@@ -2,6 +2,7 @@ pluginManagement {
     repositories {
         mavenLocal()
         jcenter()
+        maven(url = "https://dl.bintray.com/kotlin/kotlin-dev")
         maven(url = "https://dl.bintray.com/kotlin/kotlin-eap")
         mavenCentral()
     }
@@ -11,6 +12,7 @@ pluginManagement {
             val version = requested.version
             when (requested.id.id) {
                 "org.jetbrains.kotlin.jvm" -> useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${version}")
+                "org.jetbrains.kotlin.kapt" -> useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${version}")
                 "org.jetbrains.kotlin.plugin.serialization" -> useModule("org.jetbrains.kotlin:kotlin-serialization:${version}")
                 "com.jfrog.bintray" -> useModule("com.jfrog.bintray.gradle:gradle-bintray-plugin:$version")
             }
@@ -21,6 +23,7 @@ pluginManagement {
 rootProject.name = "kotlin-jvm-blocking-bridge"
 
 include("compiler-plugin")
+include("runtime")
 
 fun includeProject(projectPath: String, path: String? = null) {
     include(projectPath)

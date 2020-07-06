@@ -1,12 +1,11 @@
+import upload.Bintray
 import java.util.*
-import upload.*
 
 plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.serialization")
     id("java")
-    signing
     `maven-publish`
     id("com.jfrog.bintray")
 }
@@ -25,56 +24,23 @@ tasks.withType(JavaCompile::class.java) {
 }
 
 kotlin {
-    sourceSets.all {
-        target.compilations.all {
-            kotlinOptions {
-                freeCompilerArgs = freeCompilerArgs + "-Xjvm-default=enable"
-                jvmTarget = "1.8"
-            }
-        }
-        languageSettings.apply {
-            enableLanguageFeature("InlineClasses")
-            progressiveMode = true
-
-            useExperimentalAnnotation("kotlin.Experimental")
-            useExperimentalAnnotation("kotlin.RequiresOptIn")
-
-            useExperimentalAnnotation("kotlin.ExperimentalUnsignedTypes")
-            useExperimentalAnnotation("kotlin.experimental.ExperimentalTypeInference")
-            useExperimentalAnnotation("kotlin.contracts.ExperimentalContracts")
-        }
-    }
-
     sourceSets {
+        all {
+            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
+        }
         getByName("test") {
             languageSettings.apply {
-                //languageVersion = "1.4"
+                languageVersion = "1.4"
             }
         }
     }
 }
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
-
-    testImplementation(project(":runtime"))
-    implementation(project(":runtime"))
-
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
-
-    kapt("com.google.auto.service:auto-service:1.0-rc6")
-    compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc6")
-
-    testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.6")
-
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7")
+    implementation(kotlin("stdlib"))
 
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))
-
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.9")
-    testImplementation("org.assertj:assertj-core:3.11.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.2.0")
@@ -109,11 +75,12 @@ if (Bintray.isBintrayAvailable(project)) {
         setConfigurations("archives")
 
         pkg.apply {
+            userOrg = "mamoe"
             repo = "kotlin-jvm-blocking-bridge"
             name = "kotlin-jvm-blocking-bridge"
             setLicenses("Apache-2.0")
             publicDownloadNumbers = true
-            vcsUrl = "https://github.com/him188/kotlin-jvm-blocking-bridge"
+            vcsUrl = "https://github.com/mamoe/kotlin-jvm-blocking-bridge"
         }
     }
 
@@ -143,7 +110,7 @@ if (Bintray.isBintrayAvailable(project)) {
                     val root = asNode()
                     root.appendNode("description", description)
                     root.appendNode("name", project.name)
-                    root.appendNode("url", "https://github.com/him188/kotlin-jvm-blocking-bridge")
+                    root.appendNode("url", "https://github.com/mamoe/kotlin-jvm-blocking-bridge")
                     root.children().last()
                 }
 
@@ -152,11 +119,5 @@ if (Bintray.isBintrayAvailable(project)) {
         }
     }
 } else println("bintray isn't available. NO PUBLICATIONS WILL BE SET")
-
-
-signing {
-    setRequired(provider { gradle.taskGraph.hasTask("publish") })
-    sign(publishing.publications)
-}
 
 // endregion
