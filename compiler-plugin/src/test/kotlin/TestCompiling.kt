@@ -1,7 +1,6 @@
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import net.mamoe.kjbb.JvmBlockingBridgeComponentRegistrar
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.io.File
 
@@ -13,11 +12,11 @@ class TestCompiling {
     fun `test my annotation processor`() {
         val kotlinSource = SourceFile.kotlin(
             "KClass.kt", """
-        class KClass {
-        @net.mamoe.kjbb.JvmBlockingBridge
-        suspend fun test(){
-        
-        }
+        object KClass {
+            @net.mamoe.kjbb.JvmBlockingBridge
+            suspend fun test(){
+            this
+            }
         
             fun foo() {
                 // Classes from the test environment are visible to the compiled sources

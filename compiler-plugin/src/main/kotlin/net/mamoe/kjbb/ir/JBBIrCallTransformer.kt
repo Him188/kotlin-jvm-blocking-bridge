@@ -1,9 +1,8 @@
 package net.mamoe.kjbb.ir
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.common.ir.copyParameterDeclarationsFrom
 import org.jetbrains.kotlin.backend.common.ir.copyTo
-import org.jetbrains.kotlin.backend.common.ir.copyTypeParametersFrom
-import org.jetbrains.kotlin.backend.common.ir.copyValueParametersFrom
 import org.jetbrains.kotlin.backend.common.ir.createImplicitParameterDeclarationWithWrappedDescriptor
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.descriptors.ClassKind
@@ -11,10 +10,7 @@ import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.*
-import org.jetbrains.kotlin.ir.builders.declarations.addConstructor
-import org.jetbrains.kotlin.ir.builders.declarations.addFunction
-import org.jetbrains.kotlin.ir.builders.declarations.buildClass
-import org.jetbrains.kotlin.ir.builders.declarations.buildFun
+import org.jetbrains.kotlin.ir.builders.declarations.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrContainerExpression
@@ -25,9 +21,7 @@ import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.typeWith
-import org.jetbrains.kotlin.ir.util.constructors
-import org.jetbrains.kotlin.ir.util.parentAsClass
-import org.jetbrains.kotlin.ir.util.primaryConstructor
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
@@ -77,95 +71,69 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
         isSuspend = false
     }.apply fn@{
         this.parent = originClass
+
+        this.copyParameterDeclarationsFrom(originFunction)
+
         this.extensionReceiverParameter = originFunction.extensionReceiverParameter?.copyTo(this@fn)
         this.dispatchReceiverParameter = originFunction.dispatchReceiverParameter?.copyTo(this@fn)
 
-        copyTypeParametersFrom(originFunction)
-        copyValueParametersFrom(originFunction)
         this.body = createIrBuilder(symbol).irBlockBody {
 
             // public fun <T> runBlocking(context: CoroutineContext = EmptyCoroutineContext, block: suspend CoroutineScope.() -> T): T
-
-            val constructor: IrConstructor
-
-
-            /*
-            // class for lambda `suspend CoroutineScope.() -> T`
-            val lambdaClass = buildClass {
-                this.visibility = Visibilities.PUBLIC
-                this.name =
-                    Name.identifier(originClass.name.identifier + "\$" + originFunction.name.identifier + "\$\$JBB")
-            }.apply lambdaClass@{
-                this.createImplicitParameterDeclarationWithWrappedDescriptor()
-
-                this.parent = originClass
-                this.thisReceiver = buildValueParameter {
-                    this.name = Name.identifier("this")
-                    this.type = IrSimpleTypeImpl(this@lambdaClass.symbol, false, listOf(), listOf(), null)
-                }
-
-                constructor = addConstructor {
-                    isPrimary = true
-                }
-
-                /*
-                // fun invoke()
-                (this as IrDeclarationContainer).addFunction {
-                    this.name = Name.identifier("invoke")
-                    addDispatchReceiver { type = this@lambdaClass.defaultType }
-                }.apply {
-                    this.parent = this@lambdaClass
-                    this.body = irBlockBody {
-                        // call original function
-                        +irCall(originFunction).apply {
-                            originFunction.typeParameters.forEachIndexed { index, irTypeParameter ->
-                                putTypeArgument(index, this@fn.typeParameters[index].defaultType)
-                            }
-                            originFunction.valueParameters.forEachIndexed { index, irTypeParameter ->
-                                putValueArgument(index, irGet(this@fn.valueParameters[index]))
-                            }
-                        }
-                    }
-                }*/
-            }
-*/
-            //    loweringResult.add(lambdaClass)
 
             // given: suspend fun <T, R, ...> T.test(params): R
             // gen:           fun <T, R, ...> T.test(params): R
 
             val runBlockingFun = referenceFunctionRunBlocking()
             +irReturn(
-                // call `kotlinx.coroutines.runBlocking<R>(CoroutineContext = ..., suspend CoroutineScope.() -> R): R`
-                irCall(runBlockingFun).apply {
-                    putTypeArgument(0, this@fn.returnType) // the R for runBlocking
-
-                    // take default value for value argument 0
+                irBlock {
+                    // call `kotlinx.coroutines.runBlocking<R>(CoroutineContext = ..., suspend CoroutineScope.() -> R): R`
 
                     val suspendLambda = createSuspendLambda(
                         parent = this@fn,
                         objectName = "${originClass.name}\$\$${originFunction.name}\$blocking_bridge",
-                        lambdaType = symbols.suspendFunctionN(1).typeWith(referenceCoroutineScope().defaultType),
+                        receiverType = originClass.defaultType,
+                        lambdaType = symbols.suspendFunctionN(2).typeWith(referenceCoroutineScope().defaultType),
                         returnType = this@fn.returnType
                     ) {
+                        val irFunction = this
+                        //this.createDispatchReceiverParameter()
+                        this.addValueParameter("scope", referenceCoroutineScope().defaultType)
                         this.returnType = this@fn.returnType
-                        this.body = irBlockBody {
-                            +irCall(originFunction).apply {
-                                originClass.thisReceiver?.let { receiver ->
-                                    this.dispatchReceiver = irGet(receiver)
+                        this.body = createIrBuilder(this.symbol).irBlockBody {
+                            //return@irBlockBody
+                            +irCall(originFunction.symbol).apply {
+                                val field =
+                                    irFunction.parentAsClass.fields.single { it.name.identifier == BRIDGE_CLASS_RECEIVER_NAME }
+                                this.dispatchReceiver = irGetField(irGet(irFunction.dispatchReceiverParameter!!), field)
+
+                                /*
+                                // TODO: 2020/7/7 extension support
+                                this@fn.extensionReceiverParameter?.let { receiver ->
+                                    this.extensionReceiver = irGet(receiver)
+                                }*/
+
+                                /*
+                                // TODO: 2020/7/7 type and value arguments support
+                                originFunction.typeParameters.forEachIndexed { index, param ->
+                                    this.putTypeArgument(index, this@fn.typeParameters[index].defaultType)
                                 }
-                                originFunction.typeParameters.forEachIndexed { index, _ ->
-                                    putTypeArgument(index, this@fn.typeParameters[index].defaultType)
-                                }
-                                originFunction.valueParameters.forEachIndexed { index, _ ->
-                                    putValueArgument(index, irGet(this@fn.valueParameters[index]))
-                                }
+                                originFunction.valueParameters.forEachIndexed { index, param ->
+                                    this.putValueArgument(index, irGet(this@fn.valueParameters[index]))
+                                }*/
                             }
                         }
-                    }.also {
-                        +it
+                    }.also { +it }
+
+                    +irCall(runBlockingFun).apply {
+                        putTypeArgument(0, this@fn.returnType) // the R for runBlocking
+
+                        // take default value for value argument 0
+
+                        putValueArgument(1, irCall(suspendLambda.primaryConstructor!!).apply {
+                            putValueArgument(0, irGet(this@fn.dispatchReceiverParameter!!))
+                        })
                     }
-                    putValueArgument(1, irCall(suspendLambda.primaryConstructor!!))
                 }
             )
             /*
@@ -180,8 +148,10 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
         }
     }
 
-    return listOf(bridgeFunction) + perquisite
+    return perquisite + listOf(bridgeFunction)
 }
+
+private val BRIDGE_CLASS_RECEIVER_NAME = "\$p"
 
 /**
  * Generate an anonymous object extending `suspend CoroutineScope.() -> Unit`
@@ -189,6 +159,7 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
 fun IrPluginContext.createSuspendLambda(
     parent: IrDeclarationParent,
     objectName: String,
+    receiverType: IrType,
     lambdaType: IrType,
     returnType: IrType,
     body: IrSimpleFunction.() -> Unit
@@ -203,16 +174,28 @@ fun IrPluginContext.createSuspendLambda(
         name = Name.identifier(objectName)
         kind = ClassKind.CLASS
         visibility = Visibilities.PUBLIC
+        //isInner = true
     }.apply clazz@{
         this.parent = parent
         superTypes = listOf(lambdaType)
+
+
+        val receiverProp = this.addField {
+            this.name = Name.identifier(BRIDGE_CLASS_RECEIVER_NAME)
+            this.type = receiverType//.remapTypeParameters(parent as IrTypeParametersContainer, this@clazz)
+        }
 
         createImplicitParameterDeclarationWithWrappedDescriptor()
         addConstructor {
             isPrimary = true
         }.apply {
+            val receiverParam = this.addValueParameter {
+                this.name = Name.identifier("p")
+                this.type = receiverProp.type
+            }
             this.body = createIrBuilder(this.symbol).irBlockBody {
                 +irDelegatingConstructorCall(context.irBuiltIns.anyClass.owner.constructors.single())
+                +irSetField(irGet(this@clazz.thisReceiver!!), receiverProp, irGet(receiverParam))
             }
         }
         addFunction("invoke", returnType, isSuspend = true).apply {
