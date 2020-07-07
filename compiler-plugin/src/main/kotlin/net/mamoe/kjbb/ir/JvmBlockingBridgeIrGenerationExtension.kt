@@ -3,11 +3,12 @@ package net.mamoe.kjbb.ir
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.backend.common.ir.addChild
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.declarations.*
-import org.jetbrains.kotlin.ir.util.file
+import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.ir.util.isClass
+import org.jetbrains.kotlin.ir.util.isObject
 import org.jetbrains.kotlin.ir.visitors.*
 
 
@@ -17,19 +18,26 @@ private class JBBIrCallTransformer(
     val newDeclarations = mutableListOf<IrDeclaration>()
 
     override fun visitFunction(declaration: IrFunction): IrStatement {
+        val simpleFunction = declaration as? IrSimpleFunction ?: return declaration
 
-        if (declaration.descriptor.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME))
+        if (simpleFunction.overriddenSymbols
+                .map { it.owner }
+                .plus(simpleFunction)
+                .reversed()
+                .any { it.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) }
+        ) {
             newDeclarations.addAll(context.lowerOriginFunction(declaration).orEmpty())
+        }
+
         return declaration
     }
 
     override fun lower(irClass: IrClass) {
-        irClass.transformChildrenVoid(this)
-        //context.lowerOriginFunction(declaration)
+        if (!(irClass.isClass || irClass.isObject)) return
 
-        val (classes, functions) = newDeclarations.partition { it is IrClass }
-//        classes.forEach(irClass.file::addChild)
-        functions.forEach(irClass::addMember)
+        irClass.transformChildrenVoid(this)
+
+        newDeclarations.forEach(irClass::addMember)
     }
 }
 
