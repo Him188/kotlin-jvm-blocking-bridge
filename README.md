@@ -42,7 +42,7 @@ However, there are two problems:
   ```
 
 This plugin has been designed to minimize work against Java compatibility:
-```
+```kotlin
 @JvmBlockingBridge
 suspend fun downloadImage(): Image
 ```
