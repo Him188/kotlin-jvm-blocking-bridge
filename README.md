@@ -15,9 +15,9 @@ fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
 ```
 ... additionally for Java callers.
 
-However, there are two problems:
+However, there several problems:
 - KDoc is copied to the bridge, when updating, copying is also required.
-- Changing the signature become inconvenient.
+- Changing the signature becomes inconvenient.
 - We don't want `downloadImageBlocking` to be exposed to Kotlin callers, but we can't hide them.  
   Workaround:
   ```kotlin
