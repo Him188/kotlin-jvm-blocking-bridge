@@ -1,4 +1,4 @@
-@file:Suppress("UNCHECKED_CAST")
+@file:Suppress("UNCHECKED_CAST", "RemoveRedundantBackticks")
 
 
 import com.tschuchort.compiletesting.KotlinCompilation
@@ -25,7 +25,7 @@ internal fun test(
     source: String
 ) {
     val kotlinSource = SourceFile.kotlin(
-        "TestData.kt", source
+        "TestData.kt", "import kotlin.test.assertEquals\n$source"
     )
 
     val result = KotlinCompilation().apply {
@@ -79,10 +79,31 @@ class TestCompiling {
         object TestData {
             @JvmBlockingBridge
             suspend fun test(arg: String): String{
+                assertEquals("p0", arg)
                 return "OK"
             }
             
-            fun main(): String = this.runFunction("test", "")
+            fun main(): String = this.runFunction("test", "p0")
+        }
+    """
+        )
+    }
+
+    @Test
+    fun `static`() {
+        test(
+            """
+        import kotlin.test.assertEquals
+        object TestData {
+            @JvmStatic
+            @JvmBlockingBridge
+            suspend fun String.test(arg: String): String{
+                assertEquals("receiver", this)
+                assertEquals("p0", arg)
+                return "OK"
+            }
+            
+            fun main(): String = this.runFunction("test", "receiver", "p0")
         }
     """
         )

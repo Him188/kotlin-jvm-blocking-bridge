@@ -1,5 +1,6 @@
 package net.mamoe.kjbb.ir
 
+import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.ir.copyParameterDeclarationsFrom
 import org.jetbrains.kotlin.backend.common.ir.copyTo
@@ -8,7 +9,6 @@ import org.jetbrains.kotlin.backend.common.ir.isOverridable
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
-import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.*
@@ -16,17 +16,19 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrContainerExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
-import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.types.typeWith
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.functions
+import org.jetbrains.kotlin.ir.util.parentAsClass
+import org.jetbrains.kotlin.ir.util.primaryConstructor
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
+import java.util.*
 
 val JVM_BLOCKING_BRIDGE_FQ_NAME = FqName("net.mamoe.kjbb.JvmBlockingBridge")
 
@@ -36,7 +38,7 @@ object KOTLINX_COROUTINES {
     val CoroutineScope = pkg.child(Name.identifier("CoroutineScope"))
 }
 
-val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}") // TODO: 2020/7/3
+val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}")
 
 val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin get() = IrDeclarationOrigin.DEFINED
 
@@ -54,26 +56,24 @@ private fun IrPluginContext.referenceCoroutineScope(): IrClassSymbol {
 private object Origin_JVM_BLOCKING_BRIDGE : IrDeclarationOriginImpl("JVM_BLOCKING_BRIDGE", isSynthetic = true)
 
 fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDeclaration>? {
-    println("lowering function ${originFunction.name}")
     val originClass = originFunction.parentAsClass
-
-    val perquisite = mutableListOf<IrDeclaration>()
 
     val bridgeFunction = buildFun {
         updateFrom(originFunction)
+        isSuspend = false // keep
+
         origin = ORIGIN_JVM_BLOCKING_BRIDGE
 
         name = originFunction.bridgeFunctionName
         modality = Modality.OPEN
         returnType = originFunction.returnType
 
-        isExternal = false
-        isInline = false
-        isOperator = false
+        isExternal = false // TODO: 2020/7/7 handle external
         // TODO: 2020/7/5 handle EXPECT
-        isSuspend = false
     }.apply fn@{
-        copyAttributes(originFunction as IrAttributeContainer)
+        this.copyAttributes(originFunction as IrAttributeContainer)
+        this.annotations = originClass.annotations
+
         this.parent = originClass
 
         this.copyParameterDeclarationsFrom(originFunction)
@@ -89,57 +89,26 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
             // gen:           fun <T, R, ...> T.test(params): R
 
             val runBlockingFun = referenceFunctionRunBlocking()
+            // call `kotlinx.coroutines.runBlocking<R>(CoroutineContext = ..., suspend CoroutineScope.() -> R): R`
+
+            val suspendLambda = createSuspendLambda(
+                parent = this@fn,
+                lambdaType = symbols.suspendFunctionN(1) // suspend CoroutineScope.() -> R
+                    .typeWith(referenceCoroutineScope().defaultType, this@fn.returnType),
+                originFunction = originFunction
+            ).also { +it }
+
             +irReturn(
-                irBlock {
-                    // call `kotlinx.coroutines.runBlocking<R>(CoroutineContext = ..., suspend CoroutineScope.() -> R): R`
+                irCall(runBlockingFun).apply {
+                    putTypeArgument(0, this@fn.returnType) // the R for runBlocking
 
-                    val suspendLambda = createSuspendLambda(
-                        parent = this@fn,
-                        objectName = "${originClass.name}\$\$${originFunction.name}\$blocking_bridge",
-                        receiverType = originClass.defaultType,
-                        // probably
-                        lambdaType = symbols.suspendFunctionN(1)
-                            .typeWith(referenceCoroutineScope().defaultType, this@fn.returnType),
-                        returnType = this@fn.returnType
-                    ) {
-                        val irFunction = this
-                        //this.createDispatchReceiverParameter()
-                        this.addValueParameter("scope", referenceCoroutineScope().defaultType)
-                        this.returnType = this@fn.returnType
-                        this.body = createIrBuilder(this.symbol).irBlockBody {
-                            //return@irBlockBody
-                            +irCall(originFunction.symbol).apply {
-                                val field =
-                                    irFunction.parentAsClass.fields.single { it.name.identifier == BRIDGE_CLASS_RECEIVER_NAME }
-                                this.dispatchReceiver = irGetField(irGet(irFunction.dispatchReceiverParameter!!), field)
+                    // take default value for value argument 0
 
-                                /*
-                                // TODO: 2020/7/7 extension support
-                                this@fn.extensionReceiverParameter?.let { receiver ->
-                                    this.extensionReceiver = irGet(receiver)
-                                }*/
-
-                                /*
-                                // TODO: 2020/7/7 type and value arguments support
-                                originFunction.typeParameters.forEachIndexed { index, param ->
-                                    this.putTypeArgument(index, this@fn.typeParameters[index].defaultType)
-                                }
-                                originFunction.valueParameters.forEachIndexed { index, param ->
-                                    this.putValueArgument(index, irGet(this@fn.valueParameters[index]))
-                                }*/
-                            }
+                    putValueArgument(1, irCall(suspendLambda.primaryConstructor!!).apply {
+                        for ((index, parameter) in this@fn.paramsAndReceiversAsParamsList().withIndex()) {
+                            putValueArgument(index, irGet(parameter))
                         }
-                    }.also { +it }
-
-                    +irCall(runBlockingFun).apply {
-                        putTypeArgument(0, this@fn.returnType) // the R for runBlocking
-
-                        // take default value for value argument 0
-
-                        putValueArgument(1, irCall(suspendLambda.primaryConstructor!!).apply {
-                            putValueArgument(0, irGet(this@fn.dispatchReceiverParameter!!))
-                        })
-                    }
+                    })
                 }
             )
             /*
@@ -154,63 +123,107 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
         }
     }
 
-    return perquisite + listOf(bridgeFunction)
+    return listOf(bridgeFunction)
 }
 
-private val BRIDGE_CLASS_RECEIVER_NAME = "\$p"
+fun IrFunction.paramsAndReceiversAsParamsList(): List<IrValueParameter> {
+    val result = mutableListOf<IrValueParameter>()
+    this.dispatchReceiverParameter?.let(result::add)
+    this.extensionReceiverParameter?.let(result::add)
+    this.valueParameters.let(result::addAll)
+    return result
+}
+
+val Name.identifierOrMappedSpecialName: String
+    get() {
+        return when (this.asString()) {
+            "<this>" -> "\$receiver" // finally synthesized as
+            else -> this.identifier
+        }
+    }
 
 /**
- * Generate an anonymous object extending `suspend CoroutineScope.() -> Unit`
+ * Generate an anonymous object.
+ *
+ * - extends `suspend CoroutineScope.() -> Unit`.
+ * - takes dispatch and extension receivers as param, followed by normal params, to constructor
  */
 fun IrPluginContext.createSuspendLambda(
     parent: IrDeclarationParent,
-    objectName: String,
-    receiverType: IrType,
-    lambdaType: IrType,
-    returnType: IrType,
-    body: IrSimpleFunction.() -> Unit
+    lambdaType: IrSimpleType,
+    originFunction: IrFunction
 ): IrClass {
-    /*
-    val s: suspend CoroutineScope.() -> R = {
-
-    }
-     */
-
+    @Suppress("RemoveExplicitTypeArguments") // Kotlin 1.4-M3 bug
     return buildClass {
         name = SpecialNames.NO_NAME_PROVIDED
         kind = ClassKind.CLASS
-        visibility = Visibilities.PUBLIC
         //isInner = true
-    }.apply clazz@{
+    }.apply<IrClass> clazz@{
         this.parent = parent
         superTypes = listOf(lambdaType)
 
-
-        val receiverProp = this.addField {
-            this.name = Name.identifier(BRIDGE_CLASS_RECEIVER_NAME)
-            this.type = receiverType//.remapTypeParameters(parent as IrTypeParametersContainer, this@clazz)
+        val fields = originFunction.paramsAndReceiversAsParamsList().map {
+            addField(it.name.identifierOrMappedSpecialName.synthesizedName, it.type)
         }
 
         createImplicitParameterDeclarationWithWrappedDescriptor()
+
         addConstructor {
             isPrimary = true
-        }.apply {
-            val receiverParam = this.addValueParameter {
-                this.name = Name.identifier("p")
-                this.type = receiverProp.type
+        }.apply constructor@{
+            val newParams = fields.associateWith { irField ->
+                this@constructor.addValueParameter {
+                    name = irField.name
+                    type = irField.type
+                }
             }
-            this.body = createIrBuilder(this.symbol).irBlockBody {
+
+            this@constructor.body = createIrBuilder(symbol).irBlockBody {
                 +irDelegatingConstructorCall(context.irBuiltIns.anyClass.owner.constructors.single())
-                +irSetField(irGet(this@clazz.thisReceiver!!), receiverProp, irGet(receiverParam))
+
+                for ((irField, irValueParam) in newParams) {
+                    +irSetField(irGet(this@clazz.thisReceiver!!), irField, irGet(irValueParam))
+                }
             }
-        }
-        val irClass = this
-        val invoke = addFunction("invoke", returnType, isSuspend = true).apply {
-            this.overriddenSymbols =
-                listOf(irClass.superTypes[0].getClass()!!.functions.single { it.name.identifier == "invoke" && it.isOverridable }.symbol)
-            body()
         }
 
+        val irClass = this
+
+        addFunction("invoke", lambdaType.arguments.last().typeOrNull!!, isSuspend = true).apply functionInvoke@{
+            this.overriddenSymbols =
+                listOf(irClass.superTypes[0].getClass()!!.functions.single { it.name.identifier == "invoke" && it.isOverridable }.symbol)
+
+            // don't removed. required by supertype.
+            addValueParameter("\$scope", referenceCoroutineScope().defaultType)
+
+            //this.createDispatchReceiverParameter()
+            this.body = createIrBuilder(symbol).run {
+                // don't use expr body, coroutine codegen can't generate for it.
+                irBlockBody {
+                    +irCall(originFunction).apply call@{
+                        // set arguments
+
+                        val arguments = fields.mapTo(LinkedList()) { it } // preserve order
+
+                        fun IrField.irGetField(): IrGetFieldImpl {
+                            return irGetField(irGet(this@functionInvoke.dispatchReceiverParameter!!), this)
+                        }
+
+                        if (originFunction.dispatchReceiverParameter != null) {
+                            this@call.dispatchReceiver = arguments.pop().irGetField()
+                        }
+                        if (originFunction.extensionReceiverParameter != null) {
+                            this@call.extensionReceiver = arguments.pop().irGetField()
+                        }
+
+                        // this@call.putValueArgument(0, irGet(scopeParam))
+                        for ((index, irField) in arguments.withIndex()) {
+                            this@call.putValueArgument(index, irField.irGetField())
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
