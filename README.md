@@ -51,9 +51,9 @@ With the help of the IDE plugin, `suspend fun downloadImage` is not visible to J
 
 
 ## Modules
-- compiler-plugin  *provides bridge generators, supporting current JVM backend and experimental IR backend*
-- ide-plugin  *for IntelliJ platform IDEs only*
-- runtime-library  *provides @JvmBlockingBridge annotation*
+- **compiler-plugin**  *provides bridge generators, supporting current JVM backend and experimental IR backend*
+- **ide-plugin** plugin  *for IntelliJ platform IDEs only*
+- **runtime-library**  *provides @JvmBlockingBridge annotation*
 
 ### Runtime library
 
