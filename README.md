@@ -16,6 +16,8 @@ fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
 ... additionally for Java callers.
 
 However, there are two problems:
+- KDoc is copied to the bridge, when updating, copying is also required.
+- Changing the signature become inconvenient.
 - We don't want `downloadImageBlocking` to be exposed to Kotlin callers, but we can't hide them.  
   Workaround:
   ```kotlin
@@ -77,6 +79,6 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 ### IDE plugin
 
 - Adds compiler-plugin dependency inspection when using `@JvmBlockingBridge`
-- Hide suspend functions annotated with `@JvmBlockingBridge` from Kotlin
+- Hide suspend functions annotated with `@JvmBlockingBridge` from Java
 - Add reference resolution for generated bridge functions for Java
-
+- Kotlin callers can't reference to bridge functions (if so, error 'unresolved reference' will be reported by the compiler)
