@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.ir.copyParameterDeclarationsFrom
 import org.jetbrains.kotlin.backend.common.ir.copyTo
 import org.jetbrains.kotlin.backend.common.ir.createImplicitParameterDeclarationWithWrappedDescriptor
+import org.jetbrains.kotlin.backend.common.ir.isOverridable
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
@@ -20,10 +21,12 @@ import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.name.SpecialNames
 
 val JVM_BLOCKING_BRIDGE_FQ_NAME = FqName("net.mamoe.kjbb.JvmBlockingBridge")
 
@@ -35,7 +38,7 @@ object KOTLINX_COROUTINES {
 
 val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}") // TODO: 2020/7/3
 
-val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin get() = Origin_JVM_BLOCKING_BRIDGE
+val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin get() = IrDeclarationOrigin.DEFINED
 
 private fun IrPluginContext.referenceFunctionRunBlocking(): IrSimpleFunctionSymbol {
     return referenceFunctions(KOTLINX_COROUTINES.RUN_BLOCKING).singleOrNull()
@@ -70,6 +73,7 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
         // TODO: 2020/7/5 handle EXPECT
         isSuspend = false
     }.apply fn@{
+        copyAttributes(originFunction as IrAttributeContainer)
         this.parent = originClass
 
         this.copyParameterDeclarationsFrom(originFunction)
@@ -93,7 +97,9 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
                         parent = this@fn,
                         objectName = "${originClass.name}\$\$${originFunction.name}\$blocking_bridge",
                         receiverType = originClass.defaultType,
-                        lambdaType = symbols.suspendFunctionN(2).typeWith(referenceCoroutineScope().defaultType),
+                        // probably
+                        lambdaType = symbols.suspendFunctionN(1)
+                            .typeWith(referenceCoroutineScope().defaultType, this@fn.returnType),
                         returnType = this@fn.returnType
                     ) {
                         val irFunction = this
@@ -171,7 +177,7 @@ fun IrPluginContext.createSuspendLambda(
      */
 
     return buildClass {
-        name = Name.identifier(objectName)
+        name = SpecialNames.NO_NAME_PROVIDED
         kind = ClassKind.CLASS
         visibility = Visibilities.PUBLIC
         //isInner = true
@@ -198,9 +204,13 @@ fun IrPluginContext.createSuspendLambda(
                 +irSetField(irGet(this@clazz.thisReceiver!!), receiverProp, irGet(receiverParam))
             }
         }
-        addFunction("invoke", returnType, isSuspend = true).apply {
+        val irClass = this
+        val invoke = addFunction("invoke", returnType, isSuspend = true).apply {
+            this.overriddenSymbols =
+                listOf(irClass.superTypes[0].getClass()!!.functions.single { it.name.identifier == "invoke" && it.isOverridable }.symbol)
             body()
         }
+
     }
 }
 
