@@ -7,6 +7,7 @@ import net.mamoe.kjbb.JvmBlockingBridgeComponentRegistrar
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.lang.reflect.Modifier
 import kotlin.test.assertEquals
 
 // Expose to top-package for TestData
@@ -16,8 +17,10 @@ fun <R> Any.runFunction(name: String, vararg args: Any): R {
     return this::class.java.getMethod(name, *args.map { it::class.java }.toTypedArray()).invoke(this, *args) as R
 }
 
-fun <R> Any.runStaticFunction(name: String, vararg args: Any): R {
-    return this::class.java.getMethod(name, *args.map { it::class.java }.toTypedArray()).invoke(this, *args) as R
+fun <R> Class<*>.runStaticFunction(name: String, vararg args: Any): R {
+    return getMethod(name, *args.map { it::class.java }.toTypedArray()).also {
+        assert(Modifier.isStatic(it.modifiers)) { "method $name is not static" }
+    }.invoke(null, *args)!! as R
 }
 
 internal fun test(
@@ -90,7 +93,7 @@ class TestCompiling {
     }
 
     @Test
-    fun `static`() {
+    fun `has arg, has receiver`() {
         test(
             """
         import kotlin.test.assertEquals
@@ -104,6 +107,26 @@ class TestCompiling {
             }
             
             fun main(): String = this.runFunction("test", "receiver", "p0")
+        }
+    """
+        )
+    }
+
+    @Test
+    fun `static`() {
+        test(
+            """
+        import kotlin.test.assertEquals
+        object TestData {
+            @JvmStatic
+            @JvmBlockingBridge
+            suspend fun String.test(arg: String): String{
+                assertEquals("receiver", this)
+                assertEquals("p0", arg)
+                return "OK"
+            }
+            
+            fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
         }
     """
         )

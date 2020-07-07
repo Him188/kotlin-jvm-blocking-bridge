@@ -2,10 +2,7 @@ package net.mamoe.kjbb.ir
 
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.backend.common.ir.copyParameterDeclarationsFrom
-import org.jetbrains.kotlin.backend.common.ir.copyTo
-import org.jetbrains.kotlin.backend.common.ir.createImplicitParameterDeclarationWithWrappedDescriptor
-import org.jetbrains.kotlin.backend.common.ir.isOverridable
+import org.jetbrains.kotlin.backend.common.ir.*
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
@@ -14,6 +11,7 @@ import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrContainerExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
@@ -21,16 +19,16 @@ import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.*
-import org.jetbrains.kotlin.ir.util.constructors
-import org.jetbrains.kotlin.ir.util.functions
-import org.jetbrains.kotlin.ir.util.parentAsClass
-import org.jetbrains.kotlin.ir.util.primaryConstructor
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
+import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import java.util.*
 
 val JVM_BLOCKING_BRIDGE_FQ_NAME = FqName("net.mamoe.kjbb.JvmBlockingBridge")
+val GENERATED_BLOCKING_BRIDGE_FQ_NAME = FqName("net.mamoe.kjbb.GeneratedBlockingBridge")
+val JVM_STATIC_FQ_NAME = FqName(JvmStatic::class.qualifiedName!!)
 
 object KOTLINX_COROUTINES {
     private val pkg = FqName("kotlinx.coroutines")
@@ -55,6 +53,22 @@ private fun IrPluginContext.referenceCoroutineScope(): IrClassSymbol {
 @Suppress("ClassName")
 private object Origin_JVM_BLOCKING_BRIDGE : IrDeclarationOriginImpl("JVM_BLOCKING_BRIDGE", isSynthetic = true)
 
+fun IrFunction.isExplicitOrImplicitStatic(): Boolean {
+    return this.isStatic // || this.hasAnnotation(JVM_STATIC_FQ_NAME)
+}
+
+fun IrPluginContext.createGeneratedBlockingBridgeConstructorCall(
+    symbol: IrSymbol
+): IrConstructorCall {
+    return createIrBuilder(symbol).run {
+        irCall(referenceClass(GENERATED_BLOCKING_BRIDGE_FQ_NAME)!!.constructors.first())
+    }.run {
+        irConstructorCall(this, this.symbol)
+    }
+}
+
+fun IrClass.isJvmBlockingBridge(): Boolean = symbol.owner.fqNameWhenAvailable == JVM_BLOCKING_BRIDGE_FQ_NAME
+
 fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDeclaration>? {
     val originClass = originFunction.parentAsClass
 
@@ -72,14 +86,19 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
         // TODO: 2020/7/5 handle EXPECT
     }.apply fn@{
         this.copyAttributes(originFunction as IrAttributeContainer)
-        this.annotations = originClass.annotations
+        this.copyParameterDeclarationsFrom(originFunction)
+
+        this.annotations = originFunction.annotations
+            .filterNot { it.type.safeAs<IrClass>()?.isJvmBlockingBridge() == true }
+            .plus(createGeneratedBlockingBridgeConstructorCall(symbol))
 
         this.parent = originClass
 
-        this.copyParameterDeclarationsFrom(originFunction)
-
         this.extensionReceiverParameter = originFunction.extensionReceiverParameter?.copyTo(this@fn)
-        this.dispatchReceiverParameter = originFunction.dispatchReceiverParameter?.copyTo(this@fn)
+        this.dispatchReceiverParameter =
+            if (originFunction.isExplicitOrImplicitStatic()) null else originFunction.dispatchReceiverParameter?.copyTo(
+                this@fn
+            )
 
         this.body = createIrBuilder(symbol).irBlockBody {
 
@@ -128,7 +147,9 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
 
 fun IrFunction.paramsAndReceiversAsParamsList(): List<IrValueParameter> {
     val result = mutableListOf<IrValueParameter>()
-    this.dispatchReceiverParameter?.let(result::add)
+    if (!this.isExplicitOrImplicitStatic()) {
+        this.dispatchReceiverParameter?.let(result::add)
+    }
     this.extensionReceiverParameter?.let(result::add)
     this.valueParameters.let(result::addAll)
     return result
