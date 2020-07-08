@@ -1,6 +1,6 @@
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
-import kotlin.test.assertFailsWith
+import kotlin.test.assertFails
 
 private fun test(
     @Language("kt")
@@ -15,23 +15,15 @@ internal class TestForInterface {
 
     @Test
     fun `interface inheritance`() {
-        assertFailsWith<IllegalStateException> {
+        assertFails {
             testTestData(
                 """
             interface Inter {
-                @JvmBlockingBridge
+                @JvmBlockingBridge // inapplicable
                 suspend fun test(): String
-            }
-            object TestData: Inter {
-                override suspend fun test(): String {
-                    return "OK"
-                }
-                fun main(): String = this.runFunction("test")
             }
         """
             )
-        }.let { e ->
-            assert(e.message?.startsWith("@JvmBlockingBridge is not applicable to function ") == true) { e.message.toString() }
         }
     }
 
