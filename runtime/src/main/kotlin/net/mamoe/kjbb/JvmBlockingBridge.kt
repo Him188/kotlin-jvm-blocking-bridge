@@ -14,5 +14,5 @@ package net.mamoe.kjbb
  * ```
  */
 @Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 annotation class JvmBlockingBridge

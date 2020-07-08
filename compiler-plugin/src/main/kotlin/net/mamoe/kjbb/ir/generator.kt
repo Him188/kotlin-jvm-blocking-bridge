@@ -26,19 +26,16 @@ import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import java.util.*
 
-val JVM_BLOCKING_BRIDGE_FQ_NAME = FqName("net.mamoe.kjbb.JvmBlockingBridge")
-val GENERATED_BLOCKING_BRIDGE_FQ_NAME = FqName("net.mamoe.kjbb.GeneratedBlockingBridge")
-val JVM_STATIC_FQ_NAME = FqName(JvmStatic::class.qualifiedName!!)
 
-object KOTLINX_COROUTINES {
+internal object KOTLINX_COROUTINES {
     private val pkg = FqName("kotlinx.coroutines")
     val RUN_BLOCKING = pkg.child(Name.identifier("runBlocking"))
     val CoroutineScope = pkg.child(Name.identifier("CoroutineScope"))
 }
 
-val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}")
+internal val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}")
 
-val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin get() = IrDeclarationOrigin.DEFINED
+internal val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin? get() = IrDeclarationOrigin.DEFINED
 
 private fun IrPluginContext.referenceFunctionRunBlocking(): IrSimpleFunctionSymbol {
     return referenceFunctions(KOTLINX_COROUTINES.RUN_BLOCKING).singleOrNull()
@@ -53,11 +50,11 @@ private fun IrPluginContext.referenceCoroutineScope(): IrClassSymbol {
 @Suppress("ClassName")
 private object Origin_JVM_BLOCKING_BRIDGE : IrDeclarationOriginImpl("JVM_BLOCKING_BRIDGE", isSynthetic = true)
 
-fun IrFunction.isExplicitOrImplicitStatic(): Boolean {
+internal fun IrFunction.isExplicitOrImplicitStatic(): Boolean {
     return this.isStatic // || this.hasAnnotation(JVM_STATIC_FQ_NAME)
 }
 
-fun IrPluginContext.createGeneratedBlockingBridgeConstructorCall(
+internal fun IrPluginContext.createGeneratedBlockingBridgeConstructorCall(
     symbol: IrSymbol
 ): IrConstructorCall {
     return createIrBuilder(symbol).run {
@@ -67,23 +64,37 @@ fun IrPluginContext.createGeneratedBlockingBridgeConstructorCall(
     }
 }
 
-fun IrClass.isJvmBlockingBridge(): Boolean = symbol.owner.fqNameWhenAvailable == JVM_BLOCKING_BRIDGE_FQ_NAME
 
-fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDeclaration>? {
+internal fun IrClass.hasDuplicateBridgeFunction(originFunction: IrFunction): Boolean {
+    val params = originFunction.allParameters
+    val typePrams = originFunction.allTypeParameters
+    return this.functions
+        .filter { !it.isSuspend }
+        .filter { it.name == originFunction.name }
+        .filter { it.allParameters == params }
+        .filter { it.allTypeParameters == typePrams }
+        .any()
+}
+
+internal fun IrFunction.hasDuplicateBridgeFunction(): Boolean = parentAsClass.hasDuplicateBridgeFunction(this)
+
+fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List<IrDeclaration> {
     val originClass = originFunction.parentAsClass
 
     val bridgeFunction = buildFun {
-        updateFrom(originFunction)
-        isSuspend = false // keep
+        startOffset = originFunction.startOffset
+        endOffset = originFunction.endOffset
+        visibility = originFunction.visibility
 
-        origin = ORIGIN_JVM_BLOCKING_BRIDGE
+        origin = ORIGIN_JVM_BLOCKING_BRIDGE ?: originFunction.origin
 
         name = originFunction.bridgeFunctionName
-        modality = Modality.OPEN
+        modality = Modality.FINAL
         returnType = originFunction.returnType
 
-        isExternal = false // TODO: 2020/7/7 handle external
-        // TODO: 2020/7/5 handle EXPECT
+        isSuspend = false
+        isExternal = false
+        isExpect = false // TODO: 2020/7/8 HANDLE EXPECT/ACTUAL: GENERATE ONLY FOR ACTUAL ONES
     }.apply fn@{
         this.copyAttributes(originFunction as IrAttributeContainer)
         this.copyParameterDeclarationsFrom(originFunction)
@@ -96,9 +107,8 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
 
         this.extensionReceiverParameter = originFunction.extensionReceiverParameter?.copyTo(this@fn)
         this.dispatchReceiverParameter =
-            if (originFunction.isExplicitOrImplicitStatic()) null else originFunction.dispatchReceiverParameter?.copyTo(
-                this@fn
-            )
+            if (originFunction.isExplicitOrImplicitStatic()) null
+            else originFunction.dispatchReceiverParameter?.copyTo(this@fn)
 
         this.body = createIrBuilder(symbol).irBlockBody {
 
@@ -110,7 +120,7 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
             val runBlockingFun = referenceFunctionRunBlocking()
             // call `kotlinx.coroutines.runBlocking<R>(CoroutineContext = ..., suspend CoroutineScope.() -> R): R`
 
-            val suspendLambda = createSuspendLambda(
+            val suspendLambda = createSuspendLambdaWithCoroutineScope(
                 parent = this@fn,
                 lambdaType = symbols.suspendFunctionN(1) // suspend CoroutineScope.() -> R
                     .typeWith(referenceCoroutineScope().defaultType, this@fn.returnType),
@@ -145,7 +155,7 @@ fun IrPluginContext.lowerOriginFunction(originFunction: IrFunction): List<IrDecl
     return listOf(bridgeFunction)
 }
 
-fun IrFunction.paramsAndReceiversAsParamsList(): List<IrValueParameter> {
+internal fun IrFunction.paramsAndReceiversAsParamsList(): List<IrValueParameter> {
     val result = mutableListOf<IrValueParameter>()
     if (!this.isExplicitOrImplicitStatic()) {
         this.dispatchReceiverParameter?.let(result::add)
@@ -155,7 +165,7 @@ fun IrFunction.paramsAndReceiversAsParamsList(): List<IrValueParameter> {
     return result
 }
 
-val Name.identifierOrMappedSpecialName: String
+internal val Name.identifierOrMappedSpecialName: String
     get() {
         return when (this.asString()) {
             "<this>" -> "\$receiver" // finally synthesized as
@@ -169,7 +179,7 @@ val Name.identifierOrMappedSpecialName: String
  * - extends `suspend CoroutineScope.() -> Unit`.
  * - takes dispatch and extension receivers as param, followed by normal params, to constructor
  */
-fun IrPluginContext.createSuspendLambda(
+internal fun IrPluginContext.createSuspendLambdaWithCoroutineScope(
     parent: IrDeclarationParent,
     lambdaType: IrSimpleType,
     originFunction: IrFunction
@@ -214,7 +224,7 @@ fun IrPluginContext.createSuspendLambda(
             this.overriddenSymbols =
                 listOf(irClass.superTypes[0].getClass()!!.functions.single { it.name.identifier == "invoke" && it.isOverridable }.symbol)
 
-            // don't removed. required by supertype.
+            // don't remove. required by supertype.
             addValueParameter("\$scope", referenceCoroutineScope().defaultType)
 
             //this.createDispatchReceiverParameter()
@@ -248,14 +258,14 @@ fun IrPluginContext.createSuspendLambda(
     }
 }
 
-fun IrPluginContext.createIrBuilder(
+internal fun IrPluginContext.createIrBuilder(
     symbol: IrSymbol,
     startOffset: Int = UNDEFINED_OFFSET,
     endOffset: Int = UNDEFINED_OFFSET
 ) = DeclarationIrBuilder(this, symbol, startOffset, endOffset)
 
 
-inline fun IrBuilderWithScope.irBlock(
+internal fun IrBuilderWithScope.irBlock(
     startOffset: Int = this.startOffset,
     endOffset: Int = this.endOffset,
     origin: IrStatementOrigin? = null,
@@ -270,7 +280,7 @@ inline fun IrBuilderWithScope.irBlock(
         origin, resultType, isTransparent
     ).block(body)
 
-inline fun IrBuilderWithScope.irBlockBody(
+internal fun IrBuilderWithScope.irBlockBody(
     startOffset: Int = this.startOffset,
     endOffset: Int = this.endOffset,
     body: IrBlockBodyBuilder.() -> Unit
