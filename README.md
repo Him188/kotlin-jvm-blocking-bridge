@@ -15,9 +15,9 @@ fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
 ```
 ... additionally for Java callers.
 
-However, there are two problems:
+However, there several problems:
 - KDoc is copied to the bridge, when updating, copying is also required.
-- Changing the signature become inconvenient.
+- Changing the signature becomes inconvenient.
 - We don't want `downloadImageBlocking` to be exposed to Kotlin callers, but we can't hide them.  
   Workaround:
   ```kotlin
@@ -82,3 +82,14 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 - Hide suspend functions annotated with `@JvmBlockingBridge` from Java
 - Add reference resolution for generated bridge functions for Java
 - Kotlin callers can't reference to bridge functions (if so, error 'unresolved reference' will be reported by the compiler)
+
+
+### WIP
+This project is working in progress.   
+TODOs:
+- Bridge generating in IR backend (Experimental since Kotlin 1.3)
+  - [x] `final` functions in all kinds of classes
+  - [x] functions in interfaces without default impls
+  - [ ] functions in interfaces with default impl
+  - [ ] investigate how Kotlin tackle with `@JvmOverrides` and make consistence with it.
+- Bridge generation in JVM backend is planning.
