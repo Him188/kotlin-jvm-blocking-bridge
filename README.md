@@ -1,8 +1,11 @@
 # kotlin-jvm-blocking-bridge
+
+**[CHINESE 简体中文](./README-chs.md)**
+
 Kotlin compiler plugin that can generate a blocking bridge for calling suspend functions from Java with minimal effort
 
 ### Intention
-Kotlin suspend function is compiled with an additional `$completion: Continuation` parameter, making it hard to call from Java.
+Kotlin suspend function is compiled with an additional `$completion: Continuation` parameter, making it hard to call from Java, so we often make extra effort to simplify calling.
 
 E.g., for
 ```kotlin
@@ -53,9 +56,9 @@ With the help of the IDE plugin, `suspend fun downloadImage` is not visible to J
 
 
 ## Modules
+- **runtime-library**  *provides @JvmBlockingBridge annotation*
 - **compiler-plugin**  *provides bridge generators, supporting current JVM backend and experimental IR backend*
 - **ide-plugin**  *for IntelliJ platform IDEs only*
-- **runtime-library**  *provides @JvmBlockingBridge annotation*
 
 ### Runtime library
 
@@ -83,8 +86,12 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 - Add reference resolution for generated bridge functions for Java
 - Kotlin callers can't reference to bridge functions (if so, error 'unresolved reference' will be reported by the compiler)
 
+## Requirements
+- Gradle
+- Kotlin 1.3.70 +
+- IntelliJ IDEA 或 Android Studio
 
-### WIP
+## WIP
 This project is working in progress.   
 TODOs:
 - Bridge generating in IR backend (experimental since Kotlin 1.3)  
@@ -94,3 +101,7 @@ TODOs:
   - [ ] functions in interfaces without default impls
   - [ ] functions in interfaces with default impl
   - [ ] investigate how Kotlin tackle with `@JvmOverrides` and make consistence with it.
+
+## Try now
+
+You can try it now with Kotlin Compiler IR backend:
