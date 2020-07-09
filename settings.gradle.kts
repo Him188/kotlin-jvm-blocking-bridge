@@ -22,12 +22,12 @@ pluginManagement {
 
 rootProject.name = "kotlin-jvm-blocking-bridge"
 
-include("runtime")
-include("compiler-plugin")
-include("gradle-plugin")
-include("ide-plugin")
+includeProject("kotlin-jvm-blocking-bridge", "runtime")
+includeProject("kotlin-jvm-blocking-bridge-compiler", "compiler-plugin")
+includeProject("kotlin-jvm-blocking-bridge-gradle", "gradle-plugin")
+includeProject("kotlin-jvm-blocking-bridge-intellij", "ide-plugin")
 
-fun includeProject(projectPath: String, path: String? = null) {
-    include(projectPath)
-    if (path != null) project(projectPath).projectDir = file(path)
+fun includeProject(name: String, path: String) {
+    include(path)
+    project(":$path").name = name
 }

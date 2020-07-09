@@ -91,7 +91,7 @@ inline fun Project.setupKotlinSourceSetsSettings() {
 @Suppress("NOTHING_TO_INLINE")
 inline fun Project.setupPublishing(
     groupId: String = project.group.toString(),
-    artifactId: String,
+    artifactId: String = project.name.toString(),
     bintrayRepo: String = "kotlin-jvm-blocking-bridge",
     bintrayPkgName: String = "kotlin-jvm-blocking-bridge",
     vcs: String = "https://github.com/mamoe/kotlin-jvm-blocking-bridge"

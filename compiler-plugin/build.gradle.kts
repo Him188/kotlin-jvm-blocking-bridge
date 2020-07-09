@@ -11,8 +11,8 @@ plugins {
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
 
-    testImplementation(project(":runtime"))
-    implementation(project(":runtime"))
+    testImplementation(project(":kotlin-jvm-blocking-bridge"))
+    implementation(project(":kotlin-jvm-blocking-bridge"))
 
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
 
