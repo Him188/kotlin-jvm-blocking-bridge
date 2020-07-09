@@ -4,17 +4,15 @@ plugins {
     kotlin("jvm") version Versions.kotlin apply false
     kotlin("kapt") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
-    id("java")
-    `maven-publish`
     id("com.jfrog.bintray") version Versions.bintray apply false
-}
-
-tasks.withType(JavaCompile::class.java) {
-    options.encoding = "UTF8"
+    id("java")
 }
 
 allprojects {
     group = "net.mamoe"
+    description =
+        "Kotlin compiler plugin that can generate a blocking bridge for calling suspend functions from Java with minimal effort"
+    version = Versions.project
 
     repositories {
         mavenLocal()
@@ -27,5 +25,9 @@ allprojects {
 
 subprojects {
     afterEvaluate {
+        setupKotlinSourceSetsSettings()
+        tasks.withType(JavaCompile::class.java) {
+            options.encoding = "UTF8"
+        }
     }
 }

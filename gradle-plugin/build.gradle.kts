@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm")
     kotlin("kapt")
-    kotlin("plugin.serialization")
+
     id("java")
     signing
     `maven-publish`
@@ -36,5 +36,5 @@ dependencies {
 
 setupPublishing(
     groupId = "net.mamoe",
-    artifactId = "kotlin-jvm-blocking-bridge-compiler"
+    artifactId = "kotlin-jvm-blocking-bridge-gradle"
 )

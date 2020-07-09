@@ -22,8 +22,10 @@ pluginManagement {
 
 rootProject.name = "kotlin-jvm-blocking-bridge"
 
-include("compiler-plugin")
 include("runtime")
+include("compiler-plugin")
+include("gradle-plugin")
+include("ide-plugin")
 
 fun includeProject(projectPath: String, path: String? = null) {
     include(projectPath)
