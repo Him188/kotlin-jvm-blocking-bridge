@@ -87,9 +87,10 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 ### WIP
 This project is working in progress.   
 TODOs:
-- Bridge generating in IR backend (Experimental since Kotlin 1.3)
-  - [x] `final` functions in all kinds of classes
-  - [x] functions in interfaces without default impls
+- Bridge generating in IR backend (experimental since Kotlin 1.3)  
+  *Available now.*
+- Bridge generation in JVM backend (generally used):
+  - [ ] `final` functions in all kinds of classes
+  - [ ] functions in interfaces without default impls
   - [ ] functions in interfaces with default impl
   - [ ] investigate how Kotlin tackle with `@JvmOverrides` and make consistence with it.
-- Bridge generation in JVM backend is planning.
