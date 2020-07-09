@@ -1,6 +1,7 @@
 pluginManagement {
     repositories {
         mavenLocal()
+        gradlePluginPortal()
         jcenter()
         maven(url = "https://dl.bintray.com/kotlin/kotlin-dev")
         maven(url = "https://dl.bintray.com/kotlin/kotlin-eap")
@@ -15,6 +16,7 @@ pluginManagement {
                 "org.jetbrains.kotlin.kapt" -> useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${version}")
                 "org.jetbrains.kotlin.plugin.serialization" -> useModule("org.jetbrains.kotlin:kotlin-serialization:${version}")
                 "com.jfrog.bintray" -> useModule("com.jfrog.bintray.gradle:gradle-bintray-plugin:$version")
+                "com.gradle.plugin-publish" -> useModule("com.gradle.publish:plugin-publish-plugin:$version")
             }
         }
     }

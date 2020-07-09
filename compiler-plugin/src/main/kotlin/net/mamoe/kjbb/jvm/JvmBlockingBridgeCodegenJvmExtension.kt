@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
  */
 open class JvmBlockingBridgeCodegenJvmExtension : ExpressionCodegenExtension {
     override fun generateClassSyntheticParts(codegen: ImplementationBodyCodegen) {
+        return
         BridgeCodegen(codegen).generate()
     }
 

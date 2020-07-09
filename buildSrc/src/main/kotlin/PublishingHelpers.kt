@@ -8,6 +8,7 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import upload.Bintray
 import kotlin.reflect.KProperty
 
@@ -63,6 +64,7 @@ inline fun Project.setupKotlinSourceSetsSettings() {
         extensions.getByType(KotlinProjectExtension::class.java)
     }.getOrNull()?.run {
         sourceSets.all {
+
             languageSettings.apply {
                 progressiveMode = true
 
@@ -83,6 +85,12 @@ inline fun Project.setupKotlinSourceSetsSettings() {
         }
     }
 
+    kotlin.runCatching {
+        tasks.withType<KotlinCompile> {
+            kotlinOptions.jvmTarget = "1.8"
+        }
+    }
+
     kotlin.runCatching { tasks.getByName("test", Test::class) }.getOrNull()?.apply {
         useJUnitPlatform()
     }
@@ -94,7 +102,8 @@ inline fun Project.setupPublishing(
     artifactId: String = project.name.toString(),
     bintrayRepo: String = "kotlin-jvm-blocking-bridge",
     bintrayPkgName: String = "kotlin-jvm-blocking-bridge",
-    vcs: String = "https://github.com/mamoe/kotlin-jvm-blocking-bridge"
+    vcs: String = "https://github.com/mamoe/kotlin-jvm-blocking-bridge",
+    git: String = "git://github.com/mamoe/kotlin-jvm-blocking-bridge.git"
 ) {
     tasks.register("ensureBintrayAvailable") {
         doLast {
@@ -138,28 +147,43 @@ inline fun Project.setupPublishing(
             publications {
                 register("mavenJava", MavenPublication::class) {
                     from(components["java"])
+                    artifact(sourcesJar.get())
 
                     this.groupId = groupId
                     this.artifactId = artifactId
                     this.version = project.version.toString()
 
-                    pom.withXml {
-                        val root = asNode()
-                        root.appendNode("description", description)
-                        root.appendNode("name", project.name)
-                        root.appendNode("url", vcs)
-                        root.children().last()
-                    }
+                    pom {
+                        name.set(project.name)
+                        description.set(project.description)
+                        url.set(vcs)
 
-                    artifact(sourcesJar.get())
+                        licenses {
+                            license {
+                                name.set("Apache License 2.0")
+                                url.set("$vcs/blob/master/LICENSE.txt")
+                            }
+                        }
+                        scm {
+                            url.set("https://github.com/bnorm/kotlin-power-assert")
+                            connection.set("scm:git:$git")
+                        }
+                        developers {
+                            developer {
+                                name.set("Him188")
+                                url.set("https://github.com/him188")
+                            }
+                        }
+                    }
                 }
             }
         }
     } else println("bintray isn't available. NO PUBLICATIONS WILL BE SET")
 
 
+    /*
     signing {
         setRequired(provider { gradle.taskGraph.hasTask("publish") })
         sign(publishing.publications)
-    }
+    }*/
 }

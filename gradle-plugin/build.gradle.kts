@@ -1,40 +1,52 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     kotlin("jvm")
     kotlin("kapt")
-
+    id("java-gradle-plugin")
+    id("com.gradle.plugin-publish")
     id("java")
     signing
     `maven-publish`
     id("com.jfrog.bintray")
+
+    id("com.github.johnrengelman.shadow")
 }
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
-
-    testImplementation(project(":kotlin-jvm-blocking-bridge"))
-    implementation(project(":kotlin-jvm-blocking-bridge"))
+    implementation(kotlin("stdlib"))
+    compileOnly(gradleApi())
+    implementation(kotlin("gradle-plugin-api"))
 
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
 
-    kapt("com.google.auto.service:auto-service:1.0-rc6")
-    compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc6")
-
-    testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.6")
-
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7")
-
-    testImplementation(kotlin("test"))
-    testImplementation(kotlin("test-junit5"))
-
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.9")
-    testImplementation("org.assertj:assertj-core:3.11.1")
-
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.2.0")
+    api(project(":kotlin-jvm-blocking-bridge-compiler"))
 }
 
 setupPublishing(
     groupId = "net.mamoe",
     artifactId = "kotlin-jvm-blocking-bridge-gradle"
 )
+
+pluginBundle {
+    website = "https://github.com/mamoe/kotlin-jvm-blocking-bridge"
+    vcsUrl = "https://github.com/mamoe/kotlin-jvm-blocking-bridge.git"
+    tags = listOf("kotlin", "jvm-blocking-bridge")
+}
+
+gradlePlugin {
+    plugins {
+        create("kotlinJvmBlockingBridge") {
+            id = "net.mamoe.kotlin-jvm-blocking-bridge"
+            displayName = "Kotlin JVM Blocking Bridge"
+            description = project.description
+            implementationClass = "net.mamoe.kjbb.JvmBlockingBridgeGradlePlugin"
+        }
+    }
+}
+
+tasks.getByName("shadowJar", ShadowJar::class) {
+    archiveClassifier.set("")
+}
+
+tasks.publishPlugins.get().dependsOn(tasks.shadowJar.get())

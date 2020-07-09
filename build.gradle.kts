@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm") version Versions.kotlin apply false
     kotlin("kapt") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
+    id("com.gradle.plugin-publish") version "0.12.0" apply false
     id("com.jfrog.bintray") version Versions.bintray apply false
     id("java")
 }

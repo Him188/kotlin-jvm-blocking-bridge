@@ -105,3 +105,10 @@ TODOs:
 ## Try now
 
 You can try it now with Kotlin Compiler IR backend:
+
+`build.gradle` or `build.gradle.kts`
+```kotlin
+plugins {
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.1.3"
+}
+```

@@ -1,6 +1,5 @@
 package net.mamoe.kjbb
 
-import com.google.auto.service.AutoService
 import net.mamoe.kjbb.ir.JvmBlockingBridgeIrGenerationExtension
 import net.mamoe.kjbb.jvm.JvmBlockingBridgeCodegenJvmExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -10,7 +9,6 @@ import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.config.CompilerConfiguration
 
 @Suppress("unused")
-@AutoService(ComponentRegistrar::class)
 class JvmBlockingBridgeComponentRegistrar : ComponentRegistrar {
 
     override fun registerProjectComponents(
