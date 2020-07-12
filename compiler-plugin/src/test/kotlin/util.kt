@@ -2,7 +2,6 @@
 
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
-import net.mamoe.kjbb.JvmBlockingBridgeComponentRegistrar
 import org.intellij.lang.annotations.Language
 import java.io.File
 import java.lang.reflect.Modifier
@@ -22,7 +21,8 @@ fun <R> Class<*>.runStaticFunction(name: String, vararg args: Any): R {
 
 fun compile(
     @Language("kt")
-    source: String
+    source: String,
+    ir: Boolean
 ): KotlinCompilation.Result {
     val kotlinSource = SourceFile.kotlin(
         "TestData.kt", "import kotlin.test.assertEquals\n$source"
@@ -31,12 +31,12 @@ fun compile(
     return KotlinCompilation().apply {
         sources = listOf(kotlinSource)
 
-        compilerPlugins = listOf(JvmBlockingBridgeComponentRegistrar())
+        compilerPlugins = listOf(TestComponentRegistrar())
         verbose = false
 
         workingDir = File("testCompileOutput").apply { mkdir() }
 
-        useIR = true
+        useIR = ir
 
         inheritClassPath = true
         messageOutputStream = System.out

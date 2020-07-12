@@ -101,3 +101,37 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 ## 现在体验
 
 基于编译器 IR 后端的代码生成已经完成, 可启用 IR 后端后添加 Gradle 插件依赖:
+
+1. 第一步: 安装 Gradle 插件.
+
+`build.gradle` 或 `build.gradle.kts`
+```kotlin
+plugins {
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.1.12"
+}
+```
+
+如果 Gradle 无法下载这个插件, 请在 `settings.gradle` 或 `settings.gradle.kts` 中添加 `gradlePluginPortal()`:
+```kotlin
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+    }
+}
+```
+
+本插件会自动添加如下的依赖:
+```kotlin
+implementation("net.mamoe:kotlin-jvm-blocking-bridge")
+```
+因此只需要安装插件, 而不需要添加依赖即可使用
+
+2. 第二步, 使用 IR 后端.
+
+添加下面内容到 `build.gradle` 或 `build.gradle.kts`
+```kotlin
+```kotlin
+tasks.withType<KotlinCompile> {
+    kotlinOptions.useIR = true
+}
+```

@@ -2,6 +2,7 @@ package net.mamoe.kjbb.jvm
 
 import org.jetbrains.kotlin.codegen.ImplementationBodyCodegen
 import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
+import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.descriptors.impl.AnonymousFunctionDescriptor
@@ -27,6 +28,8 @@ class BridgeCodegen(
     }
 
     fun SimpleFunctionDescriptor.generateBridge() {
+        val originalFunction = this
+
         println("generating bridge: ${this.valueParameters}, ${this.isSuspend}")
         val desc = AnonymousFunctionDescriptor.create(
             clazz,
@@ -38,11 +41,11 @@ class BridgeCodegen(
             initialize(
                 null,
                 ReceiverParameterDescriptorImpl(clazz, clazz.thisAsReceiverParameter.value, Annotations.EMPTY),
-                typeParameters,
-                valueParameters.map { it.copy(this, it.name, it.index) },
-                returnType,
-                null,
-                visibility
+                originalFunction.typeParameters,
+                originalFunction.valueParameters.map { it.copy(this, it.name, it.index) },
+                originalFunction.returnType,
+                Modality.FINAL,
+                originalFunction.visibility
             )
 
             isSuspend = true

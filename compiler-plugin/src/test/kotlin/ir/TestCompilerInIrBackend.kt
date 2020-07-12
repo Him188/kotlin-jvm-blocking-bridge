@@ -1,6 +1,9 @@
 @file:Suppress("UNCHECKED_CAST", "RemoveRedundantBackticks")
 
+package ir
 
+
+import compile
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -9,7 +12,7 @@ fun testTestData(
     @Language("kt")
     source: String
 ) {
-    val result = compile(source)
+    val result = compile(source, true)
 
     @Suppress("UNCHECKED_CAST")
     val test = result.classLoader.loadClass("TestData")
@@ -21,7 +24,7 @@ fun testTestData(
 }
 
 @Suppress("RedundantSuspendModifier")
-class TestCompiling {
+class TestCompilerInIrBackend {
 
     @Test
     fun `no param, no extension receiver`() {

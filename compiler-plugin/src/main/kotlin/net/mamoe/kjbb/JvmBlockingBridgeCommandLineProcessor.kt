@@ -20,11 +20,25 @@ import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
 import org.jetbrains.kotlin.compiler.plugin.CliOption
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.config.CompilerConfigurationKey
 
-class JvmBlockingBridgeCommandLineProcessor : CommandLineProcessor {
-    override val pluginId: String = "net.mamoe.kotlin-jvm-blocking-bridge"
+internal val KEY_ENABLED = CompilerConfigurationKey<Boolean>("enabled")
+
+open class JvmBlockingBridgeCommandLineProcessor : CommandLineProcessor {
+    companion object {
+        const val PLUGIN_ID = "net.mamoe.kotlin-jvm-blocking-bridge-gradle"
+    }
+
+    override val pluginId: String = PLUGIN_ID
 
     override val pluginOptions: Collection<CliOption> = listOf(
+        CliOption(
+            optionName = "blocking-bridge",
+            valueDescription = "'true' to enable @JvmBlockingBridge annotation",
+            description = "@JvmBlockingBridge",
+            required = false,
+            allowMultipleOccurrences = false
+        )
     )
 
     override fun processOption(
@@ -32,6 +46,6 @@ class JvmBlockingBridgeCommandLineProcessor : CommandLineProcessor {
         value: String,
         configuration: CompilerConfiguration
     ) {
-
+        configuration.put(KEY_ENABLED, value.toBoolean())
     }
 }

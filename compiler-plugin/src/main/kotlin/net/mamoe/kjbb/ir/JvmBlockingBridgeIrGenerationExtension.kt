@@ -23,9 +23,9 @@ class JvmBlockingBridgeIrGenerationExtension : IrGenerationExtension {
 }
 
 internal fun ClassLoweringPass.runOnFileInOrder(irFile: IrFile) {
-    irFile.acceptChildrenVoid(object : IrElementVisitorVoid {
+    irFile.acceptVoid(object : IrElementVisitorVoid {
         override fun visitElement(element: IrElement) {
-            element.acceptVoid(this)
+            element.acceptChildrenVoid(this)
         }
 
         override fun visitClass(declaration: IrClass) {

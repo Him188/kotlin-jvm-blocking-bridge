@@ -104,11 +104,38 @@ TODOs:
 
 ## Try now
 
-You can try it now with Kotlin Compiler IR backend:
+You can try it now with Kotlin Compiler IR backend.
+
+1. First step: Install Gradle plugin.
 
 `build.gradle` or `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.1.3"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.1.12"
+}
+```
+
+If gradle can't resolve plugin, please add `gradlePluginPortal()` into `settings.gradle` or `settings.gradle.kts`:
+```kotlin
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+    }
+}
+```
+
+The plugin will automatically install runtime annotation library for you, as:
+```kotlin
+implementation("net.mamoe:kotlin-jvm-blocking-bridge")
+```
+Therefore, you need only to install the plugin.
+
+2. Second step, use IR backend.
+
+Add this into `build.gradle` or `build.gradle.kts`
+```kotlin
+```kotlin
+tasks.withType<KotlinCompile> {
+    kotlinOptions.useIR = true
 }
 ```

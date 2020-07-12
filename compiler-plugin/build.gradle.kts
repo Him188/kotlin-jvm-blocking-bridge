@@ -16,8 +16,10 @@ dependencies {
 
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
 
-    kapt("com.google.auto.service:auto-service:1.0-rc6")
-    compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc6")
+    kapt("com.google.auto.service:auto-service:1.0-rc7")
+    compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")
+
+    testImplementation(kotlin("reflect"))
 
     testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
     testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.6")

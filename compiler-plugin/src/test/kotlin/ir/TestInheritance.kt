@@ -1,15 +1,7 @@
-import org.intellij.lang.annotations.Language
+package ir
+
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFails
-
-private fun test(
-    @Language("kt")
-    source: String
-) {
-    val result = compile(source)
-
-    val testData = result.classLoader.loadClass("TestData")
-}
 
 internal class TestForInterface {
 
