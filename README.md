@@ -106,7 +106,7 @@ TODOs:
 
 You can try it now with Kotlin Compiler IR backend.
 
-1. First step: Install Gradle plugin.
+1. **First step: Install Gradle plugin.**
 
 `build.gradle` or `build.gradle.kts`
 ```kotlin
@@ -130,10 +130,9 @@ implementation("net.mamoe:kotlin-jvm-blocking-bridge")
 ```
 Therefore, you need only to install the plugin.
 
-2. Second step, use IR backend.
+2. **Second step, use IR backend.**
 
 Add this into `build.gradle` or `build.gradle.kts`
-```kotlin
 ```kotlin
 tasks.withType<KotlinCompile> {
     kotlinOptions.useIR = true
