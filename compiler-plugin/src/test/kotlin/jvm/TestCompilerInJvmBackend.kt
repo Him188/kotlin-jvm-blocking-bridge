@@ -1,8 +1,10 @@
 package jvm
 
+import org.junit.jupiter.api.Test
+
 internal class TestCompilerInJvmBackend {
 
-    //@Test
+    @Test
     fun `simple function in object`() = testJvmCompile(
         """
         object TestData {

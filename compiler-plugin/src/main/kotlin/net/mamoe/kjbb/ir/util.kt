@@ -2,6 +2,7 @@
 
 package net.mamoe.kjbb.ir
 
+import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -20,7 +21,13 @@ val GENERATED_BLOCKING_BRIDGE_FQ_NAME = FqName("net.mamoe.kjbb.GeneratedBlocking
 /**
  * For annotation class
  */
-fun IrClass.isJvmBlockingBridge(): Boolean = symbol.owner.fqNameWhenAvailable == JVM_BLOCKING_BRIDGE_FQ_NAME
+fun IrClass.isJvmBlockingBridge(): Boolean =
+    symbol.owner.fqNameWhenAvailable?.asString() == JVM_BLOCKING_BRIDGE_FQ_NAME.asString()
+
+/**
+ * Filter by annotation `@JvmBlockingBridge`
+ */
+fun FunctionDescriptor.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
 
 /**
  * Filter by annotation `@JvmBlockingBridge`
