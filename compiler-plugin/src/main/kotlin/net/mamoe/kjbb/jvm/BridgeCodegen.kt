@@ -6,6 +6,7 @@ import net.mamoe.kjbb.ir.identifierOrMappedSpecialName
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.backend.common.descriptors.allParameters
+import org.jetbrains.kotlin.backend.common.descriptors.explicitParameters
 import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.codegen.coroutines.continuationAsmType
 import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
@@ -65,14 +66,17 @@ class BridgeCodegen(
 
         val methodOrigin = OtherOrigin(originFunction)
         val methodName = originFunction.name.asString()
-        val methodSignature = originFunction.computeJvmDescriptor(withName = false)
+        val methodSignature = originFunction.computeJvmDescriptor(withName = true)
 
         val mv = v.newMethod(
             OtherOrigin(originFunction),
             ACC_PUBLIC,
             methodName,
+            allParametersExceptDispatch().computeJvmDescriptorForMethod(
+                typeMapper,
+                returnTypeDescriptor = returnTypeOrNothing.asmType().descriptor
+            ),
             methodSignature,
-            null,
             null
         ) // TODO: 2020/7/12 exceptions?
 
@@ -103,26 +107,31 @@ class BridgeCodegen(
                 mv.genAnnotation(annotationDescriptor.type.asmType().descriptor, true)
             }
 
-        mv.visitAnnotation(GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor, true)?.visitEnd()
+        mv.genAnnotation(GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor, true)
 
         if (!generationState.classBuilderMode.generateBodies) {
             FunctionCodegen.endVisit(mv, methodName, clazz.findPsi())
             return
         }
 
+        // body
+
+
         val iv = InstructionAdapter(mv)
 
         val lambdaClassDescriptor = generateLambdaForRunBlocking(
             originFunction, codegen.state,
             originFunction.findPsi()!!,
-            codegen.parentCodegen?.v?.thisName ?: codegen.v.thisName, // TODO: 2020/7/15 check name
             codegen.v.thisName
         ).let { Type.getObjectType(it) }
 
+        mv.visitParameter("\$\$this", 1)
+        mv.visitParameter("arg1", 2)
         mv.visitCode()
         //  AsmUtil.
 
         with(iv) {
+
             aconst(null) // coroutineContext
 
             // call lambdaConstructor
@@ -131,7 +140,7 @@ class BridgeCodegen(
 
             mv.visitVarInsn(ALOAD, 0)
             // load(0, lambdaClassDescriptor)
-            for ((index, parameter) in originFunction.allParameters.drop(1).withIndex()) {
+            for ((index, parameter) in originFunction.allParametersExceptDispatch().withIndex()) {
                 load(index + 1, parameter.type.asmType())
             }
 
@@ -185,21 +194,42 @@ internal val Class<*>.asmTypeDescriptor: String
 internal val KClass<*>.asmTypeDescriptor: String
     get() = Type.getDescriptor(this.java)
 
+internal fun FunctionDescriptor.allParametersExceptDispatch(): List<ParameterDescriptor> {
+    val list = ArrayList<ParameterDescriptor>()
+    this.extensionReceiverParameter?.let { list.add(it) }
+    list.addAll(this.valueParameters)
+    return list
+}
+
 internal fun List<ParameterDescriptor>.computeJvmDescriptorForMethod(
     typeMapper: KotlinTypeMapper,
     returnTypeDescriptor: String
 ): String {
-    return "(${this.joinToString("") { it.type.asmType(typeMapper).descriptor }})$returnTypeDescriptor"
+    return Type.getMethodDescriptor(
+        Type.getType(returnTypeDescriptor),
+        *this.map { it.type.asmType(typeMapper) }.toTypedArray()
+    )
+}
+
+internal fun List<ParameterDescriptor>.computeJvmDescriptorForMethod(
+    typeMapper: KotlinTypeMapper,
+    vararg additionalParameterTypes: Type,
+    returnTypeDescriptor: String
+): String {
+    return Type.getMethodDescriptor(
+        Type.getType(returnTypeDescriptor),
+        *this.map { it.type.asmType(typeMapper) }.toTypedArray(),
+        *additionalParameterTypes
+    )
 }
 
 private fun TypeMapperAware.generateLambdaForRunBlocking(
     originFunction: FunctionDescriptor,
     state: GenerationState,
     originElement: PsiElement,
-    packagePartClassInternalName: String,
     parentName: String
 ): String {
-    val allParameters = originFunction.allParameters // dispatch + extension + value
+    val allParameters = originFunction.explicitParameters // dispatch + extension + value
 
     val internalName = "$parentName$$${originFunction.name}\$blocking_bridge"
     val lambdaBuilder = state.factory.newVisitor(
@@ -216,13 +246,22 @@ private fun TypeMapperAware.generateLambdaForRunBlocking(
         arrayOf(NUMBERED_FUNCTION_PREFIX + "2") // Function2<in P1, in P2, out R>
     )
 
-    for (valueParameter in allParameters) {
-        lambdaBuilder.newField(
-            JvmDeclarationOrigin.NO_ORIGIN,
-            ACC_PRIVATE or ACC_FINAL,
-            valueParameter.name.identifierOrMappedSpecialName,
-            valueParameter.type.asmType().descriptor, null, null
-        )
+    for ((index, valueParameter) in allParameters.withIndex()) {
+        if (index == 0) { // dispatch receiver
+            lambdaBuilder.newField(
+                JvmDeclarationOrigin.NO_ORIGIN,
+                ACC_PRIVATE or ACC_FINAL,
+                "p\$",
+                valueParameter.type.asmType().descriptor, null, null
+            )
+        } else {
+            lambdaBuilder.newField(
+                JvmDeclarationOrigin.NO_ORIGIN,
+                ACC_PRIVATE or ACC_FINAL,
+                valueParameter.name.identifierOrMappedSpecialName,
+                valueParameter.type.asmType().descriptor, null, null
+            )
+        }
     }
 
     lambdaBuilder.newMethod(
@@ -233,8 +272,10 @@ private fun TypeMapperAware.generateLambdaForRunBlocking(
     ).apply {
         visitCode()
 
+        val iv = InstructionAdapter(this)
+
         // super(2)
-        visitVarInsn(ALOAD, 0)
+        loadThis()
         visitInsn(ICONST_2) // Function2
         visitMethodInsn(
             INVOKESPECIAL,
@@ -246,14 +287,25 @@ private fun TypeMapperAware.generateLambdaForRunBlocking(
 
         // set fields
         for ((index, valueParameter) in allParameters.withIndex()) {
-            visitVarInsn(ALOAD, 0)
-            visitVarInsn(ALOAD, 1 + index)
-            visitFieldInsn(
-                PUTFIELD,
-                lambdaBuilder.thisName,
-                valueParameter.name.identifierOrMappedSpecialName,
-                valueParameter.type.asmType().descriptor
-            )
+            val asmType = valueParameter.type.asmType()
+
+            loadThis()
+            iv.load(1 + index, asmType)
+            if (index == 0) { // dispatch receiver
+                visitFieldInsn(
+                    PUTFIELD,
+                    lambdaBuilder.thisName,
+                    "p\$",
+                    asmType.descriptor
+                )
+            } else {
+                visitFieldInsn(
+                    PUTFIELD,
+                    lambdaBuilder.thisName,
+                    valueParameter.name.identifierOrMappedSpecialName,
+                    asmType.descriptor
+                )
+            }
         }
 
         visitInsn(RETURN)
@@ -270,6 +322,8 @@ private fun TypeMapperAware.generateLambdaForRunBlocking(
             AsmTypes.OBJECT_TYPE // Continuation
         ), null, null
     ).apply {
+        val iv = InstructionAdapter(this)
+
         visitCode()
 
         /*
@@ -282,14 +336,25 @@ private fun TypeMapperAware.generateLambdaForRunBlocking(
         */
 
 
-        for (param in allParameters) {
-            visitVarInsn(ALOAD, 0)
-            visitFieldInsn(
-                GETFIELD,
-                lambdaBuilder.thisName,
-                param.name.identifierOrMappedSpecialName,
-                param.type.asmType().descriptor
-            )
+        for ((index, param) in allParameters.withIndex()) {
+            val asmType = param.type.asmType()
+
+            loadThis() // this
+            if (index == 0) { // dispatch receiver
+                visitFieldInsn(
+                    GETFIELD,
+                    lambdaBuilder.thisName,
+                    "p\$",
+                    asmType.descriptor
+                )
+            } else {
+                visitFieldInsn(
+                    GETFIELD,
+                    lambdaBuilder.thisName,
+                    param.name.identifierOrMappedSpecialName,
+                    asmType.descriptor
+                )
+            }
         }
 
         // load the second param and cast to Continuation
@@ -321,6 +386,7 @@ private fun TypeMapperAware.generateLambdaForRunBlocking(
     return lambdaBuilder.thisName
 }
 
+internal fun MethodVisitor.loadThis() = visitVarInsn(ALOAD, 0)
 
 private fun <T> T.repeatAsList(n: Int): List<T> {
     val result = ArrayList<T>()

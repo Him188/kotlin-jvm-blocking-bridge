@@ -10,7 +10,8 @@ import java.lang.reflect.Modifier
 typealias JvmBlockingBridge = net.mamoe.kjbb.JvmBlockingBridge
 
 fun <R> Any.runFunction(name: String, vararg args: Any): R {
-    return this::class.java.getMethod(name, *args.map { it::class.java }.toTypedArray()).invoke(this, *args) as R
+    return this::class.java.getMethod(name, *args.map { it::class.javaPrimitiveType ?: it::class.java }.toTypedArray())
+        .invoke(this, *args) as R
 }
 
 fun <R> Class<*>.runStaticFunction(name: String, vararg args: Any): R {
@@ -25,7 +26,7 @@ fun compile(
     ir: Boolean
 ): KotlinCompilation.Result {
     val kotlinSource = SourceFile.kotlin(
-        "TestData.kt", "import kotlin.test.assertEquals\n$source"
+        "TestData.kt", "import kotlin.test.*\n${source.trimIndent()}"
     )
 
     return KotlinCompilation().apply {
