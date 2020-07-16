@@ -20,20 +20,6 @@ internal class TestCompilerInJvmBackend {
     )
 
     @Test
-    fun `function with param in object`() = testJvmCompile(
-        """
-        object TestData {
-            @JvmBlockingBridge
-            suspend fun test(arg1: String): String{
-                return arg1
-            }
-            
-            fun main(): String = this.runFunction("test", "OK")
-        }
-    """
-    )
-
-    @Test
     fun `function with many param in object`() = testJvmCompile(
         """
         object TestData {
@@ -60,37 +46,6 @@ internal class TestCompilerInJvmBackend {
             }
             
             fun main(): String = this.runFunction("test", "aaa", "OK")
-        }
-    """
-    )
-
-    @Test
-    fun `function with primitives in object`() = testJvmCompile(
-        """
-        object TestData {
-            @JvmBlockingBridge
-            suspend fun test(long: Long, float: Float): String{
-                assertEquals(123L, long)
-                assertEquals(123f, float)
-                return "OK"
-            }
-            
-            fun main(): String = this.runFunction("test",  123L, 123f)
-        }
-    """
-    )
-
-    @Test
-    fun `function with long in object`() = testJvmCompile(
-        """
-        object TestData {
-            @JvmBlockingBridge
-            suspend fun test(long: Long): String{
-                assertEquals(123L, long)
-                return "OK"
-            }
-            
-            fun main(): String = this.runFunction("test",  123L)
         }
     """
     )
