@@ -46,6 +46,7 @@ interface BridgeCodegenExtensions {
 val GENERATED_BLOCKING_BRIDGE_ASM_TYPE = GENERATED_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
 val JVM_BLOCKING_BRIDGE_ASM_TYPE = JVM_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
 
+
 class BridgeCodegen(
     private val codegen: ImplementationBodyCodegen,
     private val generationState: GenerationState = codegen.state
@@ -78,7 +79,7 @@ class BridgeCodegen(
 
         val mv = v.newMethod(
             OtherOrigin(originFunction),
-            ACC_PUBLIC,
+            ACC_PUBLIC, // TODO: 2020/7/16 or FINAL?
             methodName,
             extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
                 typeMapper,
@@ -98,6 +99,26 @@ class BridgeCodegen(
 
         fun MethodVisitor.genAnnotation(descriptor: String, visible: Boolean) {
             visitAnnotation(descriptor, visible)?.visitEnd()
+        }
+
+        FunctionCodegen.generateParameterAnnotations(
+            originFunction,
+            mv,
+            typeMapper.mapSignatureWithCustomParameters(
+                originFunction,
+                codegen.context.contextKind,
+                originFunction.valueParameters,
+                true
+            ),
+            originFunction.valueParameters,
+            codegen,
+            generationState
+        )
+
+        for ((index, param) in originFunction.extensionReceiverAndValueParameters().withIndex()) {
+            for (annotation in param.annotations) {
+                mv.visitParameterAnnotation(index, annotation.type.asmType().descriptor, true)
+            }
         }
 
         mv.genAnnotation(
@@ -121,8 +142,6 @@ class BridgeCodegen(
             FunctionCodegen.endVisit(mv, methodName, clazz.findPsi())
             return
         }
-
-        //FunctionCodegen.generateParameterAnnotations(originFunction, mv, originFunction.computeJvmDescriptor(), remainingParameters, memberCodegen, state)
 
         // body
 
