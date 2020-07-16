@@ -96,13 +96,12 @@ This project is working in progress.
 TODOs:
 - Bridge generating in IR backend (experimental since Kotlin 1.3)  
   *Available now.*
-- Bridge generation in JVM backend (generally used):
-  - [ ] `final` functions in all kinds of classes
-  - [ ] functions in interfaces without default impls
-  - [ ] functions in interfaces with default impl
-  - [ ] investigate how Kotlin tackle with `@JvmOverrides` and make consistence with it.
+- Bridge generation in the legacy JVM backend (generally used):
+  *Available now.*
+- IDE plugin for resolving
 
-## Try now
+## Try X
+now
 
 You can try it now with Kotlin Compiler IR backend.
 

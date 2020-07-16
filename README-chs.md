@@ -95,7 +95,7 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 待办事项:
 
 - [x] 编译器 IR 后端的代码生成 (自 Kotlin 1.3 处于实验性阶段)
-- [ ] 编译器 JVM 后端的代码生成 (目前常用)
+- [x] 编译器 JVM 后端的代码生成 (目前常用)
 - [ ] IDE 插件
 
 ## 现在体验
