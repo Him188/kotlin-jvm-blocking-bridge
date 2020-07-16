@@ -86,9 +86,9 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 - 为 Kotlin 用户隐藏生成的阻塞式方法桥 (即使它们已经生成)
 
 ## 使用要求
-- Gradle
-- Kotlin 1.3.70 +
-- IntelliJ IDEA 或 Android Studio
+- Gradle (仅在 6.0+ 环境通过测试)
+- Kotlin 1.4-M3, 1.4-RC, 1.4.0 或更高
+- IntelliJ IDEA 或 Android Studio (推荐保持新版本)
 
 ## 在制品
 这个项目正在开发中.  
@@ -100,9 +100,9 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 
 ## 现在体验
 
-基于编译器 IR 后端的代码生成已经完成, 可启用 IR 后端后添加 Gradle 插件依赖:
+编译器插件已经完成, 可添加 Gradle 插件依赖:
 
-1. **第一步: 安装 Gradle 插件.**
+1. **安装 Gradle 插件.**
 
 `build.gradle` 或 `build.gradle.kts`
 ```kotlin
@@ -126,9 +126,12 @@ implementation("net.mamoe:kotlin-jvm-blocking-bridge")
 ```
 因此只需要安装插件, 而不需要添加依赖即可使用
 
-2. **第二步, 使用 IR 后端.**
+2. (可选) **使用 IR 后端**
 
-添加下面内容到 `build.gradle` 或 `build.gradle.kts`
+本插件同时支持 IR 或 旧 JVM 编译器后端, Kotlin 默认选择后者, 但也可以手动指定 IR 后端.  
+由于 Kotlin IR 后端处于实验性阶段, 因此若未在 JVM 后端遇到问题, 不推荐切换到 IR.
+
+要启用 IR 后端 添加下面内容到 `build.gradle` 或 `build.gradle.kts`
 ```kotlin=
 tasks.withType<KotlinCompile> {
     kotlinOptions.useIR = true
