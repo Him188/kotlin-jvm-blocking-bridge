@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.backend.common.descriptors.allParameters
 import org.jetbrains.kotlin.backend.common.descriptors.explicitParameters
+import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
+import org.jetbrains.kotlin.backend.common.descriptors.synthesizedString
 import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.codegen.coroutines.continuationAsmType
 import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
@@ -19,22 +21,26 @@ import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.load.kotlin.computeJvmDescriptor
+import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.OtherOrigin
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.isNullable
+import org.jetbrains.org.objectweb.asm.Label
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.Opcodes.*
 import org.jetbrains.org.objectweb.asm.Type
 import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter
 import kotlin.reflect.KClass
 
-interface TypeMapperAware {
+interface BridgeCodegenExtensions {
     val typeMapper: KotlinTypeMapper
 
     fun KotlinType.asmType(): Type = this.asmType(typeMapper)
+
+    fun FunctionDescriptor.owner(superCall: Boolean): Type = typeMapper.mapToCallableMethod(this, superCall).owner
 }
 
 val GENERATED_BLOCKING_BRIDGE_ASM_TYPE = GENERATED_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
@@ -43,7 +49,7 @@ val JVM_BLOCKING_BRIDGE_ASM_TYPE = JVM_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmT
 class BridgeCodegen(
     private val codegen: ImplementationBodyCodegen,
     private val generationState: GenerationState = codegen.state
-) : TypeMapperAware {
+) : BridgeCodegenExtensions {
     private inline val v get() = codegen.v
     private inline val clazz get() = codegen.descriptor
     override val typeMapper: KotlinTypeMapper get() = codegen.typeMapper
@@ -67,14 +73,16 @@ class BridgeCodegen(
         val methodOrigin = OtherOrigin(originFunction)
         val methodName = originFunction.name.asString()
         val methodSignature = originFunction.computeJvmDescriptor(withName = true)
+        val returnType = originFunction.returnType?.asmType()
+            ?: Nothing::class.asmType
 
         val mv = v.newMethod(
             OtherOrigin(originFunction),
             ACC_PUBLIC,
             methodName,
-            allParametersExceptDispatch().computeJvmDescriptorForMethod(
+            extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
                 typeMapper,
-                returnTypeDescriptor = returnTypeOrNothing.asmType().descriptor
+                returnTypeDescriptor = returnType.descriptor
             ),
             methodSignature,
             null
@@ -114,34 +122,43 @@ class BridgeCodegen(
             return
         }
 
+        //FunctionCodegen.generateParameterAnnotations(originFunction, mv, originFunction.computeJvmDescriptor(), remainingParameters, memberCodegen, state)
+
         // body
 
+        val ownerType = clazz.defaultType.asmType()
 
         val iv = InstructionAdapter(mv)
 
         val lambdaClassDescriptor = generateLambdaForRunBlocking(
             originFunction, codegen.state,
             originFunction.findPsi()!!,
-            codegen.v.thisName
+            codegen.v.thisName,
+            codegen.context.contextKind
         ).let { Type.getObjectType(it) }
 
-        mv.visitParameter("\$\$this", 1)
-        mv.visitParameter("arg1", 2)
+        //mv.visitParameter("\$\$this", 1)
+        //mv.visitParameter("arg1", 2)
+
         mv.visitCode()
         //  AsmUtil.
 
         with(iv) {
 
+            val stack = FrameMap()
+
             aconst(null) // coroutineContext
 
             // call lambdaConstructor
-            mv.visitTypeInsn(NEW, lambdaClassDescriptor.internalName)
-            mv.visitInsn(DUP)
+            anew(lambdaClassDescriptor)// mv.visitTypeInsn(NEW, lambdaClassDescriptor.internalName)
+            dup()
 
-            mv.visitVarInsn(ALOAD, 0)
-            // load(0, lambdaClassDescriptor)
-            for ((index, parameter) in originFunction.allParametersExceptDispatch().withIndex()) {
-                load(index + 1, parameter.type.asmType())
+            val thisIndex = stack.enterTemp(AsmTypes.OBJECT_TYPE)
+            load(thisIndex, ownerType) // dispatch
+
+            for (parameter in originFunction.extensionReceiverAndValueParameters()) {
+                val asmType = parameter.type.asmType()
+                load(stack.enterTemp(asmType), asmType)
             }
 
             invokespecial(
@@ -163,23 +180,19 @@ class BridgeCodegen(
             //cast(Type.getType(Any::class.java), originFunction.returnTypeOrNothing.asmType())
             //
 
-            if (originFunction.returnType != null) {
-                if (originFunction.returnType?.asmType() == Type.getType(Unit::class.java)) {
-                    mv.visitInsn(RETURN)
-                } else {
-                    mv.visitTypeInsn(CHECKCAST, originFunction.returnType!!.asmType().internalName)
-                    areturn(originFunction.returnType!!.asmType())
-                }
-            }
+            genReturn(returnType)
         }
-        //iv.areturn(Type.BOOLEAN_TYPE)
 
         FunctionCodegen.endVisit(mv, methodName, clazz.findPsi())
     }
 }
 
-fun InstructionAdapter.callRunBlocking() {
+internal val OBJECT_ASM_TYPE = Any::class.asmType
+internal val VOID_ASM_TYPE = Any::class.asmType
 
+internal fun InstructionAdapter.genReturn(type: Type) {
+    StackValue.coerce(OBJECT_ASM_TYPE, type, this)
+    areturn(type)
 }
 
 /**
@@ -194,11 +207,29 @@ internal val Class<*>.asmTypeDescriptor: String
 internal val KClass<*>.asmTypeDescriptor: String
     get() = Type.getDescriptor(this.java)
 
-internal fun FunctionDescriptor.allParametersExceptDispatch(): List<ParameterDescriptor> {
-    val list = ArrayList<ParameterDescriptor>()
-    this.extensionReceiverParameter?.let { list.add(it) }
-    list.addAll(this.valueParameters)
-    return list
+/**
+ * @see Type.getDescriptor
+ */
+internal val KClass<*>.asmType: Type
+    get() = Type.getType(this.java)
+
+internal fun FunctionDescriptor.extensionReceiverAndValueParameters(): List<ParameterDescriptor> {
+    return extensionReceiverParameter.followedBy(valueParameters)
+}
+
+internal operator fun <T> T.plus(list: Collection<T>): List<T> {
+    val new = ArrayList<T>(list.size + 1)
+    new.add(this)
+    new.addAll(list)
+    return new
+}
+
+internal fun <T> T?.followedBy(list: Collection<T>): List<T> {
+    if (this == null) return list.toList()
+    val new = ArrayList<T>(list.size + 1)
+    new.add(this)
+    new.addAll(list)
+    return new
 }
 
 internal fun List<ParameterDescriptor>.computeJvmDescriptorForMethod(
@@ -223,13 +254,17 @@ internal fun List<ParameterDescriptor>.computeJvmDescriptorForMethod(
     )
 }
 
-private fun TypeMapperAware.generateLambdaForRunBlocking(
+internal const val DISPATCH_RECEIVER_VAR_NAME = "p\$"
+
+private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     originFunction: FunctionDescriptor,
     state: GenerationState,
     originElement: PsiElement,
-    parentName: String
+    parentName: String,
+    contextKind: OwnerKind
 ): String {
-    val allParameters = originFunction.explicitParameters // dispatch + extension + value
+    val methodOwnerType = originFunction.owner(false)
+    val isStatic = AsmUtil.isStaticMethod(contextKind, originFunction)
 
     val internalName = "$parentName$$${originFunction.name}\$blocking_bridge"
     val lambdaBuilder = state.factory.newVisitor(
@@ -246,67 +281,71 @@ private fun TypeMapperAware.generateLambdaForRunBlocking(
         arrayOf(NUMBERED_FUNCTION_PREFIX + "2") // Function2<in P1, in P2, out R>
     )
 
-    for ((index, valueParameter) in allParameters.withIndex()) {
-        if (index == 0) { // dispatch receiver
-            lambdaBuilder.newField(
-                JvmDeclarationOrigin.NO_ORIGIN,
-                ACC_PRIVATE or ACC_FINAL,
-                "p\$",
-                valueParameter.type.asmType().descriptor, null, null
-            )
-        } else {
-            lambdaBuilder.newField(
-                JvmDeclarationOrigin.NO_ORIGIN,
-                ACC_PRIVATE or ACC_FINAL,
-                valueParameter.name.identifierOrMappedSpecialName,
-                valueParameter.type.asmType().descriptor, null, null
-            )
-        }
+
+    fun ClassBuilder.genNewField(parameter: ParameterDescriptor, name: String? = null) {
+        newField(
+            JvmDeclarationOrigin.NO_ORIGIN,
+            ACC_PRIVATE or ACC_FINAL,
+            name ?: parameter.synthesizedNameString(),
+            parameter.type.asmType().descriptor, null, null
+        )
     }
+    originFunction.dispatchReceiverParameter?.let {
+        lambdaBuilder.genNewField(it, DISPATCH_RECEIVER_VAR_NAME)
+    }
+    for (parameter in originFunction.extensionReceiverAndValueParameters()) {
+        lambdaBuilder.genNewField(parameter)
+    }
+
+
+    /*
+    val flags =
+        baseMethodFlags or
+                (if (isStatic) Opcodes.ACC_STATIC else 0) or
+                ACC_FINAL or
+                (if (allParameters.lastOrNull()?.varargElementType != null) Opcodes.ACC_VARARGS else 0)
+*/
 
     lambdaBuilder.newMethod(
         JvmDeclarationOrigin.NO_ORIGIN,
         AsmUtil.NO_FLAG_PACKAGE_PRIVATE or ACC_SYNTHETIC,
         "<init>",
-        allParameters.computeJvmDescriptorForMethod(typeMapper, "V"), null, null
-    ).apply {
+        originFunction.explicitParameters.computeJvmDescriptorForMethod(typeMapper, "V"), null, null
+    ).applyWithInstructionAdapter {
         visitCode()
 
-        val iv = InstructionAdapter(this)
+        val stack = FrameMap()
 
-        // super(2)
-        loadThis()
-        visitInsn(ICONST_2) // Function2
-        visitMethodInsn(
-            INVOKESPECIAL,
-            AsmTypes.LAMBDA.internalName,
-            "<init>",
-            Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE),
-            false
-        )
+        val methodBegin = Label()
+        visitLabel(methodBegin)
+
+        val thisIndex = stack.enterTemp(AsmTypes.OBJECT_TYPE)
 
         // set fields
-        for ((index, valueParameter) in allParameters.withIndex()) {
-            val asmType = valueParameter.type.asmType()
 
-            loadThis()
-            iv.load(1 + index, asmType)
-            if (index == 0) { // dispatch receiver
-                visitFieldInsn(
-                    PUTFIELD,
-                    lambdaBuilder.thisName,
-                    "p\$",
-                    asmType.descriptor
-                )
-            } else {
-                visitFieldInsn(
-                    PUTFIELD,
-                    lambdaBuilder.thisName,
-                    valueParameter.name.identifierOrMappedSpecialName,
-                    asmType.descriptor
-                )
-            }
+        fun InstructionAdapter.genPutField(parameter: ParameterDescriptor, name: String? = null) {
+            val asmType = parameter.type.asmType()
+
+            load(thisIndex, methodOwnerType)
+            load(stack.enterTemp(asmType), asmType)
+
+            visitFieldInsn(
+                PUTFIELD,
+                lambdaBuilder.thisName,
+                name ?: parameter.synthesizedNameString(),
+                asmType.descriptor
+            )
         }
+
+        originFunction.dispatchReceiverParameter?.let { param ->
+            genPutField(param, DISPATCH_RECEIVER_VAR_NAME)
+        }
+
+        for (valueParameter in originFunction.extensionReceiverAndValueParameters()) {
+            genPutField(valueParameter)
+        }
+
+        invokeSuperLambdaConstructor(2) // super(2)
 
         visitInsn(RETURN)
         visitEnd()
@@ -321,41 +360,36 @@ private fun TypeMapperAware.generateLambdaForRunBlocking(
             AsmTypes.OBJECT_TYPE, // CoroutineScope
             AsmTypes.OBJECT_TYPE // Continuation
         ), null, null
-    ).apply {
-        val iv = InstructionAdapter(this)
-
+    ).applyWithInstructionAdapter {
         visitCode()
 
-        /*
-        visitVarInsn(Opcodes.ALOAD, 1)
-        val coroutineScopeInternalName = "Lkotlinx/coroutines/CoroutineScope"
-        visitTypeInsn(
-            Opcodes.CHECKCAST,
-            coroutineScopeInternalName
-        )
-        */
+        val stack = FrameMap()
+        val thisIndex = stack.enterTemp(AsmTypes.OBJECT_TYPE)
 
 
-        for ((index, param) in allParameters.withIndex()) {
-            val asmType = param.type.asmType()
-
-            loadThis() // this
-            if (index == 0) { // dispatch receiver
-                visitFieldInsn(
-                    GETFIELD,
-                    lambdaBuilder.thisName,
-                    "p\$",
-                    asmType.descriptor
-                )
-            } else {
-                visitFieldInsn(
-                    GETFIELD,
-                    lambdaBuilder.thisName,
-                    param.name.identifierOrMappedSpecialName,
-                    asmType.descriptor
-                )
-            }
+        if (!isStatic) { // load this for the dispatch param at the end
+            load(thisIndex, methodOwnerType)
         }
+
+        fun InstructionAdapter.genGetField(parameter: ParameterDescriptor, name: String? = null) {
+            val asmType = parameter.type.asmType()
+
+            load(thisIndex, methodOwnerType)
+            // load(stack.enterTemp(asmType), asmType)
+
+            visitFieldInsn(
+                GETFIELD,
+                lambdaBuilder.thisName,
+                name ?: parameter.synthesizedNameString(),
+                asmType.descriptor
+            )
+        }
+
+        originFunction.dispatchReceiverParameter?.let { genGetField(it, DISPATCH_RECEIVER_VAR_NAME) }
+        for (parameter in originFunction.extensionReceiverAndValueParameters()) {
+            genGetField(parameter)
+        }
+
 
         // load the second param and cast to Continuation
         visitVarInsn(ALOAD, 2)
@@ -365,13 +399,15 @@ private fun TypeMapperAware.generateLambdaForRunBlocking(
             continuationInternalName
         )
 
+
+        // call origin function
         visitMethodInsn(
-            INVOKEVIRTUAL,
+            if (isStatic) INVOKESTATIC else INVOKEVIRTUAL, // OR INVOKESTATIC
             parentName,
-            originFunction.name.identifierOrMappedSpecialName,
+            originFunction.name.identifier,
             Type.getMethodDescriptor(
-                Type.getType(Any::class.java),
-                *allParameters.drop(1).map { it.type.asmType() }.toTypedArray(),
+                AsmTypes.OBJECT_TYPE,
+                *originFunction.extensionReceiverAndValueParameters().map { it.type.asmType() }.toTypedArray(),
                 state.languageVersionSettings.continuationAsmType()
             ),
             false
@@ -384,6 +420,38 @@ private fun TypeMapperAware.generateLambdaForRunBlocking(
 
     lambdaBuilder.done()
     return lambdaBuilder.thisName
+}
+
+internal fun ParameterDescriptor.synthesizedNameString(): String =
+    this.name.identifierOrMappedSpecialName.synthesizedString
+
+internal fun ParameterDescriptor.synthesizedName(): Name = this.name.identifierOrMappedSpecialName.synthesizedName
+
+internal fun MethodVisitor.invokeSuperLambdaConstructor(arity: Int) {
+    loadThis()
+    visitInsn(
+        when (arity) {
+            0 -> ICONST_0
+            1 -> ICONST_1
+            2 -> ICONST_2
+            3 -> ICONST_3
+            4 -> ICONST_4
+            5 -> ICONST_5
+            else -> error("unsupported arity: $arity")
+        }
+    ) // Function2
+    visitMethodInsn(
+        INVOKESPECIAL,
+        AsmTypes.LAMBDA.internalName,
+        "<init>",
+        Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE),
+        false
+    )
+}
+
+internal fun <T : MethodVisitor> T.applyWithInstructionAdapter(block: InstructionAdapter.() -> Unit): T {
+    InstructionAdapter(this).apply(block)
+    return this
 }
 
 internal fun MethodVisitor.loadThis() = visitVarInsn(ALOAD, 0)
