@@ -89,7 +89,7 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 ## Requirements
 - Gradle (`6.0` or higher recommended)
 - Kotlin `1.4-M3`, `1.4-RC`, `1.4.0` or higher
-- IntelliJ IDEA 或 Android Studio (newest version recommended)
+- IntelliJ IDEA or Android Studio (newest version recommended)
 
 ## WIP
 This project is working in progress.   
