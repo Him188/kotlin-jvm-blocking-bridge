@@ -100,8 +100,7 @@ TODOs:
   *Available now.*
 - IDE plugin for resolving
 
-## Try X
-now
+## Try now
 
 You can try it now with Kotlin Compiler IR backend.
 
@@ -130,6 +129,8 @@ implementation("net.mamoe:kotlin-jvm-blocking-bridge")
 Therefore, you need only to install the plugin.
 
 2. (optional) **Switch to IR backend.**
+
+This plugin supports both IR and the legacy JVM backend.
 
 IR compiler backend is **experimental**. If you meet compilation error when using default JVM backend, please switch to IR backend, otherwise, it's not recommend to do so.
 
