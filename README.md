@@ -2,7 +2,7 @@
 
 **[CHINESE 简体中文](./README-chs.md)**
 
-Kotlin compiler plugin that can generate a blocking bridge for calling suspend functions from Java with minimal effort
+Kotlin compiler plugin for generating blocking bridges for calling suspend functions from Java with minimal effort
 
 ### Motivation
 Kotlin suspend function is compiled with an additional `$completion: Continuation` parameter, making it hard to call from Java, so we often make extra effort to simplify calling.
