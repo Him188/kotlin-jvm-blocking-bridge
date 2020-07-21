@@ -27,7 +27,7 @@ jobs:
       - name: Gradle build
         run: ./gradlew build # if test's failed, don't publish
       - name: Check keys
-        run: ./gradlew :kotlin-jvm-blocking-bridge:ensureBintrayAvailable :kotlin-jvm-blocking-bridge-compiler:ensureBintrayAvailable :kotlin-jvm-blocking-ide:ensureBintrayAvailable  -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }} -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+        run: ./gradlew :kotlin-jvm-blocking-bridge:ensureBintrayAvailable :kotlin-jvm-blocking-bridge-compiler:ensureBintrayAvailable :kotlin-jvm-blocking-bridge-ide:ensureBintrayAvailable  -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }} -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
       - name: Gradle :mirai-console:bintrayUpload
         run: ./gradlew :kotlin-jvm-blocking-bridge:bintrayUpload :kotlin-jvm-blocking-bridge-compiler:bintrayUpload :kotlin-jvm-blocking-bridge-ide:bintrayUpload -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }} -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
 
