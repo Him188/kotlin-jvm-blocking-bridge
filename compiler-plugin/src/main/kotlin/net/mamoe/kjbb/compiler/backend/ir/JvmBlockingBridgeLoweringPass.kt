@@ -1,23 +1,25 @@
 package net.mamoe.kjbb.compiler.backend.ir
 
+import net.mamoe.kjbb.compiler.backend.jvm.followedBy
+import net.mamoe.kjbb.compiler.resolve.GeneratedBlockingBridgeStubForResolution
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.parentAsClass
-import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
-import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
+import org.jetbrains.kotlin.ir.util.transformDeclarationsFlat
 
 class JvmBlockingBridgeLoweringPass(
     private val context: IrPluginContext
 ) : ClassLoweringPass {
 
     override fun lower(irClass: IrClass) {
-        val transformer = object : IrElementTransformerVoid() {
-            val newDeclarations = mutableListOf<IrDeclaration>()
+        irClass.transformDeclarationsFlat { declaration ->
+            if (declaration is IrSimpleFunction) {
+                if (declaration.descriptor.getUserData(GeneratedBlockingBridgeStubForResolution) != null)
+                    return@transformDeclarationsFlat listOf()
 
-            override fun visitFunction(declaration: IrFunction): IrStatement {
                 if (declaration.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
                     println("lowering ${declaration.parentAsClass.name}.${declaration.name}")
                     check(declaration.canGenerateJvmBlockingBridge()) {
@@ -28,19 +30,21 @@ class JvmBlockingBridgeLoweringPass(
                             .any { it is IrSimpleFunction && it.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) }
                     ) {
                         println("ignored ${declaration.parentAsClass.name}.${declaration.name}")
-                        return declaration
+                        return@transformDeclarationsFlat listOf(declaration)
                     }
                     check(!declaration.hasDuplicateBridgeFunction()) {
                         // TODO: 2020/7/8 DIAGNOSTICS FROM PLATFORM_DECLARE_CLASH
                         "PLATFORM_DECLARE_CLASH: function '${declaration.name}'"
                     }
-                    newDeclarations.addAll(context.generateJvmBlockingBridges(declaration))
+                    return@transformDeclarationsFlat declaration.followedBy(
+                        context.generateJvmBlockingBridges(
+                            declaration
+                        )
+                    )
                 }
-
-                return declaration
             }
+
+            listOf(declaration)
         }
-        irClass.transformChildrenVoid(transformer)
-        transformer.newDeclarations.forEach(irClass::addMember)
     }
 }
