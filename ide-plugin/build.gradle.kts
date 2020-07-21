@@ -29,7 +29,7 @@ tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask>() {
 
 setupPublishing(
     groupId = "net.mamoe",
-    artifactId = "kotlin-jvm-blocking-bridge-compiler"
+    artifactId = "kotlin-jvm-blocking-bridge-ide"
 )
 
 kotlin {
