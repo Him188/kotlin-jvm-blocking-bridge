@@ -2,6 +2,7 @@ package jvm
 
 import compile
 import org.intellij.lang.annotations.Language
+import kotlin.reflect.full.createInstance
 import kotlin.test.assertEquals
 
 fun testJvmCompile(
@@ -16,7 +17,7 @@ fun testJvmCompile(
     val test = result.classLoader.loadClass("TestData")
     assertEquals(
         "OK",
-        (test.kotlin.objectInstance!!).run {
+        (test.kotlin.objectInstance ?: test.kotlin.createInstance()).run {
             this::class.java.methods.first { it.name == "main" }.invoke(this)
         } as String)
 }

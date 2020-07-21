@@ -6,6 +6,7 @@ import net.mamoe.kjbb.JvmBlockingBridge
 import org.intellij.lang.annotations.Language
 import java.io.File
 import java.lang.reflect.Modifier
+import java.util.*
 
 // Expose to top-package for TestData
 typealias JvmBlockingBridge = JvmBlockingBridge
@@ -34,14 +35,33 @@ fun compile(
     java: String? = null,
     ir: Boolean
 ): KotlinCompilation.Result {
-    val kotlinSource = SourceFile.kotlin(
-        "TestData.kt", "import kotlin.test.*\n${source.trimIndent()}"
+    val intrinsicImports = listOf(
+        "import kotlin.test.*",
+        "import JvmBlockingBridge"
     )
+
+    val kotlinSource = if (source.trim().startsWith("package")) {
+        SourceFile.kotlin("TestData.kt", run {
+            source.trimIndent().lines().mapTo(LinkedList()) { it }
+                .apply { addAll(1, intrinsicImports) }
+                .joinToString("\n")
+        })
+    } else {
+        SourceFile.kotlin(
+            "TestData.kt", "${intrinsicImports.joinToString("\n")}\n${source.trimIndent()}"
+        )
+    }
 
     return KotlinCompilation().apply {
         sources = listOfNotNull(
             kotlinSource,
-            java?.let { SourceFile.java(Regex("""class (.*)\s*\{""").find(java)!!.groupValues[1], it) })
+            java?.let { javaSource ->
+                SourceFile.java(
+                    Regex("""class\s*(.*?)\s*\{""").find(javaSource)!!.groupValues[1].let { "$it.java" },
+                    javaSource
+                )
+            }
+        )
 
         compilerPlugins = listOf(TestComponentRegistrar())
         verbose = false

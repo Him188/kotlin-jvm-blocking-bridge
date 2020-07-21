@@ -4,6 +4,7 @@ import net.mamoe.kjbb.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
 import net.mamoe.kjbb.compiler.backend.ir.identifierOrMappedSpecialName
+import net.mamoe.kjbb.compiler.resolve.GeneratedBlockingBridgeStubForResolution
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
@@ -41,6 +42,12 @@ interface BridgeCodegenExtensions {
     fun FunctionDescriptor.owner(superCall: Boolean): Type = typeMapper.mapToCallableMethod(this, superCall).owner
 }
 
+fun SimpleFunctionDescriptor.canGenerateJvmBlockingBridge(): Boolean {
+    if (getUserData(GeneratedBlockingBridgeStubForResolution) != null) return false
+
+    return isSuspend && !name.isSpecial && annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+}
+
 class BridgeCodegen(
     private val codegen: ImplementationBodyCodegen,
     private val generationState: GenerationState = codegen.state
@@ -57,7 +64,7 @@ class BridgeCodegen(
             names.flatMap { members.getContributedFunctions(it, NoLookupLocation.WHEN_GET_ALL_DESCRIPTORS) }.toSet()
 
         for (function in functions) {
-            if (function.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME))
+            if (function.canGenerateJvmBlockingBridge())
                 function.generateBridge()
         }
     }
@@ -86,7 +93,7 @@ class BridgeCodegen(
                 typeMapper,
                 returnTypeDescriptor = returnType.descriptor
             ),
-            methodSignature,
+            null,
             null
         ) // TODO: 2020/7/12 exceptions?
 

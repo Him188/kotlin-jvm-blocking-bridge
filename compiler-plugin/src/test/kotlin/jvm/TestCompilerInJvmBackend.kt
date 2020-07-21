@@ -105,4 +105,27 @@ internal class TestCompilerInJvmBackend {
     }
 """
     )
+
+    @Test
+    fun `with Java`() = testJvmCompile(
+        """
+        //package test
+        object TestData {
+            @JvmBlockingBridge
+            suspend fun test() = "OK"
+            
+            fun main() = TestDataJ.main()
+        }
+    """,
+        """
+        //package test;
+        //import TestDataKt;
+        public class TestDataJ {
+            
+            public static String main() {
+                return TestData.INSTANCE.test();
+            }
+        }
+    """
+    )
 }
