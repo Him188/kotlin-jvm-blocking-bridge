@@ -2,9 +2,9 @@
 
 **[CHINESE 简体中文](./README-chs.md)**
 
-Kotlin compiler plugin that can generate a blocking bridge for calling suspend functions from Java with minimal effort
+Kotlin compiler plugin for generating blocking bridges for calling suspend functions from Java with minimal effort
 
-### Intention
+### Motivation
 Kotlin suspend function is compiled with an additional `$completion: Continuation` parameter, making it hard to call from Java, so we often make extra effort to simplify calling.
 
 E.g., for
@@ -87,9 +87,9 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 - Kotlin callers can't reference to bridge functions (if so, error 'unresolved reference' will be reported by the compiler)
 
 ## Requirements
-- Gradle
-- Kotlin 1.3.70 +
-- IntelliJ IDEA 或 Android Studio
+- Gradle (`6.0` or higher recommended)
+- Kotlin `1.4-M3`, `1.4-RC`, `1.4.0` or higher
+- IntelliJ IDEA or Android Studio (newest version recommended)
 
 ## WIP
 This project is working in progress.   
@@ -100,12 +100,11 @@ TODOs:
   *Available now.*
 - IDE plugin for resolving
 
-## Try X
-now
+## Try now
 
 You can try it now with Kotlin Compiler IR backend.
 
-1. **First step: Install Gradle plugin.**
+1. **Install Gradle plugin.**
 
 `build.gradle` or `build.gradle.kts`
 ```kotlin
@@ -129,9 +128,13 @@ implementation("net.mamoe:kotlin-jvm-blocking-bridge")
 ```
 Therefore, you need only to install the plugin.
 
-2. **Second step, use IR backend.**
+2. (optional) **Switch to IR backend.**
 
-Add this into `build.gradle` or `build.gradle.kts`
+This plugin supports both IR and the legacy JVM backend.
+
+IR compiler backend is **experimental**. If you meet compilation error when using default JVM backend, please switch to IR backend, otherwise, it's not recommend to do so.
+
+Add into `build.gradle` or `build.gradle.kts`
 ```kotlin
 tasks.withType<KotlinCompile> {
     kotlinOptions.useIR = true
