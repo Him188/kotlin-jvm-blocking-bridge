@@ -1,5 +1,5 @@
-import net.mamoe.kjbb.ir.JvmBlockingBridgeIrGenerationExtension
-import net.mamoe.kjbb.jvm.JvmBlockingBridgeCodegenJvmExtension
+import net.mamoe.kjbb.compiler.backend.ir.JvmBlockingBridgeIrGenerationExtension
+import net.mamoe.kjbb.compiler.backend.jvm.JvmBlockingBridgeCodegenJvmExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
 import org.jetbrains.kotlin.com.intellij.mock.MockProject

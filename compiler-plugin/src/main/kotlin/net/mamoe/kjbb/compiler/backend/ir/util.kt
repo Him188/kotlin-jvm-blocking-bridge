@@ -1,7 +1,9 @@
 @file:JvmName("JvmBlockingBridgeUtils")
 
-package net.mamoe.kjbb.ir
+package net.mamoe.kjbb.compiler.backend.ir
 
+import net.mamoe.kjbb.JvmBlockingBridge
+import org.jetbrains.kotlin.codegen.topLevelClassAsmType
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.declarations.IrClass
@@ -15,8 +17,16 @@ import org.jetbrains.kotlin.name.FqName
 import kotlin.contracts.contract
 
 
-val JVM_BLOCKING_BRIDGE_FQ_NAME = FqName("net.mamoe.kjbb.JvmBlockingBridge")
-val GENERATED_BLOCKING_BRIDGE_FQ_NAME = FqName("net.mamoe.kjbb.GeneratedBlockingBridge")
+val JVM_BLOCKING_BRIDGE_FQ_NAME = FqName(JvmBlockingBridge::class.qualifiedName!!)
+
+@Suppress(
+    "INVISIBLE_REFERENCE",
+    "EXPERIMENTAL_MARKER_CAN_ONLY_BE_USED_AS_ANNOTATION_OR_ARGUMENT_IN_USE_EXPERIMENTAL"
+)
+val GENERATED_BLOCKING_BRIDGE_FQ_NAME = FqName(net.mamoe.kjbb.GeneratedBlockingBridge::class.qualifiedName!!)
+
+val JVM_BLOCKING_BRIDGE_ASM_TYPE = JVM_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
+val GENERATED_BLOCKING_BRIDGE_ASM_TYPE = GENERATED_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
 
 /**
  * For annotation class

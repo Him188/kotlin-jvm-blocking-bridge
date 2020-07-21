@@ -1,4 +1,4 @@
-package net.mamoe.kjbb.jvm
+package net.mamoe.kjbb.compiler.backend.jvm
 
 import org.jetbrains.kotlin.codegen.ExpressionCodegen
 import org.jetbrains.kotlin.codegen.FunctionGenerationStrategy

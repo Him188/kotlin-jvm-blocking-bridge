@@ -1,4 +1,4 @@
-package net.mamoe.kjbb.ir
+package net.mamoe.kjbb.compiler.backend.ir
 
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension

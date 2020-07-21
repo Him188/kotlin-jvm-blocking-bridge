@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.mamoe.kjbb
+package net.mamoe.kjbb.compiler.backend
 
 import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
 import org.jetbrains.kotlin.compiler.plugin.CliOption

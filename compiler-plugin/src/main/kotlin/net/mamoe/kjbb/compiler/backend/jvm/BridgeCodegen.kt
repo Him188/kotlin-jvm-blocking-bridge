@@ -1,12 +1,11 @@
-package net.mamoe.kjbb.jvm
+package net.mamoe.kjbb.compiler.backend.jvm
 
-import net.mamoe.kjbb.ir.GENERATED_BLOCKING_BRIDGE_FQ_NAME
-import net.mamoe.kjbb.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
-import net.mamoe.kjbb.ir.identifierOrMappedSpecialName
+import net.mamoe.kjbb.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_ASM_TYPE
+import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
+import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
+import net.mamoe.kjbb.compiler.backend.ir.identifierOrMappedSpecialName
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
-import org.jetbrains.kotlin.backend.common.descriptors.allParameters
-import org.jetbrains.kotlin.backend.common.descriptors.explicitParameters
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedString
 import org.jetbrains.kotlin.codegen.*
@@ -15,13 +14,12 @@ import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import org.jetbrains.kotlin.descriptors.ParameterDescriptor
-import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.load.kotlin.computeJvmDescriptor
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.resolve.annotations.hasJvmStaticAnnotation
 import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
@@ -42,10 +40,6 @@ interface BridgeCodegenExtensions {
 
     fun FunctionDescriptor.owner(superCall: Boolean): Type = typeMapper.mapToCallableMethod(this, superCall).owner
 }
-
-val GENERATED_BLOCKING_BRIDGE_ASM_TYPE = GENERATED_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
-val JVM_BLOCKING_BRIDGE_ASM_TYPE = JVM_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
-
 
 class BridgeCodegen(
     private val codegen: ImplementationBodyCodegen,
@@ -77,9 +71,16 @@ class BridgeCodegen(
         val returnType = originFunction.returnType?.asmType()
             ?: Nothing::class.asmType
 
+        val staticFlag = when {
+            originFunction.isJvmStatic() -> ACC_STATIC
+            else -> 0
+        }
+
+        val isStatic = staticFlag != 0
+
         val mv = v.newMethod(
             OtherOrigin(originFunction),
-            ACC_PUBLIC, // TODO: 2020/7/16 or FINAL?
+            ACC_PUBLIC or staticFlag, // TODO: 2020/7/16 or FINAL?
             methodName,
             extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
                 typeMapper,
@@ -153,7 +154,9 @@ class BridgeCodegen(
             originFunction, codegen.state,
             originFunction.findPsi()!!,
             codegen.v.thisName,
-            codegen.context.contextKind
+            codegen.context.contextKind,
+            ownerType,
+            if (isStatic) null else clazz.thisAsReceiverParameter
         ).let { Type.getObjectType(it) }
 
         //mv.visitParameter("\$\$this", 1)
@@ -172,8 +175,10 @@ class BridgeCodegen(
             anew(lambdaClassDescriptor)// mv.visitTypeInsn(NEW, lambdaClassDescriptor.internalName)
             dup()
 
-            val thisIndex = stack.enterTemp(AsmTypes.OBJECT_TYPE)
-            load(thisIndex, ownerType) // dispatch
+            if (!isStatic) {
+                val thisIndex = stack.enterTemp(AsmTypes.OBJECT_TYPE)
+                load(thisIndex, ownerType) // dispatch
+            }
 
             for (parameter in originFunction.extensionReceiverAndValueParameters()) {
                 val asmType = parameter.type.asmType()
@@ -183,7 +188,8 @@ class BridgeCodegen(
             invokespecial(
                 lambdaClassDescriptor.internalName,
                 "<init>",
-                originFunction.allParameters.computeJvmDescriptorForMethod(typeMapper, "V"),
+                originFunction.allRequiredParameters(clazz.thisAsReceiverParameter)
+                    .computeJvmDescriptorForMethod(typeMapper, "V"),
                 false
             )
 
@@ -207,7 +213,6 @@ class BridgeCodegen(
 }
 
 internal val OBJECT_ASM_TYPE = Any::class.asmType
-internal val VOID_ASM_TYPE = Any::class.asmType
 
 internal fun InstructionAdapter.genReturn(type: Type) {
     StackValue.coerce(OBJECT_ASM_TYPE, type, this)
@@ -235,6 +240,25 @@ internal val KClass<*>.asmType: Type
 internal fun FunctionDescriptor.extensionReceiverAndValueParameters(): List<ParameterDescriptor> {
     return extensionReceiverParameter.followedBy(valueParameters)
 }
+
+internal fun FunctionDescriptor.allRequiredParameters(dispatchReceiver: ReceiverParameterDescriptor?): List<ParameterDescriptor> {
+    return if (!isJvmStatic()) dispatchReceiver!!.followedBy(extensionReceiverParameter.followedBy(valueParameters)) else extensionReceiverParameter.followedBy(
+        valueParameters
+    )
+}
+
+fun CallableDescriptor.isJvmStatic(): Boolean =
+    isJvmStaticIn { true }
+
+private fun CallableDescriptor.isJvmStaticIn(predicate: (DeclarationDescriptor) -> Boolean): Boolean =
+    when (this) {
+        is PropertyAccessorDescriptor -> {
+            val propertyDescriptor = correspondingProperty
+            predicate(propertyDescriptor.containingDeclaration) &&
+                    (hasJvmStaticAnnotation() || propertyDescriptor.hasJvmStaticAnnotation())
+        }
+        else -> predicate(containingDeclaration) && hasJvmStaticAnnotation()
+    }
 
 internal operator fun <T> T.plus(list: Collection<T>): List<T> {
     val new = ArrayList<T>(list.size + 1)
@@ -280,9 +304,10 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     state: GenerationState,
     originElement: PsiElement,
     parentName: String,
-    contextKind: OwnerKind
+    contextKind: OwnerKind,
+    methodOwnerType: Type,
+    dispatchReceiverParameterDescriptor: ReceiverParameterDescriptor?
 ): String {
-    val methodOwnerType = originFunction.owner(false)
     val isStatic = AsmUtil.isStaticMethod(contextKind, originFunction)
 
     val internalName = "$parentName$$${originFunction.name}\$blocking_bridge"
@@ -309,7 +334,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
             parameter.type.asmType().descriptor, null, null
         )
     }
-    originFunction.dispatchReceiverParameter?.let {
+    dispatchReceiverParameterDescriptor?.let {
         lambdaBuilder.genNewField(it, DISPATCH_RECEIVER_VAR_NAME)
     }
     for (parameter in originFunction.extensionReceiverAndValueParameters()) {
@@ -329,7 +354,8 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
         JvmDeclarationOrigin.NO_ORIGIN,
         AsmUtil.NO_FLAG_PACKAGE_PRIVATE or ACC_SYNTHETIC,
         "<init>",
-        originFunction.explicitParameters.computeJvmDescriptorForMethod(typeMapper, "V"), null, null
+        originFunction.allRequiredParameters(dispatchReceiverParameterDescriptor)
+            .computeJvmDescriptorForMethod(typeMapper, "V"), null, null
     ).applyWithInstructionAdapter {
         visitCode()
 
@@ -356,7 +382,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
             )
         }
 
-        originFunction.dispatchReceiverParameter?.let { param ->
+        dispatchReceiverParameterDescriptor?.let { param ->
             genPutField(param, DISPATCH_RECEIVER_VAR_NAME)
         }
 
@@ -385,11 +411,6 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
         val stack = FrameMap()
         val thisIndex = stack.enterTemp(AsmTypes.OBJECT_TYPE)
 
-
-        if (!isStatic) { // load this for the dispatch param at the end
-            load(thisIndex, methodOwnerType)
-        }
-
         fun InstructionAdapter.genGetField(parameter: ParameterDescriptor, name: String? = null) {
             val asmType = parameter.type.asmType()
 
@@ -404,7 +425,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
             )
         }
 
-        originFunction.dispatchReceiverParameter?.let { genGetField(it, DISPATCH_RECEIVER_VAR_NAME) }
+        dispatchReceiverParameterDescriptor?.let { genGetField(it, DISPATCH_RECEIVER_VAR_NAME) }
         for (parameter in originFunction.extensionReceiverAndValueParameters()) {
             genGetField(parameter)
         }
@@ -421,7 +442,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
 
         // call origin function
         visitMethodInsn(
-            if (isStatic) INVOKESTATIC else INVOKEVIRTUAL, // OR INVOKESTATIC
+            if (isStatic) INVOKESTATIC else INVOKEVIRTUAL,
             parentName,
             originFunction.name.identifier,
             Type.getMethodDescriptor(

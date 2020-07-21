@@ -1,3 +1,5 @@
+@file:Suppress("RemoveRedundantBackticks")
+
 package jvm
 
 import org.junit.jupiter.api.Test
@@ -68,5 +70,39 @@ internal class TestCompilerInJvmBackend {
             fun main(): String = this.runFunction("test", 123,  123f,  123.0, '1', true, 123.toShort())
         }
     """
+    )
+
+    @Test
+    fun `function in class`() = testJvmCompile(
+        """
+            abstract class SuperClass {
+                @JvmBlockingBridge
+                suspend fun test(value: String): String {
+                    assertEquals("v", value)
+                    return "OK"
+                }
+            }
+            
+            object TestData : SuperClass() {
+                fun main(): String = this.runFunction("test", "v")
+            }
+    """
+    )
+
+    @Test
+    fun `static`() = testJvmCompile(
+        """
+    object TestData {
+        @JvmStatic
+        @JvmBlockingBridge
+        suspend fun String.test(arg: String): String{
+            assertEquals("receiver", this)
+            assertEquals("p0", arg)
+            return "OK"
+        }
+        
+        fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
+    }
+"""
     )
 }

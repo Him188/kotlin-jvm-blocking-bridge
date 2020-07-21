@@ -1,7 +1,7 @@
 package net.mamoe.kjbb
 
 import io.github.classgraph.ClassGraph
-import net.mamoe.kjbb.JvmBlockingBridgeCommandLineProcessor.Companion.PLUGIN_ID
+import net.mamoe.kjbb.compiler.backend.JvmBlockingBridgeCommandLineProcessor.Companion.PLUGIN_ID
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.*

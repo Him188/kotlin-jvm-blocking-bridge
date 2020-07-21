@@ -1,16 +1,14 @@
-package jvm
+package ir
 
 import compile
 import org.intellij.lang.annotations.Language
 import kotlin.test.assertEquals
 
-fun testJvmCompile(
+fun testIrCompile(
     @Language("kt")
-    kt: String,
-    @Language("java")
-    java: String? = null
+    source: String
 ) {
-    val result = compile(kt, java, false)
+    val result = compile(source, true)
 
     @Suppress("UNCHECKED_CAST")
     val test = result.classLoader.loadClass("TestData")

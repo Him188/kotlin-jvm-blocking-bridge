@@ -1,4 +1,4 @@
-package net.mamoe.kjbb.ir
+package net.mamoe.kjbb.compiler.backend.ir
 
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext

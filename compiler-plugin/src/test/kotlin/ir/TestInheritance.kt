@@ -8,7 +8,7 @@ internal class TestForInterface {
     @Test
     fun `interface inheritance`() {
         assertFails {
-            testTestData(
+            testIrCompile(
                 """
             interface Inter {
                 @JvmBlockingBridge // inapplicable
@@ -22,7 +22,7 @@ internal class TestForInterface {
 
     @Test
     fun `class inheritance`() {
-        testTestData(
+        testIrCompile(
             """
             abstract class Abs {
                 @JvmBlockingBridge

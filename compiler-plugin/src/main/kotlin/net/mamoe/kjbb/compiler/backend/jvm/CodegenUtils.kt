@@ -3,7 +3,7 @@
     "EXPERIMENTAL_MARKER_CAN_ONLY_BE_USED_AS_ANNOTATION_OR_ARGUMENT_IN_USE_EXPERIMENTAL"
 )
 
-package net.mamoe.kjbb.jvm
+package net.mamoe.kjbb.compiler.backend.jvm
 
 import net.mamoe.kjbb.GeneratedBlockingBridge
 import net.mamoe.kjbb.JvmBlockingBridge
