@@ -1,10 +1,13 @@
 package net.mamoe.kjbb.compiler.backend.jvm
 
+//import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import net.mamoe.kjbb.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
 import net.mamoe.kjbb.compiler.backend.ir.identifierOrMappedSpecialName
-import net.mamoe.kjbb.compiler.resolve.GeneratedBlockingBridgeStubForResolution
+import net.mamoe.kjbb.compiler.extensions.isGeneratedBlockingBridgeStub
+import net.mamoe.kjbb.compiler.extensions.jvmName
+import net.mamoe.kjbb.compiler.extensions.jvmNameOrName
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
@@ -15,18 +18,26 @@ import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.config.JvmDefaultMode
 import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
+import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
-import org.jetbrains.kotlin.load.kotlin.computeJvmDescriptor
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.KtParameter
+import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils
 import org.jetbrains.kotlin.resolve.annotations.hasJvmStaticAnnotation
 import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
+import org.jetbrains.kotlin.resolve.descriptorUtil.builtIns
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
+import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.OtherOrigin
 import org.jetbrains.kotlin.types.KotlinType
+import org.jetbrains.kotlin.types.expressions.createFunctionType
 import org.jetbrains.kotlin.types.isNullable
+import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.Label
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.Opcodes.*
@@ -42,10 +53,16 @@ interface BridgeCodegenExtensions {
     fun FunctionDescriptor.owner(superCall: Boolean): Type = typeMapper.mapToCallableMethod(this, superCall).owner
 }
 
-fun SimpleFunctionDescriptor.canGenerateJvmBlockingBridge(): Boolean {
-    if (getUserData(GeneratedBlockingBridgeStubForResolution) != null) return false
+fun FunctionDescriptor.canGenerateJvmBlockingBridge(
+    isAbstract: Boolean = AsmUtil.isAbstractMethod(
+        this,
+        OwnerKind.getMemberOwnerKind(this.containingDeclaration),
+        JvmDefaultMode.DEFAULT
+    )
+): Boolean {
+    if (isGeneratedBlockingBridgeStub()) return true
 
-    return isSuspend && !name.isSpecial && annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+    return !isAbstract && isSuspend && !name.isSpecial && annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
 }
 
 class BridgeCodegen(
@@ -72,12 +89,21 @@ class BridgeCodegen(
     fun SimpleFunctionDescriptor.generateBridge() {
         val originFunction = this
 
-        val methodOrigin = OtherOrigin(originFunction)
-        val methodName = originFunction.name.asString()
-        val methodSignature = originFunction.computeJvmDescriptor(withName = true)
+        val methodName = originFunction.jvmName ?: originFunction.name.asString()
         val returnType = originFunction.returnType?.asmType()
             ?: Nothing::class.asmType
 
+        val methodOrigin = JvmDeclarationOrigin(
+            originKind = JvmDeclarationOriginKind.BRIDGE,
+            element = originFunction.findPsi(),
+            descriptor = originFunction,
+            parametersForJvmOverload = extensionReceiverAndValueParameters().map {
+                DescriptorToSourceUtils.descriptorToDeclaration(
+                    it
+                ) as? KtParameter
+            }
+        )
+        //val methodSignature = originFunction.computeJvmDescriptor(withName = true)
         val staticFlag = when {
             originFunction.isJvmStatic() -> ACC_STATIC
             else -> 0
@@ -86,7 +112,7 @@ class BridgeCodegen(
         val isStatic = staticFlag != 0
 
         val mv = v.newMethod(
-            OtherOrigin(originFunction),
+            methodOrigin,
             ACC_PUBLIC or staticFlag, // TODO: 2020/7/16 or FINAL?
             methodName,
             extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
@@ -105,8 +131,12 @@ class BridgeCodegen(
         }
 
 
-        fun MethodVisitor.genAnnotation(descriptor: String, visible: Boolean) {
-            visitAnnotation(descriptor, visible)?.visitEnd()
+        fun MethodVisitor.genAnnotation(
+            descriptor: String,
+            visible: Boolean,
+            block: AnnotationVisitor.() -> Unit = {}
+        ) {
+            visitAnnotation(descriptor, visible)?.apply(block)?.visitEnd()
         }
 
         FunctionCodegen.generateParameterAnnotations(
@@ -140,8 +170,17 @@ class BridgeCodegen(
         originFunction.annotations
             .filterNot { it.type.asmType().descriptor == GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor }
             .filterNot { it.type.asmType().descriptor == JVM_BLOCKING_BRIDGE_ASM_TYPE.descriptor }
-            .forEach { annotationDescriptor ->
-                mv.genAnnotation(annotationDescriptor.type.asmType().descriptor, true)
+            .let { annotations ->
+                AnnotationCodegen.forMethod(mv, codegen, generationState)
+                    .genAnnotations(
+                        AnnotatedImpl(Annotations.create(annotations)),
+                        returnType,
+                        createFunctionType(
+                            builtIns,
+                            suspendFunction = false,
+                            shouldUseVarargType = true
+                        )
+                    )
             }
 
         mv.genAnnotation(GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor, true)
@@ -451,7 +490,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
         visitMethodInsn(
             if (isStatic) INVOKESTATIC else INVOKEVIRTUAL,
             parentName,
-            originFunction.name.identifier,
+            originFunction.jvmNameOrName.identifier,
             Type.getMethodDescriptor(
                 AsmTypes.OBJECT_TYPE,
                 *originFunction.extensionReceiverAndValueParameters().map { it.type.asmType() }.toTypedArray(),

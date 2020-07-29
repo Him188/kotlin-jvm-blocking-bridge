@@ -9,22 +9,20 @@ plugins {
 }
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
-
-    testImplementation(project(":kotlin-jvm-blocking-bridge"))
     implementation(project(":kotlin-jvm-blocking-bridge"))
-
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
 
     kapt("com.google.auto.service:auto-service:1.0-rc7")
     compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")
+
+    testImplementation(project(":kotlin-jvm-blocking-bridge"))
 
     testImplementation(kotlin("reflect"))
 
     testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
     testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.6")
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
 
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))

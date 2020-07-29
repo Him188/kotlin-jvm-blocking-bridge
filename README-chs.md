@@ -87,7 +87,7 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 
 ## 使用要求
 - Gradle (仅在 6.0+ 环境通过测试)
-- Kotlin 1.4-M3, 1.4-RC, 1.4.0 或更高
+- Kotlin 1.4.0-rc, 1.4.0 或更高
 - IntelliJ IDEA 或 Android Studio (推荐保持新版本)
 
 ## 在制品
@@ -107,7 +107,7 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 `build.gradle` 或 `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.1.12"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.2.21"
 }
 ```
 

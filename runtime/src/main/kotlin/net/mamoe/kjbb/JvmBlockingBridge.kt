@@ -1,3 +1,5 @@
+@file:Suppress("RedundantVisibilityModifier")
+
 package net.mamoe.kjbb
 
 /**
@@ -15,4 +17,4 @@ package net.mamoe.kjbb
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
-annotation class JvmBlockingBridge
+public annotation class JvmBlockingBridge

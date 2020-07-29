@@ -18,7 +18,14 @@ internal class TestCompilerInJvmBackend {
                 return "OK"
             }
         }
-    """
+    """,
+        """
+            public class J {
+                public void j() {
+                    TestData.INSTANCE.test();
+                }
+            }
+        """
     )
 
     @Test
@@ -102,6 +109,23 @@ internal class TestCompilerInJvmBackend {
         }
         
         fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
+    }
+"""
+    )
+
+    @Test
+    fun `jvm name`() = testJvmCompile(
+        """
+    object TestData {
+        @kotlin.jvm.JvmName("test")
+        @JvmBlockingBridge
+        suspend fun String.test2(arg: String): String{
+            assertEquals("receiver", this)
+            assertEquals("p0", arg)
+            return "OK"
+        }
+        
+        fun main(): String = this.runFunction("test", "receiver", "p0")
     }
 """
     )

@@ -1,0 +1,42 @@
+<idea-plugin>
+    <id>net.mamoe.kotlin-jvm-blocking-bridge</id>
+
+    <name>kotlin-jvm-blocking-bridge</name>
+
+    <vendor
+            email="support@mamoe.net"
+            url="https://github.com/mamoe/kotlin-jvm-blocking-bridge">
+        Mamoe Technologies
+    </vendor>
+
+    <description>Provides JvmBlockingBridge references resolver and relevant inspections</description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
+    <change-notes>
+        Initial release. Supports referencing generated blocking bridges from Java.
+    </change-notes>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <referenceProviderType key="Class Reference Provider"
+                               implementationClass="net.mamoe.kjbb.ide.JvmBlockingBridgePsiReferenceProvider"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <expressionCodegenExtension
+                implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCodegenJvmExtension"/>
+        <irGenerationExtension
+                implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeIrGenerationExtension"/>
+        <syntheticResolveExtension
+                implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeResolveExtension"/>
+        <storageComponentContainerContributor
+                implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeIDEContainerContributor"/>
+        <!-- <quickFixContributor implementation="org.jetbrains.kotlinx.serialization.idea.quickfixes.SerializationQuickFixContributor"/> -->
+        <extensions.internal.callResolutionInterceptorExtension
+                implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCallResolutionInterceptorExtension"/>
+    </extensions>
+
+    <idea-version since-build="183" until-build="203.*"/>
+
+</idea-plugin>

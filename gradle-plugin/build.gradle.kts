@@ -8,7 +8,7 @@ plugins {
     `maven-publish`
     id("com.jfrog.bintray")
 
-   // id("com.github.johnrengelman.shadow")
+    //id("com.github.johnrengelman.shadow")
 }
 
 dependencies {
@@ -16,8 +16,11 @@ dependencies {
     compileOnly(gradleApi())
     compileOnly(kotlin("gradle-plugin-api"))
     compileOnly(kotlin("gradle-plugin"))
-    implementation("io.github.classgraph:classgraph:4.8.47")
+    //implementation("io.github.classgraph:classgraph:4.8.47")
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
+
+    kapt("com.google.auto.service:auto-service:1.0-rc7")
+    compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")
 
     api(project(":kotlin-jvm-blocking-bridge-compiler"))
 }
@@ -45,9 +48,8 @@ gradlePlugin {
 }
 
 /*
-tasks.getByName("shadowJar", ShadowJar::class) {
+tasks.getByName("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
     archiveClassifier.set("")
 }
 
-tasks.publishPlugins.get().dependsOn(tasks.shadowJar.get())
-*/
+tasks.publishPlugins.get().dependsOn(tasks.shadowJar.get())*/

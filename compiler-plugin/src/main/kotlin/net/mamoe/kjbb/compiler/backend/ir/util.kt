@@ -3,6 +3,7 @@
 package net.mamoe.kjbb.compiler.backend.ir
 
 import net.mamoe.kjbb.JvmBlockingBridge
+import net.mamoe.kjbb.compiler.backend.jvm.canGenerateJvmBlockingBridge
 import org.jetbrains.kotlin.codegen.topLevelClassAsmType
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
@@ -11,10 +12,7 @@ import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.hasAnnotation
-import org.jetbrains.kotlin.ir.util.isClass
-import org.jetbrains.kotlin.ir.util.isObject
 import org.jetbrains.kotlin.name.FqName
-import kotlin.contracts.contract
 
 
 val JVM_BLOCKING_BRIDGE_FQ_NAME = FqName(JvmBlockingBridge::class.qualifiedName!!)
@@ -52,6 +50,8 @@ fun IrFunction.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(JVM_BL
  * - have parent [IrClass]
  */
 fun IrFunction.canGenerateJvmBlockingBridge(): Boolean {
+    return descriptor.canGenerateJvmBlockingBridge(isAbstract)
+    /*
     contract {
         returns() implies (this@canGenerateJvmBlockingBridge is IrSimpleFunction)
     }
@@ -59,7 +59,7 @@ fun IrFunction.canGenerateJvmBlockingBridge(): Boolean {
     return this is IrSimpleFunction
             && (!isAbstract)
             && parent is IrClass
-            && (parent.isClass || parent.isObject)
+            && (parent.isClass || parent.isObject)*/
 }
 
 

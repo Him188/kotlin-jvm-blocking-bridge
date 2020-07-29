@@ -55,6 +55,23 @@ class TestCompilerInIrBackend {
     )
 
     @Test
+    fun `jvm name`() = testIrCompile(
+        """
+    object TestData {
+        @kotlin.jvm.JvmName("test")
+        @JvmBlockingBridge
+        suspend fun String.test2(arg: String): String{
+            assertEquals("receiver", this)
+            assertEquals("p0", arg)
+            return "OK"
+        }
+        
+        fun main(): String = this.runFunction("test", "receiver", "p0")
+    }
+"""
+    )
+
+    @Test
     fun `static`() = testIrCompile(
         """
     object TestData {

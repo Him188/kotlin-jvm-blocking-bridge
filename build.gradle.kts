@@ -1,4 +1,6 @@
-@file:Suppress("UnstableApiUsage")
+@file:Suppress("UnstableApiUsage", "LocalVariableName")
+
+import kotlin.reflect.KProperty
 
 plugins {
     kotlin("jvm") version Versions.kotlin apply false
@@ -31,4 +33,58 @@ subprojects {
             options.encoding = "UTF8"
         }
     }
+}
+
+afterEvaluate {
+    // gradlew
+    //:kotlin-jvm-blocking-bridge:ensureBintrayAvailable
+    //:kotlin-jvm-blocking-bridge:clean
+    //:kotlin-jvm-blocking-bridge-compiler:clean
+    //:kotlin-jvm-blocking-bridge-gradle:clean
+    //build
+    //:kotlin-jvm-blocking-bridge:bintrayUpload
+    //:kotlin-jvm-blocking-bridge-compiler:bintrayUpload
+    //:kotlin-jvm-blocking-bridge-gradle:bintrayUpload
+    //:kotlin-jvm-blocking-bridge-gradle:publishPlugins
+
+    val `kotlin-jvm-blocking-bridge` by subprojects
+    val `kotlin-jvm-blocking-bridge-compiler` by subprojects
+    val `kotlin-jvm-blocking-bridge-gradle` by subprojects
+    val `kotlin-jvm-blocking-bridge-intellij` by subprojects
+
+    tasks.register("publish") {
+        group = "publishing"
+        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["ensureBintrayAvailable"])
+        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["clean"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["clean"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["clean"])
+        // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
+        dependsOn(tasks["build"])
+        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishPlugins"])
+        dependsOn(`kotlin-jvm-blocking-bridge-intellij`.tasks["buildPlugin"])
+        // dependsOn(`kotlin-jvm-blocking-bridge-intellij`.tasks["publishPlugin"])
+        // TODO: 2020/7/27 IDE plugin publish
+    }
+
+    tasks.register("publishWithoutClean") {
+        group = "publishing"
+        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["ensureBintrayAvailable"])
+        // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
+        dependsOn(tasks["build"])
+        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishPlugins"])
+        dependsOn(`kotlin-jvm-blocking-bridge-intellij`.tasks["buildPlugin"])
+        // dependsOn(`kotlin-jvm-blocking-bridge-intellij`.tasks["publishPlugin"])
+        // TODO: 2020/7/27 IDE plugin publish
+    }
+}
+
+operator fun <E : Project> MutableSet<E>.getValue(e: E?, property: KProperty<*>): E {
+    return this.firstOrNull { it.name == property.name }
+        ?: error("Cannot find ${property.name} project in list ${this.joinToString()}")
 }

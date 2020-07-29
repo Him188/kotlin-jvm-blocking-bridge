@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package net.mamoe.kjbb.compiler.backend
+package net.mamoe.kjbb.compiler.extensions
 
+import com.google.auto.service.AutoService
 import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
 import org.jetbrains.kotlin.compiler.plugin.CliOption
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
@@ -24,9 +25,10 @@ import org.jetbrains.kotlin.config.CompilerConfigurationKey
 
 internal val KEY_ENABLED = CompilerConfigurationKey<Boolean>("enabled")
 
+@AutoService(CommandLineProcessor::class)
 open class JvmBlockingBridgeCommandLineProcessor : CommandLineProcessor {
     companion object {
-        const val PLUGIN_ID = "net.mamoe.kotlin-jvm-blocking-bridge-gradle"
+        const val PLUGIN_ID = "net.mamoe.kotlin-jvm-blocking-bridge-compiler"
     }
 
     override val pluginId: String = PLUGIN_ID

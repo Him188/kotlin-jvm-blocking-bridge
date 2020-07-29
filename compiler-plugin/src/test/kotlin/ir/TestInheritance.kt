@@ -19,7 +19,7 @@ internal class TestForInterface {
         }
     }
 
-
+/*
     @Test
     fun `class inheritance`() {
         testIrCompile(
@@ -36,5 +36,5 @@ internal class TestForInterface {
             }
         """
         )
-    }
+    }*/
 }

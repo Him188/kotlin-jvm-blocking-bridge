@@ -1,13 +1,11 @@
 package net.mamoe.kjbb
 
-import io.github.classgraph.ClassGraph
-import net.mamoe.kjbb.compiler.backend.JvmBlockingBridgeCommandLineProcessor.Companion.PLUGIN_ID
+import net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCommandLineProcessor.Companion.PLUGIN_ID
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.*
-import java.io.File
 
-internal const val JBB_VERSION = "0.1.12"
+internal const val JBB_VERSION = "0.2.21"
 
 open class BlockingBridgePluginExtension {
     var enabled: Boolean = true
@@ -18,6 +16,50 @@ internal fun BlockingBridgePluginExtension.toSubpluginOptionList(): List<Subplug
         SubpluginOption("enabled", enabled.toString())
     )
 }
+
+/*
+class JvmBlockingBridgeGradleSubPlugin : KotlinGradleSubplugin<KotlinCompile> {
+    override fun apply(
+        project: Project,
+        kotlinCompile: KotlinCompile,
+        javaCompile: AbstractCompile?,
+        variantData: Any?,
+        androidProjectHandler: Any?,
+        kotlinCompilation: KotlinCompilation<KotlinCommonOptions>?
+    ): List<SubpluginOption> {
+        log("JvmBlockingBridgeGradleSubPlugin installed.")
+        return listOf()
+    }
+
+    override fun getCompilerPluginId(): String = PLUGIN_ID
+
+    override fun getPluginArtifact(): SubpluginArtifact = pluginArtifact
+
+    override fun isApplicable(project: Project, task: AbstractCompile): Boolean {
+        return run {
+            project.plugins.hasPlugin(JvmBlockingBridgeGradlePlugin::class.java)
+                    && task is KotlinJvmCompile
+        }.also { log("Application to ${task.name}: $it") }
+    }
+
+}
+open class JvmBlockingBridgeGradlePlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        println("applied")
+        target.dependencies.add("implementation", "net.mamoe:kotlin-jvm-blocking-bridge:$JBB_VERSION")
+        //target.afterEvaluate { p ->
+        //    p.dependencies.add("kotlinCompilerClasspath", "net.mamoe:kotlin-jvm-blocking-bridge-compiler:$JBB_VERSION")
+        //}
+    }
+}
+*/
+
+private val pluginArtifact = SubpluginArtifact(
+    groupId = PLUGIN_ID.substringBeforeLast('.'),
+    artifactId = PLUGIN_ID.substringAfterLast('.'),
+    version = JBB_VERSION
+).also { log("pluginArtifact=" + it.groupId + ":${it.artifactId}:${it.version}") }
+
 
 open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun apply(target: Project) {
@@ -32,12 +74,6 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
         target.extensions.create("blockingBridge", BlockingBridgePluginExtension::class.java)
     }
 
-    @Suppress("SameParameterValue")
-    private fun classpathOf(dependency: String): File {
-        val regex = Regex(".*${dependency.replace(':', '-')}.*")
-        return ClassGraph().classpathFiles.first { classpath -> classpath.name.matches(regex) }
-    }
-
     override fun getCompilerPluginId(): String = PLUGIN_ID
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
@@ -48,11 +84,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
         }
     }
 
-    override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
-        groupId = PLUGIN_ID.substringBeforeLast('.'),
-        artifactId = PLUGIN_ID.substringAfterLast('.'),
-        version = JBB_VERSION
-    )
+    override fun getPluginArtifact(): SubpluginArtifact = pluginArtifact
 
     override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean {
 

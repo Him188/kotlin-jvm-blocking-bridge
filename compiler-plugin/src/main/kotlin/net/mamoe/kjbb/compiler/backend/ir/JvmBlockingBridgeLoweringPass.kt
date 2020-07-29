@@ -1,7 +1,7 @@
 package net.mamoe.kjbb.compiler.backend.ir
 
 import net.mamoe.kjbb.compiler.backend.jvm.followedBy
-import net.mamoe.kjbb.compiler.resolve.GeneratedBlockingBridgeStubForResolution
+import net.mamoe.kjbb.compiler.extensions.isGeneratedBlockingBridgeStub
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrClass
@@ -17,7 +17,7 @@ class JvmBlockingBridgeLoweringPass(
     override fun lower(irClass: IrClass) {
         irClass.transformDeclarationsFlat { declaration ->
             if (declaration is IrSimpleFunction) {
-                if (declaration.descriptor.getUserData(GeneratedBlockingBridgeStubForResolution) != null)
+                if (declaration.descriptor.isGeneratedBlockingBridgeStub())
                     return@transformDeclarationsFlat listOf()
 
                 if (declaration.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
