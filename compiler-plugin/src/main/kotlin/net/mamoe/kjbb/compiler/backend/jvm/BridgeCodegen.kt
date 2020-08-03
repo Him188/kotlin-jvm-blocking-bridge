@@ -18,12 +18,10 @@ import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
-import org.jetbrains.kotlin.config.JvmDefaultMode
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
-import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils
@@ -34,6 +32,7 @@ import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.OtherOrigin
+import org.jetbrains.kotlin.resolve.source.PsiSourceElement
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.expressions.createFunctionType
 import org.jetbrains.kotlin.types.isNullable
@@ -54,11 +53,7 @@ interface BridgeCodegenExtensions {
 }
 
 fun FunctionDescriptor.canGenerateJvmBlockingBridge(
-    isAbstract: Boolean = AsmUtil.isAbstractMethod(
-        this,
-        OwnerKind.getMemberOwnerKind(this.containingDeclaration),
-        JvmDefaultMode.DEFAULT
-    )
+    isAbstract: Boolean = modality == Modality.ABSTRACT
 ): Boolean {
     if (isGeneratedBlockingBridgeStub()) return true
 
@@ -73,7 +68,6 @@ class BridgeCodegen(
     private inline val clazz get() = codegen.descriptor
     override val typeMapper: KotlinTypeMapper get() = codegen.typeMapper
 
-
     fun generate() {
         val members = clazz.unsubstitutedMemberScope
         val names = members.getFunctionNames()
@@ -87,6 +81,7 @@ class BridgeCodegen(
     }
 
     fun SimpleFunctionDescriptor.generateBridge() {
+
         val originFunction = this
 
         val methodName = originFunction.jvmName ?: originFunction.name.asString()
@@ -98,9 +93,7 @@ class BridgeCodegen(
             element = originFunction.findPsi(),
             descriptor = originFunction,
             parametersForJvmOverload = extensionReceiverAndValueParameters().map {
-                DescriptorToSourceUtils.descriptorToDeclaration(
-                    it
-                ) as? KtParameter
+                DescriptorToSourceUtils.descriptorToDeclaration(it) as? KtParameter
             }
         )
         //val methodSignature = originFunction.computeJvmDescriptor(withName = true)
@@ -547,3 +540,14 @@ private fun <T> T.repeatAsList(n: Int): List<T> {
     repeat(n) { result.add(this) }
     return result
 }
+
+internal fun DeclarationDescriptor.findPsi(): PsiElement? {
+    val psi = (this as? DeclarationDescriptorWithSource)?.source?.getPsi0()
+    return if (psi == null && this is CallableMemberDescriptor && kind == CallableMemberDescriptor.Kind.FAKE_OVERRIDE) {
+        overriddenDescriptors.mapNotNull { it.findPsi() }.firstOrNull()
+    } else {
+        psi
+    }
+}
+
+internal fun SourceElement.getPsi0(): PsiElement? = (this as? PsiSourceElement)?.psi

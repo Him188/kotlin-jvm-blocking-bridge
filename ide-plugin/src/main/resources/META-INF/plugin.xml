@@ -19,8 +19,9 @@
     </change-notes>
 
     <extensions defaultExtensionNs="com.intellij">
-        <referenceProviderType key="Class Reference Provider"
-                               implementationClass="net.mamoe.kjbb.ide.JvmBlockingBridgePsiReferenceProvider"/>
+        <!--<referenceProviderType key="Class Reference Provider"
+                               implementationClass="net.mamoe.kjbb.ide.JvmBlockingBridgePsiReferenceProvider"/>-->
+        <lang.psiAugmentProvider implementation="net.mamoe.kjbb.ide.JvmBlockingBridgePsiAugmentProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">

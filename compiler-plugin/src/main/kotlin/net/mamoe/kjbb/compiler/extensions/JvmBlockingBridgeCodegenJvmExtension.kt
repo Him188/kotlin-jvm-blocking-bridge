@@ -1,6 +1,7 @@
 package net.mamoe.kjbb.compiler.extensions
 
 import com.google.auto.service.AutoService
+import net.mamoe.kjbb.JvmBlockingBridge
 import net.mamoe.kjbb.compiler.backend.jvm.BridgeCodegen
 import org.jetbrains.kotlin.codegen.ImplementationBodyCodegen
 import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
@@ -15,5 +16,18 @@ open class JvmBlockingBridgeCodegenJvmExtension : ExpressionCodegenExtension {
     }
 
     override val shouldGenerateClassSyntheticPartsInLightClassesMode: Boolean
-        get() = false
+        get() = true
+}
+
+interface Inter {
+
+    @JvmBlockingBridge
+    suspend fun x()
+}
+
+object Obj : Inter {
+    override suspend fun x() {
+        TODO("not implemented")
+    }
+
 }
