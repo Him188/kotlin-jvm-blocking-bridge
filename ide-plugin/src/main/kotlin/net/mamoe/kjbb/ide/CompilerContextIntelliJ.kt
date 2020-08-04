@@ -22,7 +22,11 @@ open class CompilerContextIntelliJ : CompilerContext {
 
     override fun FunctionDescriptor.isGeneratedStubForJavaResolving(): Boolean {
         val psi = this.findPsi() as? KtLightMethod ?: return false
-        return psi.getUserData(GENERATED_STUB_FOR_JAVA_RESOLVING_KEY) == true
+        return psi.isGeneratedStubForJavaResolving()
+    }
+
+    fun KtLightMethod.isGeneratedStubForJavaResolving(): Boolean {
+        return this.getUserData(GENERATED_STUB_FOR_JAVA_RESOLVING_KEY) == true
     }
 
     override fun KtLightMethod.setGeneratedStubForJavaResolving() {

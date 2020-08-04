@@ -88,17 +88,8 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 
 ## Requirements
 - Gradle (`6.0` or higher recommended)
-- Kotlin `1.4.0-rc`, `1.4.0` or higher
+- **Kotlin `1.4.0-rc`, `1.4.0` or higher**
 - IntelliJ IDEA or Android Studio (newest version recommended)
-
-## WIP
-This project is working in progress.   
-TODOs:
-- Bridge generating in IR backend (experimental since Kotlin 1.3)  
-  *Available now.*
-- Bridge generation in the legacy JVM backend (generally used):
-  *Available now.*
-- IDE plugin for resolving
 
 ## Try now
 
@@ -109,7 +100,7 @@ You can try it now with Kotlin Compiler IR backend.
 `build.gradle` or `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.2.21"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.3.0"
 }
 ```
 

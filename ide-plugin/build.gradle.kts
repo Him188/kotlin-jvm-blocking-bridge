@@ -25,6 +25,7 @@ dependencies {
     compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")
 
     compileOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
+    compileOnly(files("libs/ide-common.jar"))
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
@@ -32,10 +33,21 @@ intellij {
     version = "2020.2"
     isDownloadSources = true
     updateSinceUntilBuild = false
+
     /*
     setPlugins(
-        "org.jetbrains.kotlin:${Versions.kotlin}-release-IJ${version}@Staging"
+        "org.jetbrains.kotlin:${Versions.kotlin}-release-IJ${version}@eap"
     )*/
+}
+
+tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishTask::class) {
+    val pluginKey = project.findProperty("jetbrains.hub.key")?.toString()
+    if (pluginKey != null) {
+        logger.info("Found jetbrains.hub.key")
+        setToken(pluginKey)
+    } else {
+        logger.info("jetbrains.hub.key not found")
+    }
 }
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
