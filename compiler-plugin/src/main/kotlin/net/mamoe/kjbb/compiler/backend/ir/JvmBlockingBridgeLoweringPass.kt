@@ -1,7 +1,7 @@
 package net.mamoe.kjbb.compiler.backend.ir
 
 import net.mamoe.kjbb.compiler.backend.jvm.followedBy
-import net.mamoe.kjbb.compiler.extensions.isGeneratedBlockingBridgeStub
+import net.mamoe.kjbb.compiler.backend.jvm.isGeneratedBlockingBridgeStub
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrClass

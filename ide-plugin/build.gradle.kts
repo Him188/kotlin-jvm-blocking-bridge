@@ -29,11 +29,18 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = "2020.1.3"
+    version = "2020.2"
+    isDownloadSources = true
+    updateSinceUntilBuild = false
+    /*
+    setPlugins(
+        "org.jetbrains.kotlin:${Versions.kotlin}-release-IJ${version}@Staging"
+    )*/
 }
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
     setChangeNotes("""Update to 2020.1""".trimIndent())
+    untilBuild("205.*")
 }
 
 setupPublishing(

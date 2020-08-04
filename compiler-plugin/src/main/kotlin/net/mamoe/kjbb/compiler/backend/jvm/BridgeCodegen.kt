@@ -5,9 +5,7 @@ import net.mamoe.kjbb.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
 import net.mamoe.kjbb.compiler.backend.ir.identifierOrMappedSpecialName
-import net.mamoe.kjbb.compiler.extensions.isGeneratedBlockingBridgeStub
-import net.mamoe.kjbb.compiler.extensions.jvmName
-import net.mamoe.kjbb.compiler.extensions.jvmNameOrName
+import net.mamoe.kjbb.compiler.context.CompilerContext
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
@@ -22,6 +20,7 @@ import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
+import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils
@@ -32,7 +31,6 @@ import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.OtherOrigin
-import org.jetbrains.kotlin.resolve.source.PsiSourceElement
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.expressions.createFunctionType
 import org.jetbrains.kotlin.types.isNullable
@@ -62,8 +60,10 @@ fun FunctionDescriptor.canGenerateJvmBlockingBridge(
 
 class BridgeCodegen(
     private val codegen: ImplementationBodyCodegen,
-    private val generationState: GenerationState = codegen.state
-) : BridgeCodegenExtensions {
+    compilerContext: CompilerContext = CompilerContext.INSTANCE
+) : BridgeCodegenExtensions, CompilerContext by compilerContext {
+
+    private val generationState: GenerationState get() = codegen.state
     private inline val v get() = codegen.v
     private inline val clazz get() = codegen.descriptor
     override val typeMapper: KotlinTypeMapper get() = codegen.typeMapper
@@ -90,7 +90,6 @@ class BridgeCodegen(
 
         val methodOrigin = JvmDeclarationOrigin(
             originKind = JvmDeclarationOriginKind.BRIDGE,
-            element = originFunction.findPsi(),
             descriptor = originFunction,
             parametersForJvmOverload = extensionReceiverAndValueParameters().map {
                 DescriptorToSourceUtils.descriptorToDeclaration(it) as? KtParameter
@@ -179,7 +178,7 @@ class BridgeCodegen(
         mv.genAnnotation(GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor, true)
 
         if (!generationState.classBuilderMode.generateBodies) {
-            FunctionCodegen.endVisit(mv, methodName, clazz.findPsi())
+            FunctionCodegen.endVisit(mv, methodName, methodOrigin.element)
             return
         }
 
@@ -247,7 +246,7 @@ class BridgeCodegen(
             genReturn(returnType)
         }
 
-        FunctionCodegen.endVisit(mv, methodName, clazz.findPsi())
+        FunctionCodegen.endVisit(mv, methodName, methodOrigin.element)
     }
 }
 
@@ -541,13 +540,3 @@ private fun <T> T.repeatAsList(n: Int): List<T> {
     return result
 }
 
-internal fun DeclarationDescriptor.findPsi(): PsiElement? {
-    val psi = (this as? DeclarationDescriptorWithSource)?.source?.getPsi0()
-    return if (psi == null && this is CallableMemberDescriptor && kind == CallableMemberDescriptor.Kind.FAKE_OVERRIDE) {
-        overriddenDescriptors.mapNotNull { it.findPsi() }.firstOrNull()
-    } else {
-        psi
-    }
-}
-
-internal fun SourceElement.getPsi0(): PsiElement? = (this as? PsiSourceElement)?.psi

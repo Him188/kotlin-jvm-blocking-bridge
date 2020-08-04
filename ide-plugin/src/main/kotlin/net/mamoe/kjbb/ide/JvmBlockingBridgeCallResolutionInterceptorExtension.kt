@@ -1,9 +1,10 @@
 @file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 
-package net.mamoe.kjbb.compiler.extensions
+package net.mamoe.kjbb.ide
 
 import com.google.auto.service.AutoService
 import net.mamoe.kjbb.compiler.backend.jvm.canGenerateJvmBlockingBridge
+import net.mamoe.kjbb.compiler.backend.jvm.isGeneratedBlockingBridgeStub
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.ClassifierDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
@@ -24,6 +25,9 @@ import org.jetbrains.kotlin.resolve.scopes.ResolutionScope
 import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValueWithSmartCastInfo
 import org.jetbrains.kotlin.resolve.source.KotlinSourceElement
 
+/**
+ * Hide
+ */
 @AutoService(CallResolutionInterceptorExtension::class)
 @OptIn(InternalNonStableExtensionPoints::class)
 class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterceptorExtension {
@@ -61,6 +65,16 @@ class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterc
         name: Name,
         location: LookupLocation
     ): Collection<FunctionDescriptor> {
+        if (candidates.isEmpty()) return candidates
+
+        return candidates.toMutableList().apply {
+            removeAll {
+                CompilerContextIntelliJ.run {
+                    it.isGeneratedStubForJavaResolving()
+                }
+            }
+        }
+
         return candidates.toMutableList().apply {
             removeIf { it.isGeneratedBlockingBridgeStub() }
         }
@@ -80,8 +94,15 @@ class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterc
         candidates, scopeTower, resolutionContext, resolutionScope,
         callResolver, name, location, dispatchReceiver, extensionReceiver
     ).run {
-        // TODO: 2020/7/28 static, top-level, extension functions
         if (candidates.isEmpty()) return candidates
+
+        return candidates.toMutableList().apply {
+            removeAll {
+                CompilerContextIntelliJ.run {
+                    it.isGeneratedStubForJavaResolving()
+                }
+            }
+        }
 
         val dispatcherType = dispatchReceiver?.receiverValue?.type ?: return candidates
         val classDescriptor = dispatcherType.constructor.declarationDescriptor as? ClassDescriptor ?: return candidates

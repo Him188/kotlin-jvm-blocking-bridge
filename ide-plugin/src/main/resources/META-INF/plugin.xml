@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>net.mamoe.kotlin-jvm-blocking-bridge</id>
 
-    <name>kotlin-jvm-blocking-bridge</name>
+    <name>Kotlin Jvm Blocking Bridge</name>
 
     <vendor
             email="support@mamoe.net"
@@ -30,12 +30,12 @@
         <irGenerationExtension
                 implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeIrGenerationExtension"/>
         <syntheticResolveExtension
-                implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeResolveExtension"/>
+                implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeResolveExtension"/>
         <storageComponentContainerContributor
                 implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeIDEContainerContributor"/>
         <!-- <quickFixContributor implementation="org.jetbrains.kotlinx.serialization.idea.quickfixes.SerializationQuickFixContributor"/> -->
         <extensions.internal.callResolutionInterceptorExtension
-                implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCallResolutionInterceptorExtension"/>
+                implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeCallResolutionInterceptorExtension"/>
     </extensions>
 
     <idea-version since-build="183" until-build="203.*"/>

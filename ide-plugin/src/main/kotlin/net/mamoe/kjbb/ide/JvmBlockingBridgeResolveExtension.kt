@@ -1,19 +1,15 @@
-package net.mamoe.kjbb.compiler.extensions
+package net.mamoe.kjbb.ide
 
 import com.google.auto.service.AutoService
+import net.mamoe.kjbb.compiler.backend.jvm.GeneratedBlockingBridgeStubForResolution
 import net.mamoe.kjbb.compiler.backend.jvm.canGenerateJvmBlockingBridge
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.impl.SimpleFunctionDescriptorImpl
-import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.BindingContext
-import org.jetbrains.kotlin.resolve.annotations.argumentValue
 import org.jetbrains.kotlin.resolve.extensions.SyntheticResolveExtension
 import org.jetbrains.kotlin.resolve.source.KotlinSourceElement
 
-/**
- * Generate synthetic
- */
 @AutoService(SyntheticResolveExtension::class)
 class JvmBlockingBridgeResolveExtension : SyntheticResolveExtension {
     override fun getPossibleSyntheticNestedClassNames(thisDescriptor: ClassDescriptor): List<Name>? {
@@ -27,6 +23,7 @@ class JvmBlockingBridgeResolveExtension : SyntheticResolveExtension {
         fromSupertypes: List<SimpleFunctionDescriptor>,
         result: MutableCollection<SimpleFunctionDescriptor>
     ) {
+        return
         if (name.isSpecial) return
 
         if (thisDescriptor.source !is KotlinSourceElement) {
@@ -34,6 +31,12 @@ class JvmBlockingBridgeResolveExtension : SyntheticResolveExtension {
         }
 
         for (originFunction in result.toList()) {
+            CompilerContextIntelliJ.run {
+                if (originFunction.isGeneratedStubForJavaResolving()) {
+                    result.remove(originFunction)
+                }
+            }
+
             if (originFunction.canGenerateJvmBlockingBridge()) {
                 result.remove(originFunction)
                 result.add(
@@ -104,21 +107,3 @@ object JvmBlockingBridgeResolver {
         */
     }
 }
-
-val FunctionDescriptor.jvmName: String?
-    get() = annotations.findAnnotation(JVM_NAME_FQ_NAME)
-        ?.argumentValue("name")
-        ?.value as String?
-
-val FunctionDescriptor.jvmNameOrName: Name
-    get() = jvmName?.let { Name.identifier(it) } ?: name
-
-private val JVM_NAME_FQ_NAME = FqName(JvmName::class.qualifiedName!!)
-
-/**
- * For ignoring
- */
-object GeneratedBlockingBridgeStubForResolution : CallableDescriptor.UserDataKey<Boolean>
-
-fun FunctionDescriptor.isGeneratedBlockingBridgeStub(): Boolean =
-    this.getUserData(GeneratedBlockingBridgeStubForResolution) == true

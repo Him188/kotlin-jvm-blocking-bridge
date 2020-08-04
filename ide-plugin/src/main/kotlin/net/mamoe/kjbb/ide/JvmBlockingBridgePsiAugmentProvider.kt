@@ -1,10 +1,8 @@
 package net.mamoe.kjbb.ide
 
+import com.intellij.lang.Language
 import com.intellij.openapi.util.RecursionManager
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiModifier
-import com.intellij.psi.PsiWildcardType
+import com.intellij.psi.*
 import com.intellij.psi.augment.PsiAugmentProvider
 import com.intellij.psi.impl.light.LightMethodBuilder
 import com.intellij.psi.impl.source.PsiClassReferenceType
@@ -12,8 +10,11 @@ import com.intellij.psi.impl.source.PsiExtensibleClass
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import net.mamoe.kjbb.JvmBlockingBridge
+import org.jetbrains.kotlin.asJava.builder.LightMemberOriginForDeclaration
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
+import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
+import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 import kotlin.contracts.contract
 
 /**
@@ -32,7 +33,7 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
             CachedValuesManager.getCachedValue(
                 element,
                 JvmBlockingBridgeCachedValueProvider(element, element::generateAugmentElements)
-            ).toMutableList()
+            ).orEmpty().toMutableList()
         return ret as MutableList<Psi>
     }
 
@@ -76,7 +77,7 @@ internal fun KtLightMethod.isJvmStatic(): Boolean = hasAnnotation(JvmStatic::cla
 internal fun KtLightMethod.generateLightMethod(): PsiMethod {
     val originMethod = this
 
-    return LightMethodBuilder(
+    return BlockingBridgeStubMethod(
         originMethod.manager,
         originMethod.language,
         originMethod.name
@@ -84,14 +85,13 @@ internal fun KtLightMethod.generateLightMethod(): PsiMethod {
         for (it in originMethod.parameterList.parameters.dropLast(1)) {
             addParameter(it)
         }
-
         if (isJvmStatic()) {
             addModifier(PsiModifier.STATIC)
         }
 
-        JvmModifier.values()
-            .filter { originMethod.hasModifierProperty(it.name) }
-            .forEach { addModifier(it.name.toLowerCase()) }
+        PsiModifier.MODIFIERS
+            .filter { originMethod.hasModifierProperty(it) }
+            .forEach { addModifier(it) }
 
         for (typeParameter in originMethod.typeParameters) {
             addTypeParameter(typeParameter)
@@ -115,9 +115,32 @@ internal fun KtLightMethod.generateLightMethod(): PsiMethod {
         }
 
         this.containingClass = originMethod.containingClass
+
+        navigationElement = originMethod
+
+        setBody(JavaPsiFacade.getElementFactory(project).createCodeBlock())
+    }.let {
+        val kotlinOrigin = originMethod.kotlinOrigin?.let { kotlinOrigin ->
+            LightMemberOriginForDeclaration(kotlinOrigin, JvmDeclarationOriginKind.BRIDGE) // // TODO: 2020/8/4
+        }
+        KtLightMethodImpl.create(it, kotlinOrigin, originMethod.containingClass).apply {
+
+        }
     }
 }
 
-private enum class JvmModifier {
-    PUBLIC, PROTECTED, PRIVATE, PACKAGE_LOCAL, STATIC, ABSTRACT, FINAL, NATIVE, SYNCHRONIZED, STRICTFP, TRANSIENT, VOLATILE, TRANSITIVE
+
+class BlockingBridgeStubMethod(manager: PsiManager, language: Language, name: String) :
+    LightMethodBuilder(manager, language, name) {
+
+    private var _body: PsiCodeBlock? = null
+
+    fun setBody(body: PsiCodeBlock) {
+        _body = body
+    }
+
+    override fun getBody(): PsiCodeBlock? {
+        return _body ?: super.getBody()
+    }
+
 }
