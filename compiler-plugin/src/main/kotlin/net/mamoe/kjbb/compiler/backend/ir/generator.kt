@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrContainerExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
-import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.*
@@ -27,10 +26,9 @@ import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import java.util.*
 
 
-internal object KOTLINX_COROUTINES {
-    private val pkg = FqName("kotlinx.coroutines")
-    val RUN_BLOCKING = pkg.child(Name.identifier("runBlocking"))
-    val CoroutineScope = pkg.child(Name.identifier("CoroutineScope"))
+internal object IntrinsicRuntimeFunctions {
+    private val pkg = FqName("net.mamoe.kjbb.internal")
+    val RUN_SUSPEND = pkg.child(Name.identifier("\$runSuspend\$"))
 }
 
 internal val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}")
@@ -38,13 +36,8 @@ internal val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this
 internal val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin? get() = IrDeclarationOrigin.DEFINED
 
 private fun IrPluginContext.referenceFunctionRunBlocking(): IrSimpleFunctionSymbol {
-    return referenceFunctions(KOTLINX_COROUTINES.RUN_BLOCKING).singleOrNull()
-        ?: error("kotlinx.coroutines.runBlocking not found.")
-}
-
-private fun IrPluginContext.referenceCoroutineScope(): IrClassSymbol {
-    return referenceClass(KOTLINX_COROUTINES.CoroutineScope)
-        ?: error("kotlinx.coroutines.CoroutineScope not found.")
+    return referenceFunctions(IntrinsicRuntimeFunctions.RUN_SUSPEND).singleOrNull()
+        ?: error("Internal error: Function ${IntrinsicRuntimeFunctions.RUN_SUSPEND} not found.")
 }
 
 @Suppress("ClassName")
@@ -122,18 +115,18 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
 
             val suspendLambda = createSuspendLambdaWithCoroutineScope(
                 parent = this@fn,
-                lambdaType = symbols.suspendFunctionN(1) // suspend CoroutineScope.() -> R
-                    .typeWith(referenceCoroutineScope().defaultType, this@fn.returnType),
+                lambdaType = symbols.suspendFunctionN(0).typeWith(this@fn.returnType) // suspend () -> R
+                ,
                 originFunction = originFunction
             ).also { +it }
 
             +irReturn(
                 irCall(runBlockingFun).apply {
-                    putTypeArgument(0, this@fn.returnType) // the R for runBlocking
+                    // putTypeArgument(0, this@fn.returnType) // the R for runBlocking
 
                     // take default value for value argument 0
 
-                    putValueArgument(1, irCall(suspendLambda.primaryConstructor!!).apply {
+                    putValueArgument(0, irCall(suspendLambda.primaryConstructor!!).apply {
                         for ((index, parameter) in this@fn.paramsAndReceiversAsParamsList().withIndex()) {
                             putValueArgument(index, irGet(parameter))
                         }
@@ -225,7 +218,7 @@ internal fun IrPluginContext.createSuspendLambdaWithCoroutineScope(
                 listOf(irClass.superTypes[0].getClass()!!.functions.single { it.name.identifier == "invoke" && it.isOverridable }.symbol)
 
             // don't remove. required by supertype.
-            addValueParameter("\$scope", referenceCoroutineScope().defaultType)
+            // addValueParameter("\$scope", referenceCoroutineScope().defaultType)
 
             //this.createDispatchReceiverParameter()
             this.body = createIrBuilder(symbol).run {

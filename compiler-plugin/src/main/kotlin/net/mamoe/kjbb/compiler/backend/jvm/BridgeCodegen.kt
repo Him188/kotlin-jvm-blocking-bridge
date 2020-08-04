@@ -207,8 +207,6 @@ class BridgeCodegen(
 
             val stack = FrameMap()
 
-            aconst(null) // coroutineContext
-
             // call lambdaConstructor
             anew(lambdaClassDescriptor)// mv.visitTypeInsn(NEW, lambdaClassDescriptor.internalName)
             dup()
@@ -231,13 +229,11 @@ class BridgeCodegen(
                 false
             )
 
-            aconst(1) // $default params flag
-            aconst(null) // $default marker
             // public fun <T> runBlocking(context: CoroutineContext = EmptyCoroutineContext, block: suspend CoroutineScope.() -> T): T {
             invokestatic(
-                "kotlinx/coroutines/BuildersKt",
-                "runBlocking\$default",
-                "(Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ljava/lang/Object;",
+                "net/mamoe/kjbb/internal/RunBlockingKt",
+                "\$runSuspend\$",
+                "(Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;",
                 false
             )
             //cast(Type.getType(Any::class.java), originFunction.returnTypeOrNothing.asmType())
@@ -355,12 +351,14 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
         originElement.containingFile
     )
 
+    val arity = 1
+
     lambdaBuilder.defineClass(
         originElement, state.classFileVersion,
         ACC_FINAL or ACC_SUPER or ACC_SYNTHETIC,
         internalName, null,
         AsmTypes.LAMBDA.internalName,
-        arrayOf(NUMBERED_FUNCTION_PREFIX + "2") // Function2<in P1, in P2, out R>
+        arrayOf(NUMBERED_FUNCTION_PREFIX + arity) // Function2<in P1, out R>
     )
 
 
@@ -428,7 +426,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
             genPutField(valueParameter)
         }
 
-        invokeSuperLambdaConstructor(2) // super(2)
+        invokeSuperLambdaConstructor(arity) // super(1)
 
         visitInsn(RETURN)
         visitEnd()
@@ -440,7 +438,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
         "invoke",
         Type.getMethodDescriptor(
             AsmTypes.OBJECT_TYPE,
-            AsmTypes.OBJECT_TYPE, // CoroutineScope
+            // AsmTypes.OBJECT_TYPE, // CoroutineScope
             AsmTypes.OBJECT_TYPE // Continuation
         ), null, null
     ).applyWithInstructionAdapter {
@@ -469,8 +467,8 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
         }
 
 
-        // load the second param and cast to Continuation
-        visitVarInsn(ALOAD, 2)
+        // load last function parameter and cast to Continuation
+        visitVarInsn(ALOAD, arity) // 0 is `this`, 1 is 1st param, arity is the last
         val continuationInternalName = state.languageVersionSettings.continuationAsmType().internalName
         visitTypeInsn(
             CHECKCAST,
@@ -517,7 +515,7 @@ internal fun MethodVisitor.invokeSuperLambdaConstructor(arity: Int) {
             5 -> ICONST_5
             else -> error("unsupported arity: $arity")
         }
-    ) // Function2
+    ) // FunctionN
     visitMethodInsn(
         INVOKESPECIAL,
         AsmTypes.LAMBDA.internalName,
