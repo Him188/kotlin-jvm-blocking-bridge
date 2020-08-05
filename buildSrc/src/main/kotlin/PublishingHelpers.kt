@@ -151,7 +151,7 @@ inline fun Project.setupPublishing(
                     }
                 }*/
                 publications {
-                    register("maven", MavenPublication::class) {
+                    register("mavenJava", MavenPublication::class) {
                         from(components["java"])
                         artifact(sourcesJar.get())
                         artifact(javadocJar.get())
