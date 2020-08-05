@@ -99,7 +99,7 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 `build.gradle` 或 `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.4.0"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.4.1"
 }
 ```
 

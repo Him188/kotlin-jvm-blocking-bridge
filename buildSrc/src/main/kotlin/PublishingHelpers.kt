@@ -136,42 +136,50 @@ inline fun Project.setupPublishing(
             from(sourceSets["main"].allSource)
         }
 
-        publishing {
-            /*
-            repositories {
-                maven {
-                    // change to point to your repo, e.g. http://my.org/repo
-                    url = uri("$buildDir/repo")
-                }
-            }*/
-            publications {
-                register("mavenJava", MavenPublication::class) {
-                    from(components["java"])
-                    artifact(sourcesJar.get())
+        @Suppress("DEPRECATION")
+        val javadocJar by tasks.registering(Jar::class) {
+            classifier = "javadoc"
+        }
 
-                    this.groupId = groupId
-                    this.artifactId = artifactId
-                    this.version = project.version.toString()
+        afterEvaluate {
+            publishing {
+                /*
+                repositories {
+                    maven {
+                        // change to point to your repo, e.g. http://my.org/repo
+                        url = uri("$buildDir/repo")
+                    }
+                }*/
+                publications {
+                    register("maven", MavenPublication::class) {
+                        from(components["java"])
+                        artifact(sourcesJar.get())
+                        artifact(javadocJar.get())
 
-                    pom {
-                        name.set(project.name)
-                        description.set(project.description)
-                        url.set(vcs)
+                        this.groupId = groupId
+                        this.artifactId = artifactId
+                        this.version = project.version.toString()
 
-                        licenses {
-                            license {
-                                name.set("Apache License 2.0")
-                                url.set("$vcs/blob/master/LICENSE.txt")
+                        pom {
+                            name.set(project.name)
+                            description.set(project.description)
+                            url.set(vcs)
+
+                            licenses {
+                                license {
+                                    name.set("Apache License 2.0")
+                                    url.set("$vcs/blob/master/LICENSE.txt")
+                                }
                             }
-                        }
-                        scm {
-                            url.set("https://github.com/bnorm/kotlin-power-assert")
-                            connection.set("scm:git:$git")
-                        }
-                        developers {
-                            developer {
-                                name.set("Him188")
-                                url.set("https://github.com/him188")
+                            scm {
+                                url.set(vcs)
+                                connection.set("scm:git:$git")
+                            }
+                            developers {
+                                developer {
+                                    name.set("Him188")
+                                    url.set("https://github.com/him188")
+                                }
                             }
                         }
                     }

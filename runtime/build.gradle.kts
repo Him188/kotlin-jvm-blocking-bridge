@@ -6,6 +6,8 @@ plugins {
     `maven-publish`
     signing
     id("com.jfrog.bintray")
+    // id("com.bmuschko.nexus")
+    //  id("io.codearte.nexus-staging")
 }
 
 dependencies {
@@ -22,3 +24,21 @@ setupPublishing(
     groupId = "net.mamoe",
     artifactId = "kotlin-jvm-blocking-bridge"
 )
+
+/*
+nexus {
+    sign = true
+    repositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+    snapshotRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+}
+
+nexusStaging {
+    packageGroup = "net.mamoe" //optional if packageGroup == project.getGroup()
+    // stagingProfileId = "yourStagingProfileId" //when not defined will be got from server using "packageGroup"
+}
+
+extraArchive {
+    sources = false
+    tests = false
+    javadoc = false
+}*/

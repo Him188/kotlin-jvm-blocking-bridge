@@ -5,7 +5,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.*
 
-internal const val JBB_VERSION = "0.4.0"
+internal const val JBB_VERSION = "0.4.1"
 
 open class BlockingBridgePluginExtension {
     var enabled: Boolean = true
@@ -58,14 +58,17 @@ private val pluginArtifact = SubpluginArtifact(
     groupId = PLUGIN_ID.substringBeforeLast('.'),
     artifactId = PLUGIN_ID.substringAfterLast('.'),
     version = JBB_VERSION
-).also { log("pluginArtifact=" + it.groupId + ":${it.artifactId}:${it.version}") }
+)  // .also { log("Adding: " + it.groupId + ":${it.artifactId}:${it.version}") }
 
 
 open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun apply(target: Project) {
-        log("JvmBlockingBridgeGradlePlugin installed.")
+        // log("JvmBlockingBridgeGradlePlugin installed.")
 
         target.dependencies.add("implementation", "net.mamoe:kotlin-jvm-blocking-bridge:$JBB_VERSION")
+        target.repositories.maven {
+            it.setUrl("https://dl.bintray.com/mamoe/kotlin-jvm-blocking-bridge")
+        }
 
         //target.afterEvaluate { p ->
         //    p.dependencies.add("kotlinCompilerClasspath", "net.mamoe:kotlin-jvm-blocking-bridge-compiler:$JBB_VERSION")
@@ -93,7 +96,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
             KotlinPlatformType.jvm,
             KotlinPlatformType.androidJvm -> true
             else -> false
-        }.also { log("Application to ${kotlinCompilation.name}: $it") }
+        }//.also { log("Application to ${kotlinCompilation.name}: $it") }
     }
 }
 

@@ -40,6 +40,6 @@
                 implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeCallResolutionInterceptorExtension"/>
     </extensions>
 
-    <idea-version since-build="183" until-build="203.*"/>
+    <idea-version since-build="191.*" until-build="203.*"/>
 
 </idea-plugin>

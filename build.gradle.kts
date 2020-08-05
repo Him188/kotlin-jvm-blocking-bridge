@@ -8,6 +8,8 @@ plugins {
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("com.gradle.plugin-publish") version "0.12.0" apply false
     id("com.jfrog.bintray") version Versions.bintray apply false
+    id("com.bmuschko.nexus") version "2.3.1" apply false
+    id("io.codearte.nexus-staging") version "0.11.0" apply false
     id("java")
 }
 
