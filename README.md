@@ -4,6 +4,16 @@
 
 Kotlin compiler plugin for generating blocking bridges for calling suspend functions from Java with minimal effort
 
+## Screenshots
+Kotlin suspend functions:  
+![image_2](ide-plugin/src/main/resources/icons/image_2.png)
+
+Bridge method calls:  
+![image](ide-plugin/src/main/resources/icons/image.png)
+
+Documentation and navigation support:  
+![image_1](ide-plugin/src/main/resources/icons/image_1.png)
+
 ### Motivation
 Kotlin suspend function is compiled with an additional `$completion: Continuation` parameter, making it hard to call from Java, so we often make extra effort to simplify calling.
 

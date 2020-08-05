@@ -4,6 +4,16 @@
 
 为 Kotlin `suspend` 函数快速生成阻塞式方法桥的 Kotlin 编译器插件.
 
+## 截图
+Kotlin 挂起函数:  
+![image_2](ide-plugin/src/main/resources/icons/image_2.png)
+
+阻塞式方法桥调用:  
+![image](ide-plugin/src/main/resources/icons/image.png)
+
+文档和跳转支持:  
+![image_1](ide-plugin/src/main/resources/icons/image_1.png)
+
 ### 动机
 Kotlin 会将 `suspend` 函数编译后加上一个额外参数 `$completion: Continuation`. 在 Java 调用这样的方法很困难, 我们经常会做一些兼容.
 
