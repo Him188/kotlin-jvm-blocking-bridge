@@ -103,9 +103,27 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 
 ## Try now
 
-You can try it now with Kotlin Compiler IR backend.
+The plugin is ready to use.
 
-1. **Install Gradle plugin.**
+1. **Check Kotlin version**
+
+This plugin requires some new features published in Kotlin `1.4.0-rc`, therefore, please check your Kotlin compiler version.
+
+  1. In your `build.gradle.kts` or `build.gradle`,
+      - If you use `plugins { }` DSL, please ensure `id("kotlin") version "1.4.0-rc"` or `kotlin("jvm") version "1.4.0-rc"`
+      - If you use `buildscript { }` DSL, please ensure `classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0-rc")`
+  2. In your IDE, open `Tools->Kotlin->Configure Kotlin Plugin Updates`, switch 'Update channel' to `Early Access Preview 1.4.x` and update.
+
+2. **Install IntelliJ IDEA (or Android Studio) plugin
+   The plugin currently supports from 2019.\* to 2020.\*
+   It's strongly recommended using the latest IntelliJ or AS, you may update using [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/)  
+   Please note that Eclipse and Visual Studio aren't supported.
+
+   1. Open `File->Settings->Plugins->Marketplace` in your IDE
+   2. Search `Kotlin Jvm Blocking Bridge`, download and install
+   3. Restart your IDE
+
+2. **Install Gradle plugin.**
 
 `build.gradle` or `build.gradle.kts`
 ```kotlin
@@ -129,13 +147,16 @@ implementation("net.mamoe:kotlin-jvm-blocking-bridge")
 ```
 Therefore, you need only to install the plugin.
 
-2. (optional) **Switch to IR backend.**
+## Supported compiler backends
 
-This plugin supports both IR and the legacy JVM backend.
+Kotlin compiler has two backends, one of which, `JVM`, is the legacy one and is going to be replaced with the new one, named `IR` (Intermediate Representation).  
+Currently, legacy `JVM` backend is used by default since it's more stable than the `IR`.
 
-IR compiler backend is **experimental**. If you meet compilation error when using default JVM backend, please switch to IR backend, otherwise, it's not recommend to do so.
+This plugin supports both of them.
 
-Add into `build.gradle` or `build.gradle.kts`
+**If you meet compilation error when using default JVM backend, please switch to IR backend, otherwise, it's not recommended doing so.**
+
+To switch to IR backend, add into `build.gradle` or `build.gradle.kts`:
 ```kotlin
 tasks.withType<KotlinCompile> {
     kotlinOptions.useIR = true

@@ -5,6 +5,10 @@
 为 Kotlin `suspend` 函数快速生成阻塞式方法桥的 Kotlin 编译器插件.
 
 ## 截图
+<details>
+
+<summary>点击左侧箭头查看</summary>
+
 Kotlin 挂起函数:  
 ![image_2](ide-plugin/src/main/resources/icons/image_2.png)
 
@@ -13,6 +17,8 @@ Kotlin 挂起函数:
 
 文档和跳转支持:  
 ![image_1](ide-plugin/src/main/resources/icons/image_1.png)
+
+</details>
 
 ### 动机
 Kotlin 会将 `suspend` 函数编译后加上一个额外参数 `$completion: Continuation`. 在 Java 调用这样的方法很困难, 我们经常会做一些兼容.
@@ -104,7 +110,17 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 
 编译器插件已经完成, 可添加 Gradle 插件依赖:
 
-1. **安装 Gradle 插件.**
+1. **安装 IntelliJ IDEA (或 Android Studio) 插件**
+   本插件支持 IntelliJ IDEA 2019.\* 到 2020.\*
+   It's strongly recommended using the latest IntelliJ or AS, you may update using [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/)  
+   Please note that Eclipse and Visual Studio aren't supported.
+
+   1. Open `File->Settings->Plugins->Marketplace` in your IDE
+   2. Search `Kotlin Jvm Blocking Bridge`, download and install
+   3. Restart your IDE
+
+
+2. **安装 Gradle 插件.**
 
 `build.gradle` 或 `build.gradle.kts`
 ```kotlin
@@ -122,18 +138,21 @@ pluginManagement {
 }
 ```
 
-本插件会自动添加如下的依赖:
+本插件会自动添加如下的运行时依赖:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:0.4.1")
 ```
 因此只需要安装插件, 而不需要添加依赖即可使用
 
-2. (可选) **使用 IR 后端**
+## 支持的编译器后端
 
-本插件同时支持 IR 或 旧 JVM 编译器后端, Kotlin 默认选择后者, 但也可以手动指定 IR 后端.  
-由于 Kotlin IR 后端处于实验性阶段, 因此若未在 JVM 后端遇到问题, 不推荐切换到 IR.
+Kotlin 拥有两个编译器后端, 旧 `JVM` 和新 `IR`(Intermediate Representation).  
+Kotlin 默认使用目前较稳定的 `JVM` 后端, 但将在未来启用 `IR` 后端.
 
-要启用 IR 后端 添加下面内容到 `build.gradle` 或 `build.gradle.kts`
+本插件同时支持这两个后端. 若在使用时遇到编译错误 (堆栈中能找到 `net.mamoe.kjbb`), 请切换到 `IR` 后端.
+但注意: 由于 `IR` 目前还不稳定, 请仅在遇到错误时切换.
+
+要启用 IR 后端, 添加下面内容到 `build.gradle` 或 `build.gradle.kts`
 ```kotlin=
 tasks.withType<KotlinCompile> {
     kotlinOptions.useIR = true
