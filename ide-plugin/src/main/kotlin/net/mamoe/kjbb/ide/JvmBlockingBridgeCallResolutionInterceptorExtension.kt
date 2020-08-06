@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.resolve.scopes.ResolutionScope
 import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValueWithSmartCastInfo
 
 /**
- * Hide
+ * Hide bridges for Kotlin
  */
 @AutoService(CallResolutionInterceptorExtension::class)
 @OptIn(InternalNonStableExtensionPoints::class)
@@ -61,13 +61,11 @@ class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterc
     ): Collection<FunctionDescriptor> {
         if (candidates.isEmpty()) return candidates
 
-        return candidates.toMutableList().apply {
-            removeAll {
-                CompilerContextIntelliJ.run {
-                    it.isGeneratedStubForJavaResolving()
-                }
+        return candidates.asSequence().filterNot {
+            CompilerContextIntelliJ.run {
+                it.isGeneratedStubForJavaResolving()
             }
-        }
+        }.toMutableList()
     }
 
     override fun interceptFunctionCandidates(
@@ -83,13 +81,11 @@ class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterc
     ): Collection<FunctionDescriptor> {
         if (candidates.isEmpty()) return candidates
 
-        return candidates.toMutableList().apply {
-            removeAll {
-                CompilerContextIntelliJ.run {
-                    it.isGeneratedStubForJavaResolving()
-                }
+        return candidates.asSequence().filterNot {
+            CompilerContextIntelliJ.run {
+                it.isGeneratedStubForJavaResolving()
             }
-        }
+        }.toMutableList()
     }
 
     override fun interceptVariableCandidates(
@@ -100,9 +96,7 @@ class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterc
         callResolver: CallResolver,
         name: Name,
         location: LookupLocation
-    ): Collection<VariableDescriptor> {
-        return candidates
-    }
+    ): Collection<VariableDescriptor> = candidates
 
     override fun interceptVariableCandidates(
         candidates: Collection<VariableDescriptor>,
@@ -114,7 +108,5 @@ class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterc
         location: LookupLocation,
         dispatchReceiver: ReceiverValueWithSmartCastInfo?,
         extensionReceiver: ReceiverValueWithSmartCastInfo?
-    ): Collection<VariableDescriptor> {
-        return candidates
-    }
+    ): Collection<VariableDescriptor> = candidates
 }
