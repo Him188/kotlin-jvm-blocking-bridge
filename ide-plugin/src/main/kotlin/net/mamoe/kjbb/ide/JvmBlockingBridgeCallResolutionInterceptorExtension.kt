@@ -3,9 +3,6 @@
 package net.mamoe.kjbb.ide
 
 import com.google.auto.service.AutoService
-import net.mamoe.kjbb.compiler.backend.jvm.isGeneratedBlockingBridgeStub
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.ClassifierDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.VariableDescriptor
 import org.jetbrains.kotlin.extensions.internal.CallResolutionInterceptorExtension
@@ -71,10 +68,6 @@ class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterc
                 }
             }
         }
-
-        return candidates.toMutableList().apply {
-            removeIf { it.isGeneratedBlockingBridgeStub() }
-        }
     }
 
     override fun interceptFunctionCandidates(
@@ -87,10 +80,7 @@ class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterc
         location: LookupLocation,
         dispatchReceiver: ReceiverValueWithSmartCastInfo?,
         extensionReceiver: ReceiverValueWithSmartCastInfo?
-    ): Collection<FunctionDescriptor> = InterceptFunctionCandidatesExtensions(
-        candidates, scopeTower, resolutionContext, resolutionScope,
-        callResolver, name, location, dispatchReceiver, extensionReceiver
-    ).run {
+    ): Collection<FunctionDescriptor> {
         if (candidates.isEmpty()) return candidates
 
         return candidates.toMutableList().apply {
@@ -127,23 +117,4 @@ class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterc
     ): Collection<VariableDescriptor> {
         return candidates
     }
-}
-
-class InterceptFunctionCandidatesExtensions(
-    private val candidates: Collection<FunctionDescriptor>,
-    private val scopeTower: ImplicitScopeTower,
-    private val resolutionContext: BasicCallResolutionContext,
-    private val resolutionScope: ResolutionScope,
-    private val callResolver: PSICallResolver,
-    private val name: Name,
-    private val location: LookupLocation,
-    private val dispatchReceiver: ReceiverValueWithSmartCastInfo?,
-    private val extensionReceiver: ReceiverValueWithSmartCastInfo?
-) {
-
-    fun findClass(name: Name, location: LookupLocation = this.location) =
-        findClassifier(name, location) as? ClassDescriptor
-
-    fun findClassifier(name: Name, location: LookupLocation = this.location): ClassifierDescriptor? =
-        resolutionScope.getContributedClassifierIncludeDeprecated(name, location)?.descriptor
 }
