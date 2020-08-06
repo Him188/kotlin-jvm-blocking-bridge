@@ -6,13 +6,11 @@ import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.util.IconLoader
 import com.intellij.psi.*
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.psi.KtForExpression
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
-import org.jetbrains.kotlin.psi.psiUtil.parentsWithSelf
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
 
 class BlockingBridgeLineMarkerProvider : LineMarkerProvider {
@@ -86,7 +84,6 @@ fun PsiReferenceExpression.hasBridgeCalls(): Boolean {
     return resolved.canHaveBlockingBridge()
 }
 
-fun PsiElement.containingClass(): PsiClass? = parentsWithSelf.first { it is PsiClass } as PsiClass?
 fun PsiElement.getLineNumber(start: Boolean = true): Int {
     val document =
         containingFile.viewProvider.document ?: PsiDocumentManager.getInstance(project).getDocument(containingFile)
@@ -103,7 +100,3 @@ internal fun getElementForLineMark(callElement: PsiElement): PsiElement =
             //but who knows what to reference in KtArrayAccessExpression ?
             generateSequence(callElement, { it.firstChild }).last()
     }
-
-object BlockingBridgeIcons {
-    val BRIDGE_CALL = IconLoader.getIcon("icons/")
-}

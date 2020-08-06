@@ -1,4 +1,5 @@
 @file:JvmName("JvmBlockingBridgeUtils")
+@file:Suppress("unused") // for public API
 
 package net.mamoe.kjbb.compiler.backend.ir
 

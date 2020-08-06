@@ -1,6 +1,5 @@
 package net.mamoe.kjbb.compiler.backend.jvm
 
-//import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import net.mamoe.kjbb.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
@@ -8,7 +7,6 @@ import net.mamoe.kjbb.compiler.backend.ir.identifierOrMappedSpecialName
 import net.mamoe.kjbb.compiler.context.CompilerContext
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
-import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedString
 import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.codegen.coroutines.continuationAsmType
@@ -21,7 +19,6 @@ import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
-import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils
 import org.jetbrains.kotlin.resolve.annotations.hasJvmStaticAnnotation
@@ -42,12 +39,11 @@ import org.jetbrains.org.objectweb.asm.Type
 import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter
 import kotlin.reflect.KClass
 
-interface BridgeCodegenExtensions {
+internal interface BridgeCodegenExtensions {
     val typeMapper: KotlinTypeMapper
 
     fun KotlinType.asmType(): Type = this.asmType(typeMapper)
 
-    fun FunctionDescriptor.owner(superCall: Boolean): Type = typeMapper.mapToCallableMethod(this, superCall).owner
 }
 
 fun FunctionDescriptor.canGenerateJvmBlockingBridge(
@@ -80,7 +76,7 @@ class BridgeCodegen(
         }
     }
 
-    fun SimpleFunctionDescriptor.generateBridge() {
+    private fun SimpleFunctionDescriptor.generateBridge() {
 
         val originFunction = this
 
@@ -208,7 +204,7 @@ class BridgeCodegen(
             val stack = FrameMap()
 
             // call lambdaConstructor
-            anew(lambdaClassDescriptor)// mv.visitTypeInsn(NEW, lambdaClassDescriptor.internalName)
+            anew(lambdaClassDescriptor)
             dup()
 
             if (!isStatic) {
@@ -252,12 +248,6 @@ internal fun InstructionAdapter.genReturn(type: Type) {
     StackValue.coerce(OBJECT_ASM_TYPE, type, this)
     areturn(type)
 }
-
-/**
- * @see Type.getDescriptor
- */
-internal val Class<*>.asmTypeDescriptor: String
-    get() = Type.getDescriptor(this)
 
 /**
  * @see Type.getDescriptor
@@ -316,18 +306,6 @@ internal fun List<ParameterDescriptor>.computeJvmDescriptorForMethod(
     return Type.getMethodDescriptor(
         Type.getType(returnTypeDescriptor),
         *this.map { it.type.asmType(typeMapper) }.toTypedArray()
-    )
-}
-
-internal fun List<ParameterDescriptor>.computeJvmDescriptorForMethod(
-    typeMapper: KotlinTypeMapper,
-    vararg additionalParameterTypes: Type,
-    returnTypeDescriptor: String
-): String {
-    return Type.getMethodDescriptor(
-        Type.getType(returnTypeDescriptor),
-        *this.map { it.type.asmType(typeMapper) }.toTypedArray(),
-        *additionalParameterTypes
     )
 }
 
@@ -501,8 +479,6 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
 internal fun ParameterDescriptor.synthesizedNameString(): String =
     this.name.identifierOrMappedSpecialName.synthesizedString
 
-internal fun ParameterDescriptor.synthesizedName(): Name = this.name.identifierOrMappedSpecialName.synthesizedName
-
 internal fun MethodVisitor.invokeSuperLambdaConstructor(arity: Int) {
     loadThis()
     visitInsn(
@@ -531,10 +507,4 @@ internal fun <T : MethodVisitor> T.applyWithInstructionAdapter(block: Instructio
 }
 
 internal fun MethodVisitor.loadThis() = visitVarInsn(ALOAD, 0)
-
-private fun <T> T.repeatAsList(n: Int): List<T> {
-    val result = ArrayList<T>()
-    repeat(n) { result.add(this) }
-    return result
-}
 

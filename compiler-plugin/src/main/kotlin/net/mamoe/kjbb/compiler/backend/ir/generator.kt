@@ -258,6 +258,7 @@ internal fun IrPluginContext.createIrBuilder(
 ) = DeclarationIrBuilder(this, symbol, startOffset, endOffset)
 
 
+@Suppress("unused")
 internal fun IrBuilderWithScope.irBlock(
     startOffset: Int = this.startOffset,
     endOffset: Int = this.endOffset,

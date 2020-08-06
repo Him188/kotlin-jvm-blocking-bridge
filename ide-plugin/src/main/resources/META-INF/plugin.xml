@@ -27,8 +27,6 @@
     </change-notes>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!--<referenceProviderType key="Class Reference Provider"
-                               implementationClass="net.mamoe.kjbb.ide.JvmBlockingBridgePsiReferenceProvider"/>-->
         <codeInsight.lineMarkerProvider language="JAVA"
                                         implementationClass="net.mamoe.kjbb.ide.BlockingBridgeLineMarkerProvider"/>
         <lang.psiAugmentProvider implementation="net.mamoe.kjbb.ide.JvmBlockingBridgePsiAugmentProvider"/>

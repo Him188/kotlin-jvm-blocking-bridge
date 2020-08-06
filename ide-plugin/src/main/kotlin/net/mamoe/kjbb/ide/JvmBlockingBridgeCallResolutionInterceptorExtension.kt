@@ -3,7 +3,6 @@
 package net.mamoe.kjbb.ide
 
 import com.google.auto.service.AutoService
-import net.mamoe.kjbb.compiler.backend.jvm.canGenerateJvmBlockingBridge
 import net.mamoe.kjbb.compiler.backend.jvm.isGeneratedBlockingBridgeStub
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.ClassifierDescriptor
@@ -12,7 +11,6 @@ import org.jetbrains.kotlin.descriptors.VariableDescriptor
 import org.jetbrains.kotlin.extensions.internal.CallResolutionInterceptorExtension
 import org.jetbrains.kotlin.extensions.internal.InternalNonStableExtensionPoints
 import org.jetbrains.kotlin.incremental.components.LookupLocation
-import org.jetbrains.kotlin.load.kotlin.toSourceElement
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.calls.CallResolver
 import org.jetbrains.kotlin.resolve.calls.CandidateResolver
@@ -23,7 +21,6 @@ import org.jetbrains.kotlin.resolve.calls.tower.NewResolutionOldInference
 import org.jetbrains.kotlin.resolve.calls.tower.PSICallResolver
 import org.jetbrains.kotlin.resolve.scopes.ResolutionScope
 import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValueWithSmartCastInfo
-import org.jetbrains.kotlin.resolve.source.KotlinSourceElement
 
 /**
  * Hide
@@ -102,38 +99,6 @@ class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterc
                     it.isGeneratedStubForJavaResolving()
                 }
             }
-        }
-
-        val dispatcherType = dispatchReceiver?.receiverValue?.type ?: return candidates
-        val classDescriptor = dispatcherType.constructor.declarationDescriptor as? ClassDescriptor ?: return candidates
-
-
-        if (resolutionContext.scope.ownerDescriptor.toSourceElement is KotlinSourceElement) {
-
-            return candidates.map { descriptor ->
-                if (descriptor.isGeneratedBlockingBridgeStub()) {
-                    // map stubs back to suspend functions for Kotlin
-                    JvmBlockingBridgeResolver.generateSyntheticMethods(
-                        classDescriptor,
-                        name,
-                        descriptor,
-                        isSuspend = true,
-                        addStubFlag = false
-                    )
-                } else descriptor
-            }
-        }
-
-        return candidates.map { candidate ->
-            if (candidate.canGenerateJvmBlockingBridge()) {
-                JvmBlockingBridgeResolver.generateSyntheticMethods(
-                    classDescriptor,
-                    name,
-                    candidate,
-                    isSuspend = false,
-                    addStubFlag = true
-                )
-            } else candidate
         }
     }
 

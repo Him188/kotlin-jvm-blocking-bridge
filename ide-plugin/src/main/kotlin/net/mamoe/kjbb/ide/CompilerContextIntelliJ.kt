@@ -18,6 +18,7 @@ open class CompilerContextIntelliJ : CompilerContext {
     override val kind: CompilerContext.CompilerContextKind
         get() = CompilerContext.CompilerContextKind.IntelliJ
 
+    @Suppress("ClassName")
     private object GENERATED_STUB_FOR_JAVA_RESOLVING_KEY : Key<Boolean>("kjbb.generated.key")
 
     override fun FunctionDescriptor.isGeneratedStubForJavaResolving(): Boolean {
@@ -25,7 +26,7 @@ open class CompilerContextIntelliJ : CompilerContext {
         return psi.isGeneratedStubForJavaResolving()
     }
 
-    fun KtLightMethod.isGeneratedStubForJavaResolving(): Boolean {
+    private fun KtLightMethod.isGeneratedStubForJavaResolving(): Boolean {
         return this.getUserData(GENERATED_STUB_FOR_JAVA_RESOLVING_KEY) == true
     }
 
