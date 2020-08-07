@@ -1,8 +1,6 @@
 package net.mamoe.kjbb.compiler.diagnostic
 
-import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.INAPPLICABLE_JVM_BLOCKING_BRIDGE
-import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.OVERRIDING_GENERATED_BLOCKING_BRIDGE
-import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.PLUGIN_IS_NOT_ENABLED
+import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.*
 import org.jetbrains.kotlin.diagnostics.rendering.DefaultErrorMessages
 import org.jetbrains.kotlin.diagnostics.rendering.DiagnosticFactoryToRendererMap
 import org.jetbrains.kotlin.diagnostics.rendering.Renderers
@@ -22,8 +20,13 @@ object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
         )
 
         put(
+            REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS,
+            "@JvmBlockingBridge is redundant on private declarations, as generated bridges are also private and can't be resolved from Java."
+        )
+
+        put(
             INAPPLICABLE_JVM_BLOCKING_BRIDGE,
-            "@JvmBlockingBridge is inapplicable on this declaration"
+            "@JvmBlockingBridge is not applicable on this declaration"
         )
     }
 

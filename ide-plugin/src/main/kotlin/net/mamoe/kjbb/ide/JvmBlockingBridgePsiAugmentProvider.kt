@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
-import kotlin.contracts.contract
 
 /**
  * Allows inserting elements into a PsiElement
@@ -32,7 +31,7 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
         val ret =
             CachedValuesManager.getCachedValue(
                 element,
-                JvmBlockingBridgeCachedValueProvider(element, element::generateAugmentElements)
+                JvmBlockingBridgeCachedValueProvider(element) { element.generateAugmentElements() }
             ).orEmpty().toMutableList()
         return ret as MutableList<Psi>
     }
@@ -56,16 +55,16 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
 
 internal fun PsiExtensibleClass.generateAugmentElements(): List<PsiElement> {
     return this.ownMethods.asSequence()
-        .filter(PsiMethod::canHaveBlockingBridge)
+        .filter { it.canHaveBlockingBridge() }
         .filterIsInstance<KtLightMethod>()
-        .map(KtLightMethod::generateLightMethod)
+        .map { it.generateLightMethod() }
         .toList()
 }
 
 internal fun PsiMethod.canHaveBlockingBridge(): Boolean {
-    contract {
-        returns(true) implies (this@canHaveBlockingBridge is KtLightMethod)
-    }
+    //   contract {
+    //     returns(true) implies (this@canHaveBlockingBridge is KtLightMethod)
+    // }
     return this is KtLightMethod && isSuspend() && this.hasAnnotation(JvmBlockingBridge::class.qualifiedName!!)
 }
 

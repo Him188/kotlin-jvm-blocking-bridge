@@ -36,10 +36,9 @@ intellij {
     isDownloadSources = true
     // updateSinceUntilBuild = false
 
-    /*
     setPlugins(
-        "org.jetbrains.kotlin:${Versions.kotlin}-release-IJ${version}@eap"
-    )*/
+        "org.jetbrains.kotlin:1.4.0-rc-release-IJ2020.2-2@staging"
+    )
 }
 
 tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishTask::class) {
