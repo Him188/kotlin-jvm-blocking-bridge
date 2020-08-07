@@ -1,5 +1,6 @@
 package net.mamoe.kjbb.compiler.backend.jvm
 
+import com.intellij.psi.PsiElement
 import net.mamoe.kjbb.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
@@ -14,7 +15,6 @@ import org.jetbrains.kotlin.codegen.coroutines.continuationAsmType
 import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
-import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
@@ -110,7 +110,7 @@ class BridgeCodegen(
 
         val mv = v.newMethod(
             methodOrigin,
-            ACC_PUBLIC or staticFlag, // TODO: 2020/7/16 or FINAL?
+            ACC_FINAL or ACC_PUBLIC or staticFlag,
             methodName,
             extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
                 typeMapper,
