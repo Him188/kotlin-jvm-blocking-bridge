@@ -11,7 +11,8 @@ plugins {
 }
 
 dependencies {
-    implementation(kotlin("stdlib"))
+    compileOnly(kotlin("stdlib")) // stdlib should be excluded from embeddable ShadowJar
+    //runtimeOnly(kotlin("stdlib"))
 
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))

@@ -32,5 +32,5 @@ dependencies {
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0-rc")
     compileOnly("com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5")
 
-    api("com.github.jengelman.gradle.plugins:shadow:6.0.0")
+    implementation("com.github.jengelman.gradle.plugins:shadow:6.0.0")
 }

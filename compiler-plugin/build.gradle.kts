@@ -6,20 +6,27 @@ plugins {
     signing
     `maven-publish`
     id("com.jfrog.bintray")
+    id("com.github.johnrengelman.shadow")
 }
 
-dependencies {
+dependencies includeInShadow@{
     implementation(project(":kotlin-jvm-blocking-bridge"))
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
+}
 
+dependencies compileOnly@{
+    compileOnly(kotlin("stdlib")) // don't include stdlib in shadow
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
     kapt("com.google.auto.service:auto-service:1.0-rc7")
     compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")
+}
 
+dependencies tests@{
     testImplementation(project(":kotlin-jvm-blocking-bridge"))
 
     testImplementation(kotlin("reflect"))
 
     testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
+    //testImplementation("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
     testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.6")
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
@@ -32,6 +39,16 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.2.0")
+}
+
+embeddableCompiler()
+
+val test by tasks.getting(Test::class) {
+    dependsOn(tasks.getByName("embeddable"))
+    this.classpath += tasks.getByName("embeddable").outputs.files.also {
+        println(it.joinToString("\n"))
+    }
+    this.classpath = files(*this.classpath.filterNot { it.absolutePath.endsWith(("build\\classes\\kotlin\\main")) }.toTypedArray())
 }
 
 setupPublishing(

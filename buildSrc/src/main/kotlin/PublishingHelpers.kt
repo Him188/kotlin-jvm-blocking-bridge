@@ -2,6 +2,7 @@
 
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.component.SoftwareComponent
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.bundling.Jar
@@ -103,7 +104,8 @@ inline fun Project.setupPublishing(
     bintrayRepo: String = "kotlin-jvm-blocking-bridge",
     bintrayPkgName: String = "kotlin-jvm-blocking-bridge",
     vcs: String = "https://github.com/mamoe/kotlin-jvm-blocking-bridge",
-    git: String = "git://github.com/mamoe/kotlin-jvm-blocking-bridge.git"
+    git: String = "git://github.com/mamoe/kotlin-jvm-blocking-bridge.git",
+    overrideFromArtifacts: Any? = null
 ) {
     tasks.register("ensureBintrayAvailable") {
         doLast {
@@ -152,7 +154,11 @@ inline fun Project.setupPublishing(
                 }*/
                 publications {
                     register("mavenJava", MavenPublication::class) {
-                        from(components["java"])
+                        if (overrideFromArtifacts == null) {
+                            from(components["java"])
+                        } else {
+                            artifact(overrideFromArtifacts)
+                        }
                         artifact(sourcesJar.get())
                         artifact(javadocJar.get())
 

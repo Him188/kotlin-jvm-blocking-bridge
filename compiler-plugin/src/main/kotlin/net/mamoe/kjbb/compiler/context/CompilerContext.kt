@@ -8,10 +8,6 @@ import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 import java.util.*
 
-/**
- * For resolving `org.jetbrains.kotlin.com.intellij.psi.PsiElement` for CLI compiler
- * and `com.intellij.psi.PsiElement` for IntelliJ built-in compiler (Kotlin plugin for IntelliJ)
- */
 @Suppress("FunctionName")
 interface CompilerContext {
     val kind: CompilerContextKind

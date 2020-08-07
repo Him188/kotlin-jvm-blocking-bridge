@@ -1,6 +1,8 @@
 package net.mamoe.kjbb.compiler.backend.jvm
 
+import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
+import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
@@ -23,3 +25,5 @@ object GeneratedBlockingBridgeStubForResolution : CallableDescriptor.UserDataKey
 
 fun FunctionDescriptor.isGeneratedBlockingBridgeStub(): Boolean =
     this.getUserData(GeneratedBlockingBridgeStubForResolution) == true
+
+fun DeclarationDescriptor.hasJvmBlockingBridgeAnnotation(): Boolean = this.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)

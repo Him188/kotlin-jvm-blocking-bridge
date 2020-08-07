@@ -5,7 +5,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.*
 
-internal const val JBB_VERSION = "0.4.1"
+internal const val JBB_VERSION = "0.4.3"
 
 open class BlockingBridgePluginExtension {
     var enabled: Boolean = true

@@ -128,7 +128,7 @@ This plugin requires some new features published in Kotlin `1.4.0-rc`, therefore
 `build.gradle` or `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.4.1"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.4.3"
 }
 ```
 

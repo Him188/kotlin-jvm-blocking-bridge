@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.codegen.ImplementationBodyCodegen
 import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.extensions.StorageComponentContainerContributor
 import org.jetbrains.kotlin.extensions.internal.CandidateInterceptor
 import org.jetbrains.kotlin.resolve.extensions.SyntheticResolveExtension
 
@@ -27,6 +28,7 @@ open class JvmBlockingBridgeIntelliJComponentRegistrar : ComponentRegistrar {
 
         SyntheticResolveExtension.registerExtension(project, JvmBlockingBridgeResolveExtension())
 
+        StorageComponentContainerContributor.registerExtension(project, JvmBlockingBridgeIDEContainerContributor())
         CandidateInterceptor.registerExtension(project, JvmBlockingBridgeCallResolutionInterceptorExtension())
         IrGenerationExtension.registerExtension(project, JvmBlockingBridgeIrGenerationExtension())
         ExpressionCodegenExtension.registerExtension(project, object : ExpressionCodegenExtension {

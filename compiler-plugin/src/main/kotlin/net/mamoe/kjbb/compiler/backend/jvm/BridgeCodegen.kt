@@ -5,6 +5,7 @@ import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
 import net.mamoe.kjbb.compiler.backend.ir.identifierOrMappedSpecialName
 import net.mamoe.kjbb.compiler.context.CompilerContext
+import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedString
@@ -13,10 +14,11 @@ import org.jetbrains.kotlin.codegen.coroutines.continuationAsmType
 import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
-import org.jetbrains.kotlin.com.intellij.psi.PsiElement
+import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
+import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.psi.KtParameter
@@ -64,6 +66,10 @@ class BridgeCodegen(
     private inline val clazz get() = codegen.descriptor
     override val typeMapper: KotlinTypeMapper get() = codegen.typeMapper
 
+    private fun report(diagnostic: Diagnostic) {
+        codegen.state.bindingTrace.report(diagnostic)
+    }
+
     fun generate() {
         val members = clazz.unsubstitutedMemberScope
         val names = members.getFunctionNames()
@@ -71,8 +77,11 @@ class BridgeCodegen(
             names.flatMap { members.getContributedFunctions(it, NoLookupLocation.WHEN_GET_ALL_DESCRIPTORS) }.toSet()
 
         for (function in functions) {
-            if (function.canGenerateJvmBlockingBridge())
-                function.generateBridge()
+            if (function.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
+                if (function.canGenerateJvmBlockingBridge())
+                    function.generateBridge()
+                else report(BlockingBridgeErrors.INAPPLICABLE_JVM_BLOCKING_BRIDGE.on(function.findPsi()!!))
+            }
         }
     }
 
@@ -271,7 +280,7 @@ internal fun FunctionDescriptor.allRequiredParameters(dispatchReceiver: Receiver
     )
 }
 
-fun CallableDescriptor.isJvmStatic(): Boolean =
+internal fun CallableDescriptor.isJvmStatic(): Boolean =
     isJvmStaticIn { true }
 
 private fun CallableDescriptor.isJvmStaticIn(predicate: (DeclarationDescriptor) -> Boolean): Boolean =

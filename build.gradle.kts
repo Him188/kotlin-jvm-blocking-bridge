@@ -2,6 +2,12 @@
 
 import kotlin.reflect.KProperty
 
+buildscript {
+    dependencies {
+        classpath("com.github.jengelman.gradle.plugins:shadow:6.0.0")
+    }
+}
+
 plugins {
     kotlin("jvm") version Versions.kotlin apply false
     kotlin("kapt") version Versions.kotlin apply false
@@ -11,6 +17,7 @@ plugins {
     id("com.bmuschko.nexus") version "2.3.1" apply false
     id("io.codearte.nexus-staging") version "0.11.0" apply false
     id("java")
+    //id("com.github.johnrengelman.shadow") version "6.0.0" apply false
 }
 
 allprojects {

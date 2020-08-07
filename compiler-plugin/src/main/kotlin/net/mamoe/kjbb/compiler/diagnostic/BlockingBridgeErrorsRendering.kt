@@ -1,5 +1,6 @@
 package net.mamoe.kjbb.compiler.diagnostic
 
+import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.INAPPLICABLE_JVM_BLOCKING_BRIDGE
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.OVERRIDING_GENERATED_BLOCKING_BRIDGE
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.PLUGIN_IS_NOT_ENABLED
 import org.jetbrains.kotlin.diagnostics.rendering.DefaultErrorMessages
@@ -18,6 +19,11 @@ object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
             OVERRIDING_GENERATED_BLOCKING_BRIDGE,
             "Overriding generated JvmBlockingBridge: ''{0}''",
             Renderers.STRING
+        )
+
+        put(
+            INAPPLICABLE_JVM_BLOCKING_BRIDGE,
+            "@JvmBlockingBridge is inapplicable on this declaration"
         )
     }
 
