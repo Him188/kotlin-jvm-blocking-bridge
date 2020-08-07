@@ -47,7 +47,9 @@ val test by tasks.getting(Test::class) {
     dependsOn(tasks.getByName("embeddable"))
     this.classpath += tasks.getByName("embeddable").outputs.files
     this.classpath =
-        files(*this.classpath.filterNot { it.absolutePath.endsWith(("build\\classes\\kotlin\\main")) }.toTypedArray())
+        files(*this.classpath.filterNot {
+            it.absolutePath.replace("\\", "/").removeSuffix("/").endsWith(("build/classes/kotlin/main"))
+        }.toTypedArray())
 }
 
 setupPublishing(
