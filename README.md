@@ -70,6 +70,8 @@ With the help of the IDE plugin, `suspend fun downloadImage` is not visible to J
 - **compiler-plugin**  *provides bridge generators, supporting current JVM backend and experimental IR backend*
 - **ide-plugin**  *for IntelliJ platform IDEs only*
 
+**Read specifications on [BridgeFeatures.md](BridgeFeatures.md)**
+
 ### Runtime library
 
 - Provides `public annotation class net.mamoe.kjbb.JvmBlockingBridge`
@@ -99,7 +101,7 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 ## Requirements
 - Gradle (`6.0` or higher recommended)
 - **Kotlin `1.4.0-rc`, `1.4.0` or higher**
-- IntelliJ IDEA or Android Studio (newest version recommended)
+- IntelliJ IDEA or Android Studio (newer version recommended)
 
 ## Try now
 

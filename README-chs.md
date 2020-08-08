@@ -75,6 +75,8 @@ IDE (IntelliJ) 插件会帮助为 Java 调用方隐藏 `suspend fun downloadImag
 - **编译器插件**  *provides bridge generators, supporting current JVM backend and experimental IR backend*
 - **ide-plugin**  *for IntelliJ platform IDEs only*
 
+**在 [BridgeFeatures.md](BridgeFeatures.md) 阅读规范**
+
 ### 运行时库
 
 - 提供 `public annotation class net.mamoe.kjbb.JvmBlockingBridge`
