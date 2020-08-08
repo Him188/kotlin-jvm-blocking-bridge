@@ -34,7 +34,7 @@ version = Versions.idePlugin
 intellij {
     version = "2020.2"
     isDownloadSources = true
-    // updateSinceUntilBuild = false
+    updateSinceUntilBuild = false
 
     setPlugins(
         "org.jetbrains.kotlin:1.4.0-rc-release-IJ2020.2-2@staging"
