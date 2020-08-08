@@ -108,12 +108,11 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 The plugin is ready to use.
 
 1. **Check Kotlin version**
-
-This plugin requires some new features published in Kotlin `1.4.0-rc`, therefore, please check your Kotlin compiler version.
-  - In your `build.gradle.kts` or `build.gradle`,
+  This plugin requires some new features published in Kotlin `1.4.0-rc`, therefore, please check your Kotlin compiler version.
+    - In your `build.gradle.kts` or `build.gradle`,
       - If you use `plugins { }` DSL, please ensure `id("kotlin") version "1.4.0-rc"` or `kotlin("jvm") version "1.4.0-rc"`
       - If you use `buildscript { }` DSL, please ensure `classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0-rc")`
-  - In your IDE, open `Tools->Kotlin->Configure Kotlin Plugin Updates`, switch 'Update channel' to `Early Access Preview 1.4.x` and update.
+    - In your IDE, open `Tools->Kotlin->Configure Kotlin Plugin Updates`, switch 'Update channel' to `Early Access Preview 1.4.x` and update.
 
 
 2. **Install IntelliJ IDEA (or Android Studio) plugin
