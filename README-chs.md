@@ -10,13 +10,13 @@
 <summary>点击左侧箭头查看</summary>
 
 Kotlin 挂起函数:  
-![image_2](ide-plugin/src/main/resources/icons/image_2.png)
+![image_2.png](https://i.loli.net/2020/08/08/d5cYwhQqeuj8Nvf.png)
 
 阻塞式方法桥调用:  
-![image](ide-plugin/src/main/resources/icons/image.png)
+![image.png](https://i.loli.net/2020/08/08/tJyGeOcB8E4muQ5.png)
 
 文档和跳转支持:  
-![image_1](ide-plugin/src/main/resources/icons/image_1.png)
+![image_1.png](https://i.loli.net/2020/08/08/koCl6zj4OAJ5aUN.png)
 
 </details>
 
