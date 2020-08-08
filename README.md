@@ -110,11 +110,11 @@ The plugin is ready to use.
 1. **Check Kotlin version**
 
 This plugin requires some new features published in Kotlin `1.4.0-rc`, therefore, please check your Kotlin compiler version.
-
-  1. In your `build.gradle.kts` or `build.gradle`,
+  - In your `build.gradle.kts` or `build.gradle`,
       - If you use `plugins { }` DSL, please ensure `id("kotlin") version "1.4.0-rc"` or `kotlin("jvm") version "1.4.0-rc"`
       - If you use `buildscript { }` DSL, please ensure `classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0-rc")`
-  2. In your IDE, open `Tools->Kotlin->Configure Kotlin Plugin Updates`, switch 'Update channel' to `Early Access Preview 1.4.x` and update.
+  - In your IDE, open `Tools->Kotlin->Configure Kotlin Plugin Updates`, switch 'Update channel' to `Early Access Preview 1.4.x` and update.
+
 
 2. **Install IntelliJ IDEA (or Android Studio) plugin
    The plugin currently supports from 2019.\* to 2020.\*
@@ -124,6 +124,8 @@ This plugin requires some new features published in Kotlin `1.4.0-rc`, therefore
    1. Open `File->Settings->Plugins->Marketplace` in your IDE
    2. Search `Kotlin Jvm Blocking Bridge`, download and install
    3. Restart your IDE
+
+
 
 2. **Install Gradle plugin.**
 
