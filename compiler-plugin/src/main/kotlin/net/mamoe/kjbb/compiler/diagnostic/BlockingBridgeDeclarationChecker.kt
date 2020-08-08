@@ -1,82 +1,59 @@
 package net.mamoe.kjbb.compiler.diagnostic
 
-import com.intellij.psi.PsiElement
-import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
-import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeTestResult
-import net.mamoe.kjbb.compiler.backend.jvm.canGenerateJvmBlockingBridge
+import net.mamoe.kjbb.compiler.backend.jvm.analyzeCapabilityForGeneratingBridges
 import net.mamoe.kjbb.compiler.backend.jvm.hasJvmBlockingBridgeAnnotation
+import net.mamoe.kjbb.compiler.backend.jvm.jvmBlockingBridgeAnnotation
+import net.mamoe.kjbb.compiler.backend.jvm.report
+import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeDeclarationChecker.CheckResult.BREAK
+import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeDeclarationChecker.CheckResult.CONTINUE
+import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.INAPPLICABLE_JVM_BLOCKING_BRIDGE
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.psi.KtDeclaration
-import org.jetbrains.kotlin.psi.KtNamedDeclaration
-import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.resolve.checkers.DeclarationChecker
 import org.jetbrains.kotlin.resolve.checkers.DeclarationCheckerContext
-import org.jetbrains.kotlin.resolve.descriptorUtil.isEffectivelyPrivateApi
-import org.jetbrains.kotlin.resolve.descriptorUtil.isInsidePrivateClass
-import org.jetbrains.kotlin.resolve.source.getPsi
 
 open class BlockingBridgeDeclarationChecker : DeclarationChecker {
     override fun check(
         declaration: KtDeclaration,
         descriptor: DeclarationDescriptor,
-        context: DeclarationCheckerContext
+        context: DeclarationCheckerContext,
     ) {
-        when {
-            checkIsPluginEnabled(declaration, descriptor, context) -> return
-            checkApplicability(declaration, descriptor, context) -> return
+        when (BREAK) {
+            checkIsPluginEnabled(declaration, descriptor, context),
+            checkApplicability(declaration, descriptor, context),
+            -> return
+            else -> return
         }
+    }
+
+    enum class CheckResult {
+        CONTINUE,
+        BREAK
     }
 
     protected open fun checkIsPluginEnabled(
         declaration: KtDeclaration,
         descriptor: DeclarationDescriptor,
-        context: DeclarationCheckerContext
-    ): Boolean {
-        return false
+        context: DeclarationCheckerContext,
+    ): CheckResult {
+        return CONTINUE
     }
 
     private fun checkApplicability(
         declaration: KtDeclaration,
         descriptor: DeclarationDescriptor,
-        context: DeclarationCheckerContext
-    ): Boolean {
-        if (!descriptor.hasJvmBlockingBridgeAnnotation()) return false
+        context: DeclarationCheckerContext,
+    ): CheckResult {
+        if (!descriptor.hasJvmBlockingBridgeAnnotation()) return CONTINUE
         if (descriptor !is FunctionDescriptor) {
-            context.report(BlockingBridgeErrors.INAPPLICABLE_JVM_BLOCKING_BRIDGE.on(descriptor.jvmBlockingBridgeAnnotation()!!))
-            return true
+            val inspectionTarget = descriptor.jvmBlockingBridgeAnnotation() ?: declaration
+            context.report(INAPPLICABLE_JVM_BLOCKING_BRIDGE.on(inspectionTarget))
+            return BREAK
         }
 
-        when (val result = descriptor.canGenerateJvmBlockingBridge()) {
-            BlockingBridgeTestResult.ALLOWED,
-            BlockingBridgeTestResult.FROM_STUB,
-            is BlockingBridgeTestResult.OriginFunctionOverridesSuperMember,
-            -> {
-                // no-op
-            }
-            BlockingBridgeTestResult.INAPPLICABLE -> {
-                context.report(BlockingBridgeErrors.INAPPLICABLE_JVM_BLOCKING_BRIDGE.on(descriptor.jvmBlockingBridgeAnnotation()!!))
-            }
-            is BlockingBridgeTestResult.BlockingBridgeHidesSuperMember -> {
-                context.report(
-                    BlockingBridgeErrors.IMPLICIT_OVERRIDE_BY_JVM_BLOCKING_BRIDGE.on(
-                        descriptor.jvmBlockingBridgeAnnotation()!!,
-                        result.overridingMethod as KtNamedDeclaration,
-                        result.overridingMethod.containingClassOrObject?.name
-                            ?: result.overridingMethod.containingKtFile.name
-                    )
-                )
-            }
-        }
-        if (descriptor.isEffectivelyPrivateApi || descriptor.isInsidePrivateClass) {
-            context.report(BlockingBridgeErrors.REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS.on(descriptor.jvmBlockingBridgeAnnotation()!!))
-            return true
-        }
-        return false
+        val result = descriptor.analyzeCapabilityForGeneratingBridges()
+        result.createDiagnostic()?.let(context::report)
+        return CONTINUE
     }
 }
-
-internal fun DeclarationCheckerContext.report(diagnostic: Diagnostic) = trace.report(diagnostic)
-internal fun DeclarationDescriptor.jvmBlockingBridgeAnnotation(): PsiElement? =
-    annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)?.source?.getPsi()

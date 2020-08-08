@@ -78,7 +78,6 @@ class BlockingBridgeLineMarkerProvider : LineMarkerProvider {
 }
 
 fun PsiReferenceExpression.hasBridgeCalls(): Boolean {
-    print(this::class.qualifiedName + ": " + this.text)
     val resolved = this.resolve() as? KtLightMethod ?: return false
 
     return resolved.canHaveBlockingBridge()

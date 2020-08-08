@@ -21,7 +21,6 @@ open class JvmBlockingBridgeIntelliJComponentRegistrar : ComponentRegistrar {
         project: MockProject,
         configuration: CompilerConfiguration
     ) {
-        println("registerProjectComponents")
         // if (configuration[KEY_ENABLED] == false) {
         //     return
         // }

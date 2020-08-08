@@ -4,8 +4,8 @@
 package net.mamoe.kjbb.compiler.backend.ir
 
 import net.mamoe.kjbb.JvmBlockingBridge
-import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeTestResult
-import net.mamoe.kjbb.compiler.backend.jvm.canGenerateJvmBlockingBridge
+import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeAnalyzeResult
+import net.mamoe.kjbb.compiler.backend.jvm.analyzeCapabilityForGeneratingBridges
 import org.jetbrains.kotlin.codegen.topLevelClassAsmType
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
@@ -52,18 +52,8 @@ fun IrFunction.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(JVM_BL
  * - be `final` or `open`
  * - have parent [IrClass]
  */
-fun IrFunction.canGenerateJvmBlockingBridge(): BlockingBridgeTestResult {
-    return descriptor.canGenerateJvmBlockingBridge()
-    /*
-    contract {
-        returns() implies (this@canGenerateJvmBlockingBridge is IrSimpleFunction)
-    }
-    val parent = this.parent
-    return this is IrSimpleFunction
-            && (!isAbstract)
-            && parent is IrClass
-            && (parent.isClass || parent.isObject)*/
-}
+fun IrFunction.canGenerateJvmBlockingBridge(): BlockingBridgeAnalyzeResult =
+    descriptor.analyzeCapabilityForGeneratingBridges()
 
 
 internal val IrFunction.isFinal get() = this is IrSimpleFunction && this.modality == Modality.FINAL

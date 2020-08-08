@@ -30,10 +30,14 @@ object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
         )
 
         put(
-            IMPLICIT_OVERRIDE_BY_JVM_BLOCKING_BRIDGE,
-            "Generated blocking bridge implicitly overrides super member ''{0}'' declared in ''{1}''",
-            Renderers.DECLARATION_NAME, // super function name
-            Renderers.STRING // classname
+            INLINE_CLASSES_NOT_SUPPORTED,
+            "Inline class is not supported for ''{0}''",
+            Renderers.DECLARATION_NAME_WITH_KIND
+        )
+
+        put(
+            INTERFACE_NOT_SUPPORTED_BELOW_JAVA8,
+            "Interface is not supported for jvm target lower than 8"
         )
     }
 

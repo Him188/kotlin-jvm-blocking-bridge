@@ -117,6 +117,14 @@ Reported when `@JvmBlockingBridge` is applied to a function which is either:
 - not `suspend`
 - declared in Java class
 
+#### `INLINE_CLASSES_NOT_SUPPORTED`
+Reported when `@JvmBlockingBridge` is applied to a function which either:
+- is in `inline` class
+- has parameter types or return type that is `inline` classes
+
+#### `UNSUPPORTED_BLOCKING_BRIDGES_IN_INTERFACE`
+Reported when `@JvmBlockingBridge` is applied to a function in an interface, and the JVM target is below 8
+
 ### Warnings
 
 #### `REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS`

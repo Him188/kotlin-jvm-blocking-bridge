@@ -26,6 +26,7 @@ dependencies tests@{
     testImplementation(kotlin("reflect"))
 
     testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
+    testRuntimeOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}") // for debugger
     //testImplementation("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
     testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.6")
 

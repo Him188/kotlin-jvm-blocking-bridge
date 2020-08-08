@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.backend.common.descriptors.synthesizedString
 import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.codegen.coroutines.continuationAsmType
 import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
-import org.jetbrains.kotlin.codegen.inline.isInlineOrInsideInline
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
 import org.jetbrains.kotlin.descriptors.*
@@ -26,7 +25,6 @@ import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils
 import org.jetbrains.kotlin.resolve.annotations.hasJvmStaticAnnotation
 import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
 import org.jetbrains.kotlin.resolve.descriptorUtil.builtIns
-import org.jetbrains.kotlin.resolve.descriptorUtil.parentsWithSelf
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
@@ -48,49 +46,6 @@ internal interface BridgeCodegenExtensions {
     fun KotlinType.asmType(): Type = this.asmType(typeMapper)
 
 }
-
-sealed class BlockingBridgeTestResult(
-    val allowed: Boolean,
-) {
-    object ALLOWED : BlockingBridgeTestResult(true)
-    object FROM_STUB : BlockingBridgeTestResult(true)
-    object INAPPLICABLE : BlockingBridgeTestResult(false)
-
-    /**
-     * When super member has `@JvmBlockingBridge`
-     */
-    data class OriginFunctionOverridesSuperMember(
-        val overridingMethod: FunctionDescriptor,
-    ) : BlockingBridgeTestResult(false)
-
-    data class BlockingBridgeHidesSuperMember(
-        // todo
-        val overridingMethod: FunctionDescriptor,
-    ) : BlockingBridgeTestResult(false)
-}
-
-fun FunctionDescriptor.canGenerateJvmBlockingBridge(): BlockingBridgeTestResult {
-    if (isGeneratedBlockingBridgeStub()) return BlockingBridgeTestResult.FROM_STUB
-
-    if (!containingDeclaration.isInlineOrInsideInline()
-        && containingClass?.kind != ClassKind.INTERFACE
-        && isSuspend && !name.isSpecial && annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
-    ) {
-        val overridden = overriddenDescriptors
-        if (overridden.isNotEmpty()) {
-
-            return BlockingBridgeTestResult.OriginFunctionOverridesSuperMember(overridden.first())
-        }
-        return BlockingBridgeTestResult.ALLOWED
-    } else {
-        return BlockingBridgeTestResult.INAPPLICABLE
-    }
-}
-
-internal val FunctionDescriptor.containingClass: ClassDescriptor?
-    get() {
-        return this.parentsWithSelf.firstOrNull { it is ClassDescriptor } as ClassDescriptor?
-    }
 
 class BridgeCodegen(
     private val codegen: ImplementationBodyCodegen,
@@ -114,20 +69,9 @@ class BridgeCodegen(
 
         for (function in functions) {
             if (function.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
-                if (function.overriddenDescriptors.any { it.hasJvmBlockingBridgeAnnotation() }) { // generates in super only
-                    continue
-                }
-                function.generateBridge()
-
-                /*when (val result = function.canGenerateJvmBlockingBridge()) {
-                    BlockingBridgeTestResult.ALLOWED -> {
-                        function.generateBridge()
-                    }
-                    is BlockingBridgeTestResult.BlockingBridgeHidesSuperMember -> {
-                        // TODO: 2020/8/7 Should we consider fake overrides?
-                        function.generateBridge()
-                    }
-                }*/
+                val capability = function.analyzeCapabilityForGeneratingBridges()
+                if (!capability.diagnosticPassed) capability.createDiagnostic()?.let(::report)
+                if (capability.shouldGenerate) function.generateBridge()
             }
         }
     }
@@ -178,7 +122,7 @@ class BridgeCodegen(
         fun MethodVisitor.genAnnotation(
             descriptor: String,
             visible: Boolean,
-            block: AnnotationVisitor.() -> Unit = {}
+            block: AnnotationVisitor.() -> Unit = {},
         ) {
             visitAnnotation(descriptor, visible)?.apply(block)?.visitEnd()
         }
@@ -357,7 +301,7 @@ internal fun <T> T?.followedBy(list: Collection<T>): List<T> {
 
 internal fun List<ParameterDescriptor>.computeJvmDescriptorForMethod(
     typeMapper: KotlinTypeMapper,
-    returnTypeDescriptor: String
+    returnTypeDescriptor: String,
 ): String {
     return Type.getMethodDescriptor(
         Type.getType(returnTypeDescriptor),
@@ -374,7 +318,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     parentName: String,
     contextKind: OwnerKind,
     methodOwnerType: Type,
-    dispatchReceiverParameterDescriptor: ReceiverParameterDescriptor?
+    dispatchReceiverParameterDescriptor: ReceiverParameterDescriptor?,
 ): String {
     val isStatic = AsmUtil.isStaticMethod(contextKind, originFunction)
 
