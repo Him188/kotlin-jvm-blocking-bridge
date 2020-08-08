@@ -14,6 +14,8 @@ import org.jetbrains.kotlin.asJava.builder.LightMemberOriginForDeclaration
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
+import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
+import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 
 /**
@@ -62,11 +64,44 @@ internal fun PsiExtensibleClass.generateAugmentElements(): List<PsiElement> {
 }
 
 internal fun PsiMethod.canHaveBlockingBridge(): Boolean {
-    //   contract {
-    //     returns(true) implies (this@canHaveBlockingBridge is KtLightMethod)
-    // }
-    return this is KtLightMethod && isSuspend() && this.hasAnnotation(JvmBlockingBridge::class.qualifiedName!!)
+    return if (this is KtLightMethod && isSuspend()
+        && Name.isValidIdentifier(this.name)
+        && this.hasAnnotation(JvmBlockingBridge::class.qualifiedName!!)
+        && !this.containingClass.isInterface
+    ) {
+        !hasOverridingMethod()
+    } else {
+        false
+    }
 }
+
+internal fun PsiMethod.hasOverridingMethod(): Boolean {
+    var any = false
+    forEachOverridingMethod {
+        any = true
+        false
+    }
+    return any
+}
+
+internal fun PsiMethod.firstOverridingMethodOrNull(): PsiMethod? {
+    var any: PsiMethod? = null
+    forEachOverridingMethod {
+        any = it
+        false
+    }
+    return any
+}
+
+internal val PsiMethod.overridingMethods: List<PsiMethod>
+    get() {
+        val mutableList = mutableListOf<PsiMethod>()
+        forEachOverridingMethod {
+            mutableList.add(it)
+            true
+        }
+        return mutableList
+    }
 
 internal fun KtLightMethod.isSuspend(): Boolean =
     this.modifierList.text.contains("suspend")

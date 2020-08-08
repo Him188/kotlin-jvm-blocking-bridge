@@ -1,4 +1,4 @@
-@file:Suppress("RemoveRedundantBackticks")
+@file:Suppress("RemoveRedundantBackticks", "RedundantSuspendModifier")
 
 package jvm
 
@@ -151,5 +151,21 @@ internal class TestCompilerInJvmBackend {
             }
         }
     """
+    )
+
+    @Test
+    fun `abstract`() = testJvmCompile(
+        """
+            
+    abstract class Abstract {
+        abstract suspend fun test(): String
+    }
+    object TestData : Abstract() {
+        @JvmBlockingBridge
+        override suspend fun test() = "OK"
+        
+        fun main(): String = TestData.runFunction("test")
+    }
+"""
     )
 }

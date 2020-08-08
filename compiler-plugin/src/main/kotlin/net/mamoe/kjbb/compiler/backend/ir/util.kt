@@ -4,6 +4,7 @@
 package net.mamoe.kjbb.compiler.backend.ir
 
 import net.mamoe.kjbb.JvmBlockingBridge
+import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeTestResult
 import net.mamoe.kjbb.compiler.backend.jvm.canGenerateJvmBlockingBridge
 import org.jetbrains.kotlin.codegen.topLevelClassAsmType
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
@@ -51,8 +52,8 @@ fun IrFunction.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(JVM_BL
  * - be `final` or `open`
  * - have parent [IrClass]
  */
-fun IrFunction.canGenerateJvmBlockingBridge(): Boolean {
-    return descriptor.canGenerateJvmBlockingBridge(isAbstract)
+fun IrFunction.canGenerateJvmBlockingBridge(): BlockingBridgeTestResult {
+    return descriptor.canGenerateJvmBlockingBridge()
     /*
     contract {
         returns() implies (this@canGenerateJvmBlockingBridge is IrSimpleFunction)

@@ -22,7 +22,7 @@ class JvmBlockingBridgeLoweringPass(
 
                 if (declaration.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
                     println("lowering ${declaration.parentAsClass.name}.${declaration.name}")
-                    check(declaration.canGenerateJvmBlockingBridge()) {
+                    check(declaration.canGenerateJvmBlockingBridge().allowed) {
                         // TODO: 2020/7/8 DIAGNOSTICS
                         "@JvmBlockingBridge is not applicable to function '${declaration.name}'"
                     }

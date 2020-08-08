@@ -7,11 +7,11 @@ import org.jetbrains.kotlin.diagnostics.rendering.Renderers
 
 object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
     private val MAP = DiagnosticFactoryToRendererMap("SerializationPlugin").apply {
-        put(
+        /*put(
             PLUGIN_IS_NOT_ENABLED,
             "JvmBlockingBridge compiler plugin is not applied to the module, so this annotation would not be processed. " +
                     "Make sure that you've setup your buildscript correctly and re-import project."
-        )
+        )*/
 
         put(
             OVERRIDING_GENERATED_BLOCKING_BRIDGE,
@@ -27,6 +27,13 @@ object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
         put(
             INAPPLICABLE_JVM_BLOCKING_BRIDGE,
             "@JvmBlockingBridge is not applicable on this declaration"
+        )
+
+        put(
+            IMPLICIT_OVERRIDE_BY_JVM_BLOCKING_BRIDGE,
+            "Generated blocking bridge implicitly overrides super member ''{0}'' declared in ''{1}''",
+            Renderers.DECLARATION_NAME, // super function name
+            Renderers.STRING // classname
         )
     }
 
