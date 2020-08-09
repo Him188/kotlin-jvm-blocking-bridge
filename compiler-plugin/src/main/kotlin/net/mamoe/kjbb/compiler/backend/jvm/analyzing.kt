@@ -49,7 +49,7 @@ sealed class BlockingBridgeAnalyzeResult(
     class InterfaceNotSupported(
         private val inspectionTarget: PsiElement,
     ) : BlockingBridgeAnalyzeResult(false) {
-        override fun createDiagnostic(): Diagnostic? = INTERFACE_NOT_SUPPORTED_BELOW_JAVA8.on(inspectionTarget)
+        override fun createDiagnostic(): Diagnostic? = INTERFACE_NOT_SUPPORTED.on(inspectionTarget)
     }
 
     class InlineClassesNotSupported(

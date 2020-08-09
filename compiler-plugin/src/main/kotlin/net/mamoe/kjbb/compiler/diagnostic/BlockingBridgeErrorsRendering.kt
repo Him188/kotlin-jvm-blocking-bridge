@@ -36,7 +36,7 @@ object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
         )
 
         put(
-            INTERFACE_NOT_SUPPORTED_BELOW_JAVA8,
+            INTERFACE_NOT_SUPPORTED,
             "Interface is not supported for jvm target lower than 8"
         )
     }

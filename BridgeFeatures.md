@@ -122,7 +122,7 @@ Reported when `@JvmBlockingBridge` is applied to a function which either:
 - is in `inline` class
 - has parameter types or return type that is `inline` classes
 
-#### `UNSUPPORTED_BLOCKING_BRIDGES_IN_INTERFACE`
+#### `INTERFACE_NOT_SUPPORTED`
 Reported when `@JvmBlockingBridge` is applied to a function in an interface, and the JVM target is below 8
 
 ### Warnings
@@ -133,7 +133,5 @@ Reported when `@JvmBlockingBridge` is applied to a function which is either:
 - in `private` classes, interfaces, enums or objects.
 
 #### `OVERRIDING_GENERATED_BLOCKING_BRIDGE`
+*(TODO)*  
 Reported when overriding generated bridges from Java or Kotlin.
-
-#### `IMPLICIT_OVERRIDE_BY_JVM_BLOCKING_BRIDGE`
-Reported when bridges are overriding or hiding a super member.
