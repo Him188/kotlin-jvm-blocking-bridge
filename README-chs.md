@@ -127,7 +127,7 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 `build.gradle` 或 `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.5.0"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.6.0"
 }
 ```
 
@@ -142,7 +142,7 @@ pluginManagement {
 
 本插件会自动添加如下的运行时依赖:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:0.5.0")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:0.6.0")
 ```
 因此只需要安装插件, 而不需要添加依赖即可使用
 
