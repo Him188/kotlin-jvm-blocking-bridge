@@ -80,7 +80,7 @@ class BlockingBridgeLineMarkerProvider : LineMarkerProvider {
 fun PsiReferenceExpression.hasBridgeCalls(): Boolean {
     val resolved = this.resolve() as? KtLightMethod ?: return false
 
-    return resolved.canHaveBlockingBridge()
+    return resolved.isCompanionedWithBlockingBrideInThisOrSuper()
 }
 
 fun PsiElement.getLineNumber(start: Boolean = true): Int {

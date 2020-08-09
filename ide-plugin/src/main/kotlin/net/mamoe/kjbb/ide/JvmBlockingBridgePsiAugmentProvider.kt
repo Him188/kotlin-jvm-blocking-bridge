@@ -40,7 +40,7 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
 
     private class JvmBlockingBridgeCachedValueProvider(
         private val element: PsiElement,
-        private val psiAugmentGenerator: () -> List<PsiElement>
+        private val psiAugmentGenerator: () -> List<PsiElement>,
     ) : CachedValueProvider<List<PsiElement>> {
         companion object {
             internal val guard = RecursionManager.createGuard<PsiElement>("kjbb.augment")
@@ -57,23 +57,39 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
 
 internal fun PsiExtensibleClass.generateAugmentElements(): List<PsiElement> {
     return this.ownMethods.asSequence()
-        .filter { it.canHaveBlockingBridge() }
+        .filter { it.isCompanionedWithBlockingBrideInThisOrSuper() }
         .filterIsInstance<KtLightMethod>()
         .map { it.generateLightMethod() }
         .toList()
 }
 
-internal fun PsiMethod.canHaveBlockingBridge(): Boolean {
-    return if (this is KtLightMethod && isSuspend()
+internal fun PsiMethod.isCompanionedWithBlockingBrideInThisOrSuper(): Boolean {
+    return if (isSuspend()
         && Name.isValidIdentifier(this.name)
         && this.hasAnnotation(JvmBlockingBridge::class.qualifiedName!!)
-        && !this.containingClass.isInterface
     ) {
-        !hasOverridingMethod()
+        true
     } else {
-        false
+        return findOverrides()?.any { it.isCompanionedWithBlockingBrideInThisOrSuper() } == true
     }
 }
+
+/**
+ * @return `null` if top-level method
+ */
+internal fun PsiMethod.findOverrides(): Sequence<PsiMethod>? {
+    return containingClass?.superClasses
+        ?.flatMap { it.methods.asSequence() }
+        ?.filter {
+            it.hasSameSignatureWith(this)
+        }
+}
+
+internal fun PsiMethod.hasSameSignatureWith(another: PsiMethod): Boolean {
+    return this.hierarchicalMethodSignature == another.hierarchicalMethodSignature
+}
+
+internal val PsiClass.superClasses: Sequence<PsiClass> get() = this.superTypes.asSequence().mapNotNull { it.resolve() }
 
 internal fun PsiMethod.hasOverridingMethod(): Boolean {
     var any = false
@@ -103,10 +119,10 @@ internal val PsiMethod.overridingMethods: List<PsiMethod>
         return mutableList
     }
 
-internal fun KtLightMethod.isSuspend(): Boolean =
+internal fun PsiMethod.isSuspend(): Boolean =
     this.modifierList.text.contains("suspend")
 
-internal fun KtLightMethod.isJvmStatic(): Boolean = hasAnnotation(JvmStatic::class.qualifiedName!!)
+internal fun PsiMethod.isJvmStatic(): Boolean = hasAnnotation(JvmStatic::class.qualifiedName!!)
 
 internal fun KtLightMethod.generateLightMethod(): PsiMethod {
     val originMethod = this
