@@ -123,8 +123,7 @@ The plugin is ready to use.
    It's strongly recommended using the latest IJ or AS, you may update using [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/)  
    Please note that Eclipse and Visual Studio aren't supported.
 
-   One-key install:
-   <iframe frameborder="none" width="245px" height="48px" src="https://plugins.jetbrains.com/embeddable/install/14816"></iframe>
+   One-key install: [Install to IntelliJ IDEA](https://plugins.jetbrains.com/embeddable/install/14816)
 
    You can also install manually:
 
