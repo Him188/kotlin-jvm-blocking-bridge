@@ -23,7 +23,7 @@ plugins {
 allprojects {
     group = "net.mamoe"
     description =
-        "Kotlin compiler plugin that can generate a blocking bridge for calling suspend functions from Java with minimal effort"
+        "Kotlin compiler plugin for generating blocking bridges for calling suspend functions from Java with minimal effort"
     version = Versions.project
 
     repositories {

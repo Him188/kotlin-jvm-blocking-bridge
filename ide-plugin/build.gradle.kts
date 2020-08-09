@@ -52,7 +52,6 @@ tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishTask::class
 }
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
-    setChangeNotes("""Update to 2020.1""".trimIndent())
     untilBuild("205.*")
 }
 
