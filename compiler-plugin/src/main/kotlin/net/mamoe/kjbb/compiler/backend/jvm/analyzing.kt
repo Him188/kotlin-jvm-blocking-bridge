@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
+import org.jetbrains.kotlin.load.kotlin.toSourceElement
 import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.psi.psiUtil.parents
 import org.jetbrains.kotlin.resolve.checkers.DeclarationCheckerContext
@@ -39,7 +40,8 @@ sealed class BlockingBridgeAnalyzeResult(
      */
     class OriginFunctionOverridesSuperMember(
         val overridingMethod: FunctionDescriptor,
-    ) : BlockingBridgeAnalyzeResult(false)
+        shouldGenerate: Boolean,
+    ) : BlockingBridgeAnalyzeResult(false, shouldGenerate)
 
     /**
      * Below Java 8
@@ -71,7 +73,7 @@ sealed class BlockingBridgeAnalyzeResult(
 
 internal fun TargetPlatform.isJvm8OrHigher(): Boolean {
     return componentPlatforms
-        .any { (it.targetPlatformVersion as? JvmTarget)?.bytecodeVersion ?: 0 > JvmTarget.JVM_1_8.bytecodeVersion }
+        .any { (it.targetPlatformVersion as? JvmTarget)?.bytecodeVersion ?: 0 >= JvmTarget.JVM_1_8.bytecodeVersion }
 }
 
 /**
@@ -121,15 +123,17 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAn
             return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotation)
         }
 
-        val overridden = overriddenDescriptors
-        val psi = this.findPsi() ?: error("analyzeCapabilityForGeneratingBridges when findPsi is null")
-        if (overridden.any { it.shouldGenerateBlockingBridge() } // overriding a super function
-            && jvmBlockingBridgeAnnotation.originalElement != null  // inherited annotation from super function
-        ) return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden.first())
+        val overridden = original.overriddenDescriptors
+
+        if (overridden.any { it.shouldGenerateBlockingBridge() })  // overriding a super function
+            return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden.first(),
+                isDeclaredFunction())
     }
 
     return BlockingBridgeAnalyzeResult.ALLOWED
 }
+
+internal fun FunctionDescriptor.isDeclaredFunction(): Boolean = original.toSourceElement.getPsi() != null
 
 internal val FunctionDescriptor.containingClass: ClassDescriptor?
     get() = this.parents.firstOrNull { it is ClassDescriptor } as ClassDescriptor?
@@ -138,6 +142,4 @@ internal fun DeclarationCheckerContext.report(diagnostic: Diagnostic) = trace.re
 internal fun DeclarationDescriptor.jvmBlockingBridgeAnnotation(): PsiElement? =
     annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)?.findPsi()
 
-internal fun AnnotationDescriptor.findPsi(): PsiElement? {
-    return source.getPsi()
-}
+internal fun AnnotationDescriptor.findPsi(): PsiElement? = source.getPsi()

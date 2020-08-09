@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
 import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.descriptors.ClassKind.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.diagnostics.Diagnostic
@@ -101,7 +102,7 @@ class BridgeCodegen(
 
         val mv = v.newMethod(
             methodOrigin,
-            ACC_FINAL or ACC_PUBLIC or staticFlag,
+            originFunction.bridgesVisibility() or ACC_PUBLIC or staticFlag,
             methodName,
             extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
                 typeMapper,
@@ -412,7 +413,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
 
     lambdaBuilder.newMethod(
         JvmDeclarationOrigin.NO_ORIGIN,
-        ACC_PUBLIC or ACC_FINAL or ACC_SYNTHETIC,
+        ACC_PUBLIC or ACC_SYNTHETIC or ACC_FINAL,
         "invoke",
         Type.getMethodDescriptor(
             AsmTypes.OBJECT_TYPE,
@@ -456,7 +457,11 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
 
         // call origin function
         visitMethodInsn(
-            if (isStatic) INVOKESTATIC else INVOKEVIRTUAL,
+            when {
+                isStatic -> INVOKESTATIC
+                originFunction.containingClass?.isInterface() == true -> INVOKEINTERFACE
+                else -> INVOKEVIRTUAL
+            },
             parentName,
             originFunction.jvmNameOrName.identifier,
             Type.getMethodDescriptor(
@@ -464,8 +469,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
                 *originFunction.extensionReceiverAndValueParameters().map { it.type.asmType() }.toTypedArray(),
                 state.languageVersionSettings.continuationAsmType()
             ),
-            false
-        )
+            false)
         visitInsn(ARETURN)
         visitEnd()
     }
@@ -474,6 +478,19 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
 
     lambdaBuilder.done()
     return lambdaBuilder.thisName
+}
+
+private fun FunctionDescriptor.bridgesVisibility(): Int {
+    val containingClass = containingClass ?: return ACC_FINAL
+    return when (containingClass.kind) {
+        ENUM_ENTRY,
+        ANNOTATION_CLASS,
+        ENUM_CLASS,
+        OBJECT,
+        CLASS,
+        -> ACC_FINAL
+        INTERFACE -> 0
+    }
 }
 
 internal fun ParameterDescriptor.synthesizedNameString(): String =
