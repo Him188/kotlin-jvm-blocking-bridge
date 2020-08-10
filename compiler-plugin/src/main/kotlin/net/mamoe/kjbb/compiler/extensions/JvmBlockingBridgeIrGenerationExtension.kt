@@ -1,8 +1,10 @@
 package net.mamoe.kjbb.compiler.extensions
 
 import com.google.auto.service.AutoService
-import net.mamoe.kjbb.compiler.backend.ir.JvmBlockingBridgeLoweringPass
+import net.mamoe.kjbb.compiler.backend.ir.JvmBlockingBridgeClassLoweringPass
+import net.mamoe.kjbb.compiler.backend.ir.JvmBlockingBridgeFileLoweringPass
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
+import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
@@ -20,7 +22,8 @@ import org.jetbrains.kotlin.ir.visitors.acceptVoid
 open class JvmBlockingBridgeIrGenerationExtension : IrGenerationExtension {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         for (file in moduleFragment.files) {
-            JvmBlockingBridgeLoweringPass(pluginContext).runOnFileInOrder(file)
+            JvmBlockingBridgeClassLoweringPass(pluginContext).runOnFileInOrder(file)
+            JvmBlockingBridgeFileLoweringPass(pluginContext).runOnFileInOrder(file)
         }
     }
 }
@@ -33,6 +36,18 @@ internal fun ClassLoweringPass.runOnFileInOrder(irFile: IrFile) {
 
         override fun visitClass(declaration: IrClass) {
             lower(declaration) // lower bridge before lowering suspend
+        }
+    })
+}
+
+internal fun FileLoweringPass.runOnFileInOrder(irFile: IrFile) {
+    irFile.acceptVoid(object : IrElementVisitorVoid {
+        override fun visitElement(element: IrElement) {
+            element.acceptChildrenVoid(this)
+        }
+
+        override fun visitFile(declaration: IrFile) {
+            lower(declaration)
         }
     })
 }

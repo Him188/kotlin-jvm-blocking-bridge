@@ -3,6 +3,7 @@
 package jvm
 
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 internal class TestCompilerInJvmBackend {
 
@@ -168,4 +169,14 @@ internal class TestCompilerInJvmBackend {
     }
 """
     )
+
+    @Test
+    fun `topLevel`() = testJvmCompile(
+        """
+    @JvmBlockingBridge
+    suspend fun test() = "OK"
+""", noMain = true, ir = true
+    ) {
+        assertEquals("OK", classLoader.loadClass("TestDataKt").getDeclaredMethod("test").invoke(null))
+    }
 }

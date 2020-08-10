@@ -12,9 +12,10 @@ fun testJvmCompile(
     @Language("java")
     java: String? = null,
     noMain: Boolean = false,
+    ir: Boolean = false,
     block: KotlinCompilation.Result.() -> Unit = {},
 ) {
-    val result = compile(kt, java, false)
+    val result = compile(kt, java, ir)
 
     if (!noMain) {
         @Suppress("UNCHECKED_CAST")

@@ -13,11 +13,6 @@ open class JvmBlockingBridgeCodegenJvmExtension :
     ExpressionCodegenExtension {
 
     override fun generateClassSyntheticParts(codegen: ImplementationBodyCodegen) {
-        if (kotlin.runCatching { Class.forName("com.intellij.psi.PsiElement") }
-                .isFailure) {
-            // Running in IDE
-            return
-        }
         BridgeCodegen(codegen).generate()
     }
 
