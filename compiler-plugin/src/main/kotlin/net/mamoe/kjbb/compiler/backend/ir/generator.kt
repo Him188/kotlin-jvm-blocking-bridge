@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.ir.*
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.backend.jvm.codegen.fileParent
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
@@ -20,9 +21,9 @@ import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.FqNameUnsafe
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
-import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import java.util.*
 
 
@@ -48,7 +49,7 @@ internal fun IrFunction.isExplicitOrImplicitStatic(): Boolean {
 }
 
 internal fun IrPluginContext.createGeneratedBlockingBridgeConstructorCall(
-    symbol: IrSymbol
+    symbol: IrSymbol,
 ): IrConstructorCall {
     return createIrBuilder(symbol).run {
         irCall(referenceClass(GENERATED_BLOCKING_BRIDGE_FQ_NAME)!!.constructors.first())
@@ -58,7 +59,10 @@ internal fun IrPluginContext.createGeneratedBlockingBridgeConstructorCall(
 }
 
 
-internal fun IrClass.hasDuplicateBridgeFunction(originFunction: IrFunction): Boolean {
+internal val IrDeclarationContainer.functions: Sequence<IrSimpleFunction>
+    get() = declarations.asSequence().filterIsInstance<IrSimpleFunction>()
+
+internal fun IrDeclarationContainer.hasDuplicateBridgeFunction(originFunction: IrFunction): Boolean {
     val params = originFunction.allParameters
     val typePrams = originFunction.allTypeParameters
     return this.functions
@@ -69,10 +73,18 @@ internal fun IrClass.hasDuplicateBridgeFunction(originFunction: IrFunction): Boo
         .any()
 }
 
-internal fun IrFunction.hasDuplicateBridgeFunction(): Boolean = parentAsClass.hasDuplicateBridgeFunction(this)
+internal val IrDeclaration.parentFileOrClass: IrDeclarationContainer get() = this.parentClassOrNull ?: fileParent
+
+internal fun IrFunction.hasDuplicateBridgeFunction(): Boolean = parentFileOrClass.hasDuplicateBridgeFunction(this)
+
+internal fun IrType.isClassType(fqName: FqNameUnsafe, hasQuestionMark: Boolean? = null): Boolean {
+    if (this !is IrSimpleType) return false
+    if (hasQuestionMark != null && this.hasQuestionMark != hasQuestionMark) return false
+    return classifier.isClassWithFqName(fqName)
+}
 
 fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List<IrDeclaration> {
-    val originClass = originFunction.parentAsClass
+    val originDeclaration = originFunction.parentFileOrClass
 
     val bridgeFunction = buildFun {
         startOffset = originFunction.startOffset
@@ -93,10 +105,10 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
         this.copyParameterDeclarationsFrom(originFunction)
 
         this.annotations = originFunction.annotations
-            .filterNot { it.type.safeAs<IrClass>()?.isJvmBlockingBridge() == true }
+            .filterNot { it.type.isClassType(JVM_BLOCKING_BRIDGE_FQ_NAME.toUnsafe()) }
             .plus(createGeneratedBlockingBridgeConstructorCall(symbol))
 
-        this.parent = originClass
+        this.parent = originDeclaration
 
         this.extensionReceiverParameter = originFunction.extensionReceiverParameter?.copyTo(this@fn)
         this.dispatchReceiverParameter =
@@ -175,7 +187,7 @@ internal val Name.identifierOrMappedSpecialName: String
 internal fun IrPluginContext.createSuspendLambdaWithCoroutineScope(
     parent: IrDeclarationParent,
     lambdaType: IrSimpleType,
-    originFunction: IrFunction
+    originFunction: IrFunction,
 ): IrClass {
     @Suppress("RemoveExplicitTypeArguments") // Kotlin 1.4-M3 bug
     return buildClass {
@@ -254,7 +266,7 @@ internal fun IrPluginContext.createSuspendLambdaWithCoroutineScope(
 internal fun IrPluginContext.createIrBuilder(
     symbol: IrSymbol,
     startOffset: Int = UNDEFINED_OFFSET,
-    endOffset: Int = UNDEFINED_OFFSET
+    endOffset: Int = UNDEFINED_OFFSET,
 ) = DeclarationIrBuilder(this, symbol, startOffset, endOffset)
 
 
@@ -265,7 +277,7 @@ internal fun IrBuilderWithScope.irBlock(
     origin: IrStatementOrigin? = null,
     resultType: IrType? = null,
     isTransparent: Boolean = false,
-    body: IrBlockBuilder.() -> Unit
+    body: IrBlockBuilder.() -> Unit,
 ): IrContainerExpression =
     IrBlockBuilder(
         context, scope,
@@ -277,7 +289,7 @@ internal fun IrBuilderWithScope.irBlock(
 internal fun IrBuilderWithScope.irBlockBody(
     startOffset: Int = this.startOffset,
     endOffset: Int = this.endOffset,
-    body: IrBlockBodyBuilder.() -> Unit
+    body: IrBlockBodyBuilder.() -> Unit,
 ): IrBlockBody =
     IrBlockBodyBuilder(
         context, scope,
