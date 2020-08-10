@@ -12,7 +12,8 @@ import kotlin.coroutines.startCoroutine
  * net/mamoe/kjbb/internal/RunSuspend.runSuspend
  */
 @Deprecated("For compiler use only", level = DeprecationLevel.HIDDEN)
-fun `$runSuspend$`(block: suspend () -> Any?): Any? {
+// don't internal, otherwise function name will be changed
+public fun `$runSuspend$`(block: suspend () -> Any?): Any? {
     val run = RunSuspend<Any?>()
     block.startCoroutine(run)
     return run.await()

@@ -1,30 +1,83 @@
+@file:Suppress("UNUSED_VARIABLE")
+
 plugins {
-    kotlin("jvm")
+    kotlin("multiplatform")
     kotlin("kapt")
     kotlin("plugin.serialization")
     id("java")
     `maven-publish`
     signing
-    id("com.jfrog.bintray")
     // id("com.bmuschko.nexus")
     //  id("io.codearte.nexus-staging")
 }
 
-dependencies {
-    compileOnly(kotlin("stdlib")) // stdlib should be excluded from embeddable ShadowJar
-    //runtimeOnly(kotlin("stdlib"))
+kotlin {
+    explicitApi()
 
-    testImplementation(kotlin("test"))
-    testImplementation(kotlin("test-junit5"))
+    targets {
+        jvm()
+        js {
+            useCommonJs()
+        }
+        val hostOs = System.getProperty("os.name")
+        val isMingwX64 = hostOs.startsWith("Windows")
+        val nativeTarget = when {
+            hostOs == "Mac OS X" -> macosX64("native")
+            hostOs == "Linux" -> linuxX64("native")
+            isMingwX64 -> mingwX64("native")
+            else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+        }
+    }
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.2.0")
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                compileOnly(kotlin("stdlib-common")) // stdlib should be excluded from embeddable ShadowJar
+            }
+        }
+
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test-annotations-common"))
+            }
+        }
+
+        val jvmMain by getting {
+            dependencies {
+                compileOnly(kotlin("stdlib")) // stdlib should be excluded from embeddable ShadowJar
+                //runtimeOnly(kotlin("stdlib"))
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("stdlib"))
+                implementation(kotlin("test"))
+                implementation(kotlin("test-junit5"))
+
+                implementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
+                implementation("org.junit.jupiter:junit-jupiter-engine:5.2.0")
+            }
+        }
+
+        val jsMain by getting {
+            dependencies {
+                compileOnly(kotlin("stdlib-js"))
+            }
+        }
+        val nativeMain by getting {
+            dependencies {
+            }
+        }
+    }
 }
-
+/*
 setupPublishing(
     groupId = "net.mamoe",
     artifactId = "kotlin-jvm-blocking-bridge"
 )
+*/
+apply(from = "gradle/publish.gradle")
 
 /*
 nexus {

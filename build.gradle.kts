@@ -5,11 +5,12 @@ import kotlin.reflect.KProperty
 buildscript {
     dependencies {
         classpath("com.github.jengelman.gradle.plugins:shadow:6.0.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}")
     }
 }
 
 plugins {
-    kotlin("jvm") version Versions.kotlin apply false
+    //kotlin("jvm") version Versions.kotlin apply false
     kotlin("kapt") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("com.gradle.plugin-publish") version "0.12.0" apply false
@@ -58,38 +59,60 @@ afterEvaluate {
 
     val `kotlin-jvm-blocking-bridge` by subprojects
     val `kotlin-jvm-blocking-bridge-compiler` by subprojects
+    val `kotlin-jvm-blocking-bridge-compiler-embeddable` by subprojects
     val `kotlin-jvm-blocking-bridge-gradle` by subprojects
     val `kotlin-jvm-blocking-bridge-intellij` by subprojects
 
-    tasks.register("publish") {
-        group = "publishing"
+    tasks.register("publishAll") {
+        group = "publishing0"
         dependsOn(`kotlin-jvm-blocking-bridge`.tasks["ensureBintrayAvailable"])
         dependsOn(`kotlin-jvm-blocking-bridge`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["clean"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["clean"])
         // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
         dependsOn(tasks["build"])
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["bintrayUpload"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["bintrayUpload"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishPlugins"])
-        dependsOn(`kotlin-jvm-blocking-bridge-intellij`.tasks["buildPlugin"])
-        // dependsOn(`kotlin-jvm-blocking-bridge-intellij`.tasks["publishPlugin"])
-        // TODO: 2020/7/27 IDE plugin publish
     }
 
-    tasks.register("publishWithoutClean") {
-        group = "publishing"
+    tasks.register("publishAllToMavenLocal") {
+        group = "publishing0"
+        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["clean"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["clean"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["clean"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["clean"])
+        // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
+        dependsOn(tasks["build"])
+        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publishToMavenLocal"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["publishToMavenLocal"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["publishToMavenLocal"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishToMavenLocal"])
+    }
+
+    tasks.register("publishAllWithoutClean") {
+        group = "publishing0"
         dependsOn(`kotlin-jvm-blocking-bridge`.tasks["ensureBintrayAvailable"])
         // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
         dependsOn(tasks["build"])
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["bintrayUpload"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["bintrayUpload"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishPlugins"])
-        dependsOn(`kotlin-jvm-blocking-bridge-intellij`.tasks["buildPlugin"])
-        // dependsOn(`kotlin-jvm-blocking-bridge-intellij`.tasks["publishPlugin"])
-        // TODO: 2020/7/27 IDE plugin publish
+    }
+
+    tasks.register("publishAllToMavenLocalWithoutClean") {
+        group = "publishing0"
+        // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
+        dependsOn(tasks["build"])
+        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publishToMavenLocal"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["publishToMavenLocal"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["publishToMavenLocal"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishToMavenLocal"])
     }
 }
 

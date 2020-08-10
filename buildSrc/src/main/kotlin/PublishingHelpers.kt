@@ -2,7 +2,6 @@
 
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.component.SoftwareComponent
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.bundling.Jar
@@ -75,13 +74,6 @@ inline fun Project.setupKotlinSourceSetsSettings() {
                 useExperimentalAnnotation("kotlin.ExperimentalUnsignedTypes")
                 useExperimentalAnnotation("kotlin.experimental.ExperimentalTypeInference")
                 useExperimentalAnnotation("kotlin.contracts.ExperimentalContracts")
-            }
-        }
-        sourceSets {
-            getByName("test") {
-                languageSettings.apply {
-                    //languageVersion = "1.4"
-                }
             }
         }
     }

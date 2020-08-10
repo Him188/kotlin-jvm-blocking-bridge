@@ -1,4 +1,5 @@
 @file:Suppress("RedundantVisibilityModifier")
+@file:OptIn(ExperimentalMultiplatform::class)
 
 package net.mamoe.kjbb
 
@@ -15,6 +16,7 @@ package net.mamoe.kjbb
  * fun foo( params ) = runBlocking { foo(params) }
  * ```
  */
+@OptionalExpectation
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
-public annotation class JvmBlockingBridge
+public expect annotation class JvmBlockingBridge()

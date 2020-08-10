@@ -12,6 +12,7 @@ import com.intellij.psi.util.CachedValuesManager
 import net.mamoe.kjbb.JvmBlockingBridge
 import org.jetbrains.kotlin.asJava.builder.LightMemberOriginForDeclaration
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
+import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
 import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
@@ -25,10 +26,12 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
     @Suppress("UNCHECKED_CAST")
     override fun <Psi : PsiElement?> getAugments(element: PsiElement, type: Class<Psi>): MutableList<Psi> {
 
-        if (element !is KtUltraLightClass) return mutableListOf()
+        if (element !is KtUltraLightClass && element !is KtUltraLightClassForFacade) return mutableListOf()
         if (type != PsiMethod::class.java) {
             return mutableListOf()
         }
+
+        element as PsiExtensibleClass // inference mistake
 
         val ret =
             CachedValuesManager.getCachedValue(
