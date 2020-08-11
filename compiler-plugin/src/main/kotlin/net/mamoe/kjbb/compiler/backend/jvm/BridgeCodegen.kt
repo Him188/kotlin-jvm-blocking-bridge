@@ -323,7 +323,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
 ): String {
     val isStatic = AsmUtil.isStaticMethod(contextKind, originFunction)
 
-    val internalName = "$parentName$$${originFunction.name}\$blocking_bridge"
+    val internalName = originFunction.mangleBridgeLambdaClassname(parentName)
     val lambdaBuilder = state.factory.newVisitor(
         OtherOrigin(originFunction),
         Type.getObjectType(internalName),

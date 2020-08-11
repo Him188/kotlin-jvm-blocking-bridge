@@ -186,4 +186,18 @@ internal abstract class TestCompilerBasicsCommon(
     }
 """, ir = ir
     )
+
+    @Test
+    fun `mangling`() = testJvmCompile(
+        """
+    object TestData {
+        @JvmBlockingBridge
+        suspend fun test() = "OK"
+        @JvmBlockingBridge
+        suspend fun test(s: String) = "OK"
+        
+        fun main(): String = TestData.runFunction("test")
+    }
+""", ir = ir
+    )
 }
