@@ -59,13 +59,13 @@ internal fun IrPluginContext.createGeneratedBlockingBridgeConstructorCall(
 }
 
 
-internal val IrDeclarationContainer.functions: Sequence<IrSimpleFunction>
+internal val IrDeclarationContainer.functionsSequence: Sequence<IrSimpleFunction>
     get() = declarations.asSequence().filterIsInstance<IrSimpleFunction>()
 
 internal fun IrDeclarationContainer.hasDuplicateBridgeFunction(originFunction: IrFunction): Boolean {
     val params = originFunction.allParameters
     val typePrams = originFunction.allTypeParameters
-    return this.functions
+    return this.functionsSequence
         .filter { !it.isSuspend }
         .filter { it.name == originFunction.name }
         .filter { it.allParameters == params }
@@ -99,7 +99,7 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
 
         isSuspend = false
         isExternal = false
-        isExpect = false // TODO: 2020/7/8 HANDLE EXPECT/ACTUAL: GENERATE ONLY FOR ACTUAL ONES
+        isExpect = false
     }.apply fn@{
         this.copyAttributes(originFunction as IrAttributeContainer)
         this.copyParameterDeclarationsFrom(originFunction)
@@ -179,22 +179,21 @@ internal val Name.identifierOrMappedSpecialName: String
     }
 
 /**
- * Generate an anonymous object.
+ * Generates an anonymous object.
  *
- * - extends `suspend CoroutineScope.() -> Unit`.
- * - takes dispatch and extension receivers as param, followed by normal params, to constructor
+ * - extends `suspend () -> Unit`.
+ * - takes dispatch and extension receivers as param, followed by normal value params, to the constructor of this object
  */
 internal fun IrPluginContext.createSuspendLambdaWithCoroutineScope(
     parent: IrDeclarationParent,
     lambdaType: IrSimpleType,
     originFunction: IrFunction,
 ): IrClass {
-    @Suppress("RemoveExplicitTypeArguments") // Kotlin 1.4-M3 bug
     return buildClass {
         name = SpecialNames.NO_NAME_PROVIDED
         kind = ClassKind.CLASS
         //isInner = true
-    }.apply<IrClass> clazz@{
+    }.apply clazz@{
         this.parent = parent
         superTypes = listOf(lambdaType)
 
@@ -227,10 +226,7 @@ internal fun IrPluginContext.createSuspendLambdaWithCoroutineScope(
 
         addFunction("invoke", lambdaType.arguments.last().typeOrNull!!, isSuspend = true).apply functionInvoke@{
             this.overriddenSymbols =
-                listOf(irClass.superTypes[0].getClass()!!.functions.single { it.name.identifier == "invoke" && it.isOverridable }.symbol)
-
-            // don't remove. required by supertype.
-            // addValueParameter("\$scope", referenceCoroutineScope().defaultType)
+                listOf(irClass.superTypes[0].getClass()!!.functionsSequence.single { it.name.identifier == "invoke" && it.isOverridable }.symbol)
 
             //this.createDispatchReceiverParameter()
             this.body = createIrBuilder(symbol).run {

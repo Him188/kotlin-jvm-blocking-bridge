@@ -1,10 +1,13 @@
 package net.mamoe.kjbb.compiler.backend.ir
 
+import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeAnalyzeResult
+import net.mamoe.kjbb.compiler.backend.jvm.analyzeCapabilityForGeneratingBridges
 import net.mamoe.kjbb.compiler.backend.jvm.followedBy
 import net.mamoe.kjbb.compiler.backend.jvm.isGeneratedBlockingBridgeStub
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.diagnostics.DiagnosticSink
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrFile
@@ -32,24 +35,16 @@ internal fun IrDeclaration.transformFlat(context: IrPluginContext): List<IrDecla
             return listOf()
 
         if (declaration.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
-            check(declaration.canGenerateJvmBlockingBridge().diagnosticPassed) {
-                // TODO: 2020/7/8 DIAGNOSTICS
-                "@JvmBlockingBridge is not applicable to function '${declaration.name}'"
+            val capability: BlockingBridgeAnalyzeResult = declaration.descriptor.analyzeCapabilityForGeneratingBridges()
+            capability.createDiagnostic()?.let { diagnostic ->
+                DiagnosticSink.THROW_EXCEPTION.report(diagnostic)
             }
-            if (declaration.isFakeOverride || declaration.overriddenSymbols
-                    .any { it is IrSimpleFunction && it.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) }
-            ) {
-                return listOf(declaration)
+
+            if (capability.shouldGenerate) {
+                return declaration.followedBy(context.generateJvmBlockingBridges(declaration))
             }
-            check(!declaration.hasDuplicateBridgeFunction()) {
-                // TODO: 2020/7/8 DIAGNOSTICS FROM PLATFORM_DECLARE_CLASH
-                "PLATFORM_DECLARE_CLASH: function '${declaration.name}'"
-            }
-            return declaration.followedBy(
-                context.generateJvmBlockingBridges(
-                    declaration
-                )
-            )
+
+            return listOf(declaration)
         }
     }
 

@@ -52,7 +52,7 @@ fun IrFunction.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(JVM_BL
  * - be `final` or `open`
  * - have parent [IrClass]
  */
-fun IrFunction.canGenerateJvmBlockingBridge(): BlockingBridgeAnalyzeResult =
+fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeResult =
     descriptor.analyzeCapabilityForGeneratingBridges()
 
 

@@ -118,7 +118,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
             KotlinPlatformType.common,
             -> true
             else -> false
-        }.also { log("Application to ${kotlinCompilation.name} (${kotlinCompilation.platformType}): $it") }
+        }//.also { log("Application to ${kotlinCompilation.name} (${kotlinCompilation.platformType}): $it") }
     }
 }
 
