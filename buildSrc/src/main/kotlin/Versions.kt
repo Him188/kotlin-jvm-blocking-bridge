@@ -1,5 +1,5 @@
 object Versions {
-    const val project = "0.8.0"
+    const val project = "0.8.1"
     const val idePlugin = "1.1.0"
 
     const val kotlin = "1.4.0-rc"
