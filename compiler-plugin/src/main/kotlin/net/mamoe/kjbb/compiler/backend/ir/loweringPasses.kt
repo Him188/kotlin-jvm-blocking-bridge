@@ -29,7 +29,7 @@ internal fun IrDeclaration.transformFlat(context: IrPluginContext): List<IrDecla
     val declaration = this
     if (declaration is IrSimpleFunction) {
         if (declaration.descriptor.isGeneratedBlockingBridgeStub())
-            return@transformFlat listOf()
+            return listOf()
 
         if (declaration.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
             check(declaration.canGenerateJvmBlockingBridge().diagnosticPassed) {
@@ -39,13 +39,13 @@ internal fun IrDeclaration.transformFlat(context: IrPluginContext): List<IrDecla
             if (declaration.isFakeOverride || declaration.overriddenSymbols
                     .any { it is IrSimpleFunction && it.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) }
             ) {
-                return@transformFlat listOf(declaration)
+                return listOf(declaration)
             }
             check(!declaration.hasDuplicateBridgeFunction()) {
                 // TODO: 2020/7/8 DIAGNOSTICS FROM PLATFORM_DECLARE_CLASH
                 "PLATFORM_DECLARE_CLASH: function '${declaration.name}'"
             }
-            return@transformFlat declaration.followedBy(
+            return declaration.followedBy(
                 context.generateJvmBlockingBridges(
                     declaration
                 )
