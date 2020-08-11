@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrContainerExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
+import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.*
@@ -25,6 +26,7 @@ import org.jetbrains.kotlin.name.FqNameUnsafe
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
 import java.util.*
+import org.jetbrains.kotlin.ir.util.isInterface as isInterfaceKotlin
 
 
 internal object IntrinsicRuntimeFunctions {
@@ -41,6 +43,12 @@ private fun IrPluginContext.referenceFunctionRunBlocking(): IrSimpleFunctionSymb
         ?: error("Internal error: Function ${IntrinsicRuntimeFunctions.RUN_SUSPEND} not found.")
 }
 
+private fun IrPluginContext.referenceJvmDefault(): IrClassSymbol {
+    val s = FqName("kotlin.jvm").child(Name.identifier("JvmDefault"))
+    return referenceClass(s)
+        ?: error("Internal error: Function ${s} not found.")
+}
+
 @Suppress("ClassName")
 private object Origin_JVM_BLOCKING_BRIDGE : IrDeclarationOriginImpl("JVM_BLOCKING_BRIDGE", isSynthetic = true)
 
@@ -51,8 +59,14 @@ internal fun IrFunction.isExplicitOrImplicitStatic(): Boolean {
 internal fun IrPluginContext.createGeneratedBlockingBridgeConstructorCall(
     symbol: IrSymbol,
 ): IrConstructorCall {
-    return createIrBuilder(symbol).run {
-        irCall(referenceClass(GENERATED_BLOCKING_BRIDGE_FQ_NAME)!!.constructors.first())
+    return createIrBuilder(symbol).irAnnotationConstructor(referenceClass(GENERATED_BLOCKING_BRIDGE_FQ_NAME)!!)
+}
+
+internal fun IrBuilderWithScope.irAnnotationConstructor(
+    clazz: IrClassSymbol,
+): IrConstructorCall {
+    return run {
+        irCall(clazz.constructors.first())
     }.run {
         irConstructorCall(this, this.symbol)
     }
@@ -83,6 +97,9 @@ internal fun IrType.isClassType(fqName: FqNameUnsafe, hasQuestionMark: Boolean? 
     return classifier.isClassWithFqName(fqName)
 }
 
+internal val IrDeclarationContainer.isInterface: Boolean
+    get() = (this as? IrClass)?.isInterfaceKotlin == true
+
 fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List<IrDeclaration> {
     val containingFileOrClass = originFunction.parentFileOrClass
 
@@ -94,7 +111,7 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
         origin = ORIGIN_JVM_BLOCKING_BRIDGE ?: originFunction.origin
 
         name = originFunction.bridgeFunctionName
-        modality = if ((containingFileOrClass as? IrClass)?.isInterface == true) Modality.OPEN else Modality.FINAL
+        modality = if (containingFileOrClass.isInterface) Modality.OPEN else Modality.FINAL
         returnType = originFunction.returnType
 
         isSuspend = false
@@ -107,6 +124,10 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
         this.annotations = originFunction.annotations
             .filterNot { it.type.isClassType(JVM_BLOCKING_BRIDGE_FQ_NAME.toUnsafe()) }
             .plus(createGeneratedBlockingBridgeConstructorCall(symbol))
+
+        if (containingFileOrClass.isInterface) {
+            this.annotations += createIrBuilder(symbol).irAnnotationConstructor(referenceJvmDefault())
+        }
 
         this.parent = containingFileOrClass
 

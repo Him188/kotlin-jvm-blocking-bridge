@@ -8,7 +8,12 @@ import testJvmCompile
 import kotlin.test.assertFailsWith
 
 internal class TestInheritanceJvmBackend : TestInheritanceCommon(ir = false)
-internal class TestInheritanceIrBackend : TestInheritanceCommon(ir = true)
+internal class TestInheritanceIrBackend : TestInheritanceCommon(ir = true) {
+    @Test
+    override fun `bridge for interface inheritance`() {
+        super.`bridge for interface inheritance`()
+    }
+}
 
 internal abstract class TestInheritanceCommon(
     private val ir: Boolean,
@@ -69,7 +74,7 @@ internal abstract class TestInheritanceCommon(
     }
 
     @Test
-    fun `bridge for interface inheritance`() = testJvmCompile(
+    open fun `bridge for interface inheritance`() = testJvmCompile(
         """
     interface Interface2 {
         @JvmBlockingBridge
