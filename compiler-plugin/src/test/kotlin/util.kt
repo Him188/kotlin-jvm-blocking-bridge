@@ -8,6 +8,8 @@ import org.jetbrains.kotlin.config.JvmTarget
 import java.io.File
 import java.lang.reflect.Modifier
 import java.util.*
+import kotlin.reflect.full.createInstance
+import kotlin.test.assertEquals
 
 // Expose to top-package for TestData
 typealias JvmBlockingBridge = JvmBlockingBridge
@@ -26,15 +28,17 @@ fun <R> Class<*>.runStaticFunction(name: String, vararg args: Any): R {
 fun compile(
     @Language("kt")
     source: String,
-    ir: Boolean
-) = compile(source, null, ir)
+    ir: Boolean,
+    jvmTarget: JvmTarget = JvmTarget.JVM_1_8,
+) = compile(source, null, ir, jvmTarget)
 
 fun compile(
     @Language("kt")
     source: String,
     @Language("java")
     java: String? = null,
-    ir: Boolean
+    ir: Boolean,
+    jvmTarget: JvmTarget = JvmTarget.JVM_1_8,
 ): KotlinCompilation.Result {
     val intrinsicImports = listOf(
         "import kotlin.test.*",
@@ -67,7 +71,7 @@ fun compile(
         compilerPlugins = listOf(TestComponentRegistrar())
         verbose = false
 
-        jvmTarget = JvmTarget.JVM_1_8.description
+        this.jvmTarget = jvmTarget.description
 
         workingDir = File("testCompileOutput").apply {
             this.walk().forEach { it.delete() }
@@ -81,4 +85,41 @@ fun compile(
     }.compile().also { result ->
         assert(result.exitCode == KotlinCompilation.ExitCode.OK)
     }
+}
+
+
+fun testIrCompile(
+    @Language("kt")
+    kt: String,
+    @Language("java")
+    java: String? = null,
+    noMain: Boolean = false,
+    ir: Boolean = true,
+    jvmTarget: JvmTarget = JvmTarget.JVM_1_8,
+    block: KotlinCompilation.Result.() -> Unit = {},
+) = testJvmCompile(kt, java, noMain, ir, jvmTarget, block)
+
+
+fun testJvmCompile(
+    @Language("kt")
+    kt: String,
+    @Language("java")
+    java: String? = null,
+    noMain: Boolean = false,
+    ir: Boolean = false,
+    jvmTarget: JvmTarget = JvmTarget.JVM_1_8,
+    block: KotlinCompilation.Result.() -> Unit = {},
+) {
+    val result = compile(kt, java, ir, jvmTarget)
+
+    if (!noMain) {
+        @Suppress("UNCHECKED_CAST")
+        val test = result.classLoader.loadClass("TestData")
+        assertEquals(
+            "OK",
+            (test.kotlin.objectInstance ?: test.kotlin.createInstance()).run {
+                this::class.java.methods.first { it.name == "main" }.invoke(this)
+            } as String)
+    }
+    block(result)
 }

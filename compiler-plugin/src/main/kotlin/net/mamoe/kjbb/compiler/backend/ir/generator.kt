@@ -84,7 +84,7 @@ internal fun IrType.isClassType(fqName: FqNameUnsafe, hasQuestionMark: Boolean? 
 }
 
 fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List<IrDeclaration> {
-    val originDeclaration = originFunction.parentFileOrClass
+    val containingFileOrClass = originFunction.parentFileOrClass
 
     val bridgeFunction = buildFun {
         startOffset = originFunction.startOffset
@@ -108,7 +108,7 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
             .filterNot { it.type.isClassType(JVM_BLOCKING_BRIDGE_FQ_NAME.toUnsafe()) }
             .plus(createGeneratedBlockingBridgeConstructorCall(symbol))
 
-        this.parent = originDeclaration
+        this.parent = containingFileOrClass
 
         this.extensionReceiverParameter = originFunction.extensionReceiverParameter?.copyTo(this@fn)
         this.dispatchReceiverParameter =

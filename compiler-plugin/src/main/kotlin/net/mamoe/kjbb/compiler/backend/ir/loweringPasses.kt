@@ -43,8 +43,6 @@ internal fun IrDeclaration.transformFlat(context: IrPluginContext): List<IrDecla
             if (capability.shouldGenerate) {
                 return declaration.followedBy(context.generateJvmBlockingBridges(declaration))
             }
-
-            return listOf(declaration)
         }
     }
 

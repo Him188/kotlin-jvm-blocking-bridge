@@ -1,12 +1,18 @@
-@file:Suppress("RemoveRedundantBackticks", "RedundantSuspendModifier")
+@file:Suppress("RemoveRedundantBackticks", "RedundantSuspendModifier", "MainFunctionReturnUnit")
 
-package jvm
+package compiler
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import testJvmCompile
 import kotlin.test.assertFailsWith
 
-internal class TestInheritanceJvmBackend {
+internal class TestInheritanceJvmBackend : TestInheritanceCommon(ir = false)
+internal class TestInheritanceIrBackend : TestInheritanceCommon(ir = true)
+
+internal abstract class TestInheritanceCommon(
+    private val ir: Boolean,
+) {
 
     @Test
     fun `bridge for abstract`() = testJvmCompile(
@@ -20,7 +26,7 @@ internal class TestInheritanceJvmBackend {
         
         fun main(): String = TestData.runFunction("test")
     }
-"""
+""", ir = ir
     ) {
         assertFailsWith<NoSuchMethodException> {
             assertThat(classLoader.loadClass("Abstract")).hasDeclaredMethods("test")
@@ -40,7 +46,7 @@ internal class TestInheritanceJvmBackend {
         
         fun main(): String = TestData.runFunction("test")
     }
-"""
+""", ir = ir
     ) {
         classLoader.loadClass("TestData").getDeclaredMethod("test")
     }
@@ -57,7 +63,7 @@ internal class TestInheritanceJvmBackend {
         
         fun main(): String = TestData.runFunction("test")
     }
-"""
+""", ir = ir
     ) {
         classLoader.loadClass("TestData").getDeclaredMethod("test")
     }
@@ -74,7 +80,7 @@ internal class TestInheritanceJvmBackend {
         
         fun main(): String = TestData.runFunction("test")
     }
-"""
+""", ir = ir
     ) {
         assertThat(classLoader.loadClass("Interface2")).hasDeclaredMethods("test")
         assertFailsWith<NoSuchMethodException> {
@@ -89,8 +95,7 @@ internal class TestInheritanceJvmBackend {
         @JvmBlockingBridge
         suspend fun test(): String
     }
-""",
-        noMain = true
+""", noMain = true, ir = ir
     ) {
         assertThat(classLoader.loadClass("Interface")).hasDeclaredMethods("test")
     }

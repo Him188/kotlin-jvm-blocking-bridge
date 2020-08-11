@@ -1,11 +1,28 @@
-@file:Suppress("RemoveRedundantBackticks", "RedundantSuspendModifier")
+@file:Suppress("RemoveRedundantBackticks", "RedundantSuspendModifier", "MainFunctionReturnUnit")
 
-package jvm
+package compiler
 
 import org.junit.jupiter.api.Test
+import testJvmCompile
 import kotlin.test.assertEquals
 
-internal class TestCompilerInJvmBackend {
+internal class TestCompilerBasicsJvm : TestCompilerBasicsCommon(ir = false)
+
+internal class TestCompilerBasicsIr : TestCompilerBasicsCommon(ir = true) {
+    @Test
+    fun `topLevel`() = testJvmCompile(
+        """
+    @JvmBlockingBridge
+    suspend fun test() = "OK"
+""", noMain = true, ir = true
+    ) {
+        assertEquals("OK", classLoader.loadClass("TestDataKt").getDeclaredMethod("test").invoke(null))
+    }
+}
+
+internal abstract class TestCompilerBasicsCommon(
+    private val ir: Boolean,
+) {
 
     @Test
     fun `simple function in object`() = testJvmCompile(
@@ -26,7 +43,7 @@ internal class TestCompilerInJvmBackend {
                     TestData.INSTANCE.test();
                 }
             }
-        """
+        """, ir = ir
     )
 
     @Test
@@ -42,7 +59,7 @@ internal class TestCompilerInJvmBackend {
             
             fun main(): String = this.runFunction("test", "OK", "KO", "OO")
         }
-    """
+    """, ir = ir
     )
 
     @Test
@@ -57,7 +74,7 @@ internal class TestCompilerInJvmBackend {
             
             fun main(): String = this.runFunction("test", "aaa", "OK")
         }
-    """
+    """, ir = ir
     )
 
     @Test
@@ -77,7 +94,7 @@ internal class TestCompilerInJvmBackend {
             
             fun main(): String = this.runFunction("test", 123,  123f,  123.0, '1', true, 123.toShort())
         }
-    """
+    """, ir = ir
     )
 
     @Test
@@ -94,7 +111,7 @@ internal class TestCompilerInJvmBackend {
             object TestData : SuperClass() {
                 fun main(): String = this.runFunction("test", "v")
             }
-    """
+    """, ir = ir
     )
 
     @Test
@@ -111,7 +128,7 @@ internal class TestCompilerInJvmBackend {
         
         fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
     }
-"""
+""", ir = ir
     )
 
     @Test
@@ -128,7 +145,7 @@ internal class TestCompilerInJvmBackend {
         
         fun main(): String = this.runFunction("test", "receiver", "p0")
     }
-"""
+""", ir = ir
     )
 
     @Test
@@ -151,7 +168,7 @@ internal class TestCompilerInJvmBackend {
                 return TestData.INSTANCE.test();
             }
         }
-    """
+    """, ir = ir
     )
 
     @Test
@@ -167,16 +184,6 @@ internal class TestCompilerInJvmBackend {
         
         fun main(): String = TestData.runFunction("test")
     }
-"""
+""", ir = ir
     )
-
-    @Test
-    fun `topLevel`() = testJvmCompile(
-        """
-    @JvmBlockingBridge
-    suspend fun test() = "OK"
-""", noMain = true, ir = true
-    ) {
-        assertEquals("OK", classLoader.loadClass("TestDataKt").getDeclaredMethod("test").invoke(null))
-    }
 }
