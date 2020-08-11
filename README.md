@@ -137,7 +137,7 @@ The plugin is ready to use.
 `build.gradle` or `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.7.0"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.8.0"
 }
 ```
 

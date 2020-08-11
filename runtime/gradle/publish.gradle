@@ -160,7 +160,9 @@ afterEvaluate {
 }
 
 
-apply from: project.file("gradle/bintray.gradle")
+if (upload.Bintray.isBintrayAvailable(project)) {
+    apply from: project.file("gradle/bintray.gradle")
+}
 
 /*
 task bintrayUpload(dependsOn: publish)
