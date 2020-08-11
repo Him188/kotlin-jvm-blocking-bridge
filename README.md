@@ -7,6 +7,7 @@ Kotlin compiler plugin for generating blocking bridges for calling suspend funct
 ## Screenshots
 <details>
 <summary>Click to expand</summary>
+
 Kotlin suspend functions:  
 ![image_2.png](https://i.loli.net/2020/08/08/d5cYwhQqeuj8Nvf.png)
 
