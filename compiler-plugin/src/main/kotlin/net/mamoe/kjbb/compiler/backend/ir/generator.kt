@@ -94,7 +94,7 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
         origin = ORIGIN_JVM_BLOCKING_BRIDGE ?: originFunction.origin
 
         name = originFunction.bridgeFunctionName
-        modality = Modality.FINAL
+        modality = if ((containingFileOrClass as? IrClass)?.isInterface == true) Modality.OPEN else Modality.FINAL
         returnType = originFunction.returnType
 
         isSuspend = false
