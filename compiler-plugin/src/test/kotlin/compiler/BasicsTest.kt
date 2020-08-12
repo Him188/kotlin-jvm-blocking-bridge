@@ -6,23 +6,22 @@ import org.junit.jupiter.api.Test
 import testJvmCompile
 import kotlin.test.assertEquals
 
-internal class TestCompilerBasicsJvm : TestCompilerBasicsCommon(ir = false)
-
-internal class TestCompilerBasicsIr : TestCompilerBasicsCommon(ir = true) {
-    @Test
-    fun `topLevel`() = testJvmCompile(
-        """
+internal sealed class BasicsTest(
+    ir: Boolean,
+) : AbstractCompilerTest(ir) {
+    internal class Ir : BasicsTest(true) {
+        @Test
+        fun `topLevel`() = testJvmCompile(
+            """
     @JvmBlockingBridge
     suspend fun test() = "OK"
 """, noMain = true, ir = true
-    ) {
-        assertEquals("OK", classLoader.loadClass("TestDataKt").getDeclaredMethod("test").invoke(null))
+        ) {
+            assertEquals("OK", classLoader.loadClass("TestDataKt").getDeclaredMethod("test").invoke(null))
+        }
     }
-}
 
-internal abstract class TestCompilerBasicsCommon(
-    private val ir: Boolean,
-) {
+    internal class Jvm : BasicsTest(false)
 
     @Test
     fun `simple function in object`() = testJvmCompile(
@@ -43,7 +42,7 @@ internal abstract class TestCompilerBasicsCommon(
                     TestData.INSTANCE.test();
                 }
             }
-        """, ir = ir
+        """
     )
 
     @Test
@@ -59,7 +58,7 @@ internal abstract class TestCompilerBasicsCommon(
             
             fun main(): String = this.runFunction("test", "OK", "KO", "OO")
         }
-    """, ir = ir
+    """
     )
 
     @Test
@@ -74,7 +73,7 @@ internal abstract class TestCompilerBasicsCommon(
             
             fun main(): String = this.runFunction("test", "aaa", "OK")
         }
-    """, ir = ir
+    """
     )
 
     @Test
@@ -94,7 +93,7 @@ internal abstract class TestCompilerBasicsCommon(
             
             fun main(): String = this.runFunction("test", 123,  123f,  123.0, '1', true, 123.toShort())
         }
-    """, ir = ir
+    """
     )
 
     @Test
@@ -111,7 +110,7 @@ internal abstract class TestCompilerBasicsCommon(
             object TestData : SuperClass() {
                 fun main(): String = this.runFunction("test", "v")
             }
-    """, ir = ir
+    """
     )
 
     @Test
@@ -128,7 +127,7 @@ internal abstract class TestCompilerBasicsCommon(
         
         fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
     }
-""", ir = ir
+"""
     )
 
     @Test
@@ -145,7 +144,7 @@ internal abstract class TestCompilerBasicsCommon(
         
         fun main(): String = this.runFunction("test", "receiver", "p0")
     }
-""", ir = ir
+"""
     )
 
     @Test
@@ -168,7 +167,7 @@ internal abstract class TestCompilerBasicsCommon(
                 return TestData.INSTANCE.test();
             }
         }
-    """, ir = ir
+    """
     )
 
     @Test
@@ -184,7 +183,7 @@ internal abstract class TestCompilerBasicsCommon(
         
         fun main(): String = TestData.runFunction("test")
     }
-""", ir = ir
+"""
     )
 
     @Test
@@ -198,6 +197,6 @@ internal abstract class TestCompilerBasicsCommon(
         
         fun main(): String = TestData.runFunction("test")
     }
-""", ir = ir
+"""
     )
 }

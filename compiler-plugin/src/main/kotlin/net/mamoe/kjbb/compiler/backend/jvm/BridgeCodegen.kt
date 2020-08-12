@@ -21,10 +21,13 @@ import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils
 import org.jetbrains.kotlin.resolve.annotations.hasJvmStaticAnnotation
 import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
+import org.jetbrains.kotlin.resolve.constants.ArrayValue
+import org.jetbrains.kotlin.resolve.constants.KClassValue
 import org.jetbrains.kotlin.resolve.descriptorUtil.builtIns
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
@@ -33,6 +36,7 @@ import org.jetbrains.kotlin.resolve.jvm.diagnostics.OtherOrigin
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.expressions.createFunctionType
 import org.jetbrains.kotlin.types.isNullable
+import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.Label
 import org.jetbrains.org.objectweb.asm.MethodVisitor
@@ -88,29 +92,26 @@ class BridgeCodegen(
         val methodOrigin = JvmDeclarationOrigin(
             originKind = JvmDeclarationOriginKind.BRIDGE,
             descriptor = originFunction,
-            parametersForJvmOverload = extensionReceiverAndValueParameters().map {
-                DescriptorToSourceUtils.descriptorToDeclaration(it) as? KtParameter
-            }
+            parametersForJvmOverload = extensionReceiverAndValueParameters().toKtParameterList()
         )
         //val methodSignature = originFunction.computeJvmDescriptor(withName = true)
-        val staticFlag = when {
-            originFunction.isJvmStatic() -> ACC_STATIC
-            else -> 0
-        }
+        val staticFlag = originFunction.asmStaticFlag
 
         val isStatic = staticFlag != 0
 
         val mv = v.newMethod(
             methodOrigin,
-            originFunction.bridgesVisibility() or ACC_PUBLIC or staticFlag,
+            originFunction.bridgesModality() or originFunction.visibility.asmFlag or staticFlag,
             methodName,
             extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
                 typeMapper,
                 returnTypeDescriptor = returnType.descriptor
             ),
             null,
-            null
-        ) // TODO: 2020/7/12 exceptions?
+            // public annotation class Throws(vararg val exceptionClasses: KClass<out Throwable>)
+            originFunction.exceptionsByThrowsAnnotation(typeMapper)
+        )
+
 
         if (codegen.context.contextKind != OwnerKind.ERASED_INLINE_CLASS && clazz.isInline) {
             FunctionCodegen.generateMethodInsideInlineClassWrapper(
@@ -243,6 +244,33 @@ class BridgeCodegen(
     }
 }
 
+internal val FunctionDescriptor.asmStaticFlag: Int
+    get() = when {
+        this.isJvmStatic() -> ACC_STATIC
+        else -> 0
+    }
+
+internal val Visibility.asmFlag: Int
+    get() = when (this) {
+        Visibilities.PUBLIC -> ACC_PUBLIC
+        Visibilities.PRIVATE -> ACC_PRIVATE
+        Visibilities.PROTECTED -> ACC_PROTECTED
+        else -> ACC_PUBLIC
+    }
+
+@Suppress("TYPE_INFERENCE_ONLY_INPUT_TYPES_WARNING")
+internal fun FunctionDescriptor.exceptionsByThrowsAnnotation(typeMapper: KotlinTypeMapper): Array<out String> {
+    val annotation = annotations.findAnnotation(FqName(Throws::class.qualifiedName!!)) ?: return emptyArray()
+    val classes =
+        annotation.allValueArguments.values.single().cast<ArrayValue>().value.map { it.cast<KClassValue>() }
+    return classes.map {
+        when (val clazz = it.value) {
+            is KClassValue.Value.NormalClass -> clazz.classId.asSingleFqName().asString().replace(".", "/")
+            is KClassValue.Value.LocalClass -> clazz.type.asmType(typeMapper).descriptor
+        }
+    }.toTypedArray()
+}
+
 internal val OBJECT_ASM_TYPE = Any::class.asmType
 
 internal fun InstructionAdapter.genReturn(type: Type) {
@@ -266,13 +294,19 @@ internal fun FunctionDescriptor.extensionReceiverAndValueParameters(): List<Para
     return extensionReceiverParameter.followedBy(valueParameters)
 }
 
+internal fun List<ParameterDescriptor>.toKtParameterList(): List<KtParameter?> {
+    return map {
+        DescriptorToSourceUtils.descriptorToDeclaration(it) as? KtParameter
+    }
+}
+
 internal fun FunctionDescriptor.allRequiredParameters(dispatchReceiver: ReceiverParameterDescriptor?): List<ParameterDescriptor> {
     return if (!isJvmStatic()) dispatchReceiver!!.followedBy(extensionReceiverParameter.followedBy(valueParameters)) else extensionReceiverParameter.followedBy(
         valueParameters
     )
 }
 
-internal fun CallableDescriptor.isJvmStatic(): Boolean =
+internal fun FunctionDescriptor.isJvmStatic(): Boolean =
     isJvmStaticIn { true }
 
 private fun CallableDescriptor.isJvmStaticIn(predicate: (DeclarationDescriptor) -> Boolean): Boolean =
@@ -284,13 +318,6 @@ private fun CallableDescriptor.isJvmStaticIn(predicate: (DeclarationDescriptor) 
         }
         else -> predicate(containingDeclaration) && hasJvmStaticAnnotation()
     }
-
-internal operator fun <T> T.plus(list: Collection<T>): List<T> {
-    val new = ArrayList<T>(list.size + 1)
-    new.add(this)
-    new.addAll(list)
-    return new
-}
 
 internal fun <T> T?.followedBy(list: Collection<T>): List<T> {
     if (this == null) return list.toList()
@@ -480,7 +507,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     return lambdaBuilder.thisName
 }
 
-private fun FunctionDescriptor.bridgesVisibility(): Int {
+private fun FunctionDescriptor.bridgesModality(): Int {
     val containingClass = containingClass ?: return ACC_FINAL
     return when (containingClass.kind) {
         ENUM_ENTRY,
@@ -488,7 +515,12 @@ private fun FunctionDescriptor.bridgesVisibility(): Int {
         ENUM_CLASS,
         OBJECT,
         CLASS,
-        -> ACC_FINAL
+        -> {
+            when (containingClass.modality) {
+                Modality.OPEN, Modality.ABSTRACT -> ACC_OPEN
+                else -> ACC_FINAL
+            }
+        }
         INTERFACE -> 0
     }
 }

@@ -4,20 +4,14 @@ package compiler
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import testJvmCompile
 import kotlin.test.assertFailsWith
 
-internal class TestInheritanceJvmBackend : TestInheritanceCommon(ir = false)
-internal class TestInheritanceIrBackend : TestInheritanceCommon(ir = true) {
-    @Test
-    override fun `bridge for interface inheritance`() {
-        super.`bridge for interface inheritance`()
-    }
-}
+internal sealed class InheritanceTest(
+    ir: Boolean,
+) : AbstractCompilerTest(ir) {
 
-internal abstract class TestInheritanceCommon(
-    private val ir: Boolean,
-) {
+    internal class Ir : InheritanceTest(true)
+    internal class Jvm : InheritanceTest(false)
 
     @Test
     fun `bridge for abstract`() = testJvmCompile(
@@ -31,7 +25,7 @@ internal abstract class TestInheritanceCommon(
         
         fun main(): String = TestData.runFunction("test")
     }
-""", ir = ir
+"""
     ) {
         assertFailsWith<NoSuchMethodException> {
             assertThat(classLoader.loadClass("Abstract")).hasDeclaredMethods("test")
@@ -51,7 +45,7 @@ internal abstract class TestInheritanceCommon(
         
         fun main(): String = TestData.runFunction("test")
     }
-""", ir = ir
+"""
     ) {
         classLoader.loadClass("TestData").getDeclaredMethod("test")
     }
@@ -68,7 +62,7 @@ internal abstract class TestInheritanceCommon(
         
         fun main(): String = TestData.runFunction("test")
     }
-""", ir = ir
+"""
     ) {
         classLoader.loadClass("TestData").getDeclaredMethod("test")
     }
@@ -85,7 +79,7 @@ internal abstract class TestInheritanceCommon(
         
         fun main(): String = TestData.runFunction("test")
     }
-""", ir = ir
+"""
     ) {
         assertThat(classLoader.loadClass("Interface2")).hasDeclaredMethods("test")
         assertFailsWith<NoSuchMethodException> {
@@ -100,7 +94,7 @@ internal abstract class TestInheritanceCommon(
         @JvmBlockingBridge
         suspend fun test(): String
     }
-""", noMain = true, ir = ir
+""", noMain = true
     ) {
         assertThat(classLoader.loadClass("Interface")).hasDeclaredMethods("test")
     }

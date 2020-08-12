@@ -4,9 +4,12 @@ import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.ir.*
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.backend.common.lower.parents
 import org.jetbrains.kotlin.backend.jvm.codegen.fileParent
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.descriptors.Visibilities
+import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.*
@@ -100,19 +103,46 @@ internal fun IrType.isClassType(fqName: FqNameUnsafe, hasQuestionMark: Boolean? 
 internal val IrDeclarationContainer.isInterface: Boolean
     get() = (this as? IrClass)?.isInterfaceKotlin == true
 
+internal val IrDeclarationContainer.isAbstract: Boolean
+    get() = (this as? IrClass)?.modality == Modality.ABSTRACT
+
+internal val IrDeclarationContainer.isOpen: Boolean
+    get() = (this as? IrClass)?.modality == Modality.OPEN
+
+internal val IrDeclarationContainer.isPrivate: Boolean
+    get() = (this as? IrDeclarationWithVisibility)?.visibility == Visibilities.PRIVATE
+
+internal val IrClass.isInsidePrivateClass: Boolean
+    get() =
+        this.parents.any { (it as? IrClass)?.isPrivate == true }
+
+internal fun IrDeclarationContainer.computeModalityForBridgeFunction(): Modality {
+    if (isInterface) return Modality.OPEN
+    return when {
+        isOpen || isAbstract -> Modality.OPEN
+        else -> Modality.FINAL
+    }
+}
+
+internal fun IrFunction.computeVisibilityForBridgeFunction(): Visibility {
+    if (parentFileOrClass.isInterface) return Visibilities.PUBLIC
+    return this.visibility
+}
+
 fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List<IrDeclaration> {
     val containingFileOrClass = originFunction.parentFileOrClass
 
     val bridgeFunction = buildFun {
         startOffset = originFunction.startOffset
         endOffset = originFunction.endOffset
-        visibility = originFunction.visibility
 
         origin = ORIGIN_JVM_BLOCKING_BRIDGE ?: originFunction.origin
 
         name = originFunction.bridgeFunctionName
-        modality = if (containingFileOrClass.isInterface) Modality.OPEN else Modality.FINAL
         returnType = originFunction.returnType
+
+        modality = containingFileOrClass.computeModalityForBridgeFunction()
+        visibility = originFunction.computeVisibilityForBridgeFunction() // avoid suppressing
 
         isSuspend = false
         isExternal = false

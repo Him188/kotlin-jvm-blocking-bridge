@@ -5,7 +5,11 @@ import com.tschuchort.compiletesting.SourceFile
 import net.mamoe.kjbb.JvmBlockingBridge
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.config.JvmTarget
+import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.descriptors.Visibilities
+import org.jetbrains.kotlin.descriptors.Visibility
 import java.io.File
+import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.*
 import kotlin.reflect.full.createInstance
@@ -123,3 +127,19 @@ fun testJvmCompile(
     }
     block(result)
 }
+
+
+internal val Method.visibility: Visibility
+    get() = when {
+        Modifier.isPublic(this.modifiers) -> Visibilities.PUBLIC
+        Modifier.isPrivate(this.modifiers) -> Visibilities.PRIVATE
+        Modifier.isProtected(this.modifiers) -> Visibilities.PROTECTED
+        else -> Visibilities.PRIVATE_TO_THIS
+    }
+
+internal val Method.modality: Modality
+    get() = when {
+        Modifier.isFinal(this.modifiers) -> Modality.FINAL
+        Modifier.isAbstract(this.modifiers) -> Modality.ABSTRACT
+        else -> Modality.OPEN
+    }
