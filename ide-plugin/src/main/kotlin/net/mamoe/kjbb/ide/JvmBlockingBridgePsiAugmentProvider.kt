@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
+import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
@@ -60,20 +61,20 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
 
 internal fun PsiExtensibleClass.generateAugmentElements(): List<PsiElement> {
     return this.ownMethods.asSequence()
-        .filter { it.isCompanionedWithBlockingBrideInThisOrSuper() }
+        .filter { it.canHaveBridgeFunctions() }
         .filterIsInstance<KtLightMethod>()
         .map { it.generateLightMethod() }
         .toList()
 }
 
-internal fun PsiMethod.isCompanionedWithBlockingBrideInThisOrSuper(): Boolean {
+internal fun PsiMethod.canHaveBridgeFunctions(): Boolean {
     return if (isSuspend()
         && Name.isValidIdentifier(this.name)
         && this.hasAnnotation(JvmBlockingBridge::class.qualifiedName!!)
     ) {
         true
     } else {
-        return findOverrides()?.any { it.isCompanionedWithBlockingBrideInThisOrSuper() } == true
+        return findOverrides()?.any { it.canHaveBridgeFunctions() } == true
     }
 }
 
@@ -138,13 +139,23 @@ internal fun KtLightMethod.generateLightMethod(): PsiMethod {
         for (it in originMethod.parameterList.parameters.dropLast(1)) {
             addParameter(it)
         }
-        if (isJvmStatic()) {
+
+        if (isJvmStatic() || originMethod.parent is KtUltraLightClassForFacade) {
             addModifier(PsiModifier.STATIC)
         }
 
-        PsiModifier.MODIFIERS
+        VISIBILITIES_MODIFIERS
             .filter { originMethod.hasModifierProperty(it) }
             .forEach { addModifier(it) }
+
+        addModifier(
+            if (containingClass?.isInterface == true) {
+                PsiModifier.OPEN
+            } else when (containingClass?.modality) {
+                Modality.OPEN, Modality.ABSTRACT, Modality.SEALED -> PsiModifier.OPEN
+                else -> PsiModifier.FINAL
+            }
+        )
 
         for (typeParameter in originMethod.typeParameters) {
             addTypeParameter(typeParameter)
@@ -197,3 +208,25 @@ class BlockingBridgeStubMethod(manager: PsiManager, language: Language, name: St
     }
 
 }
+
+internal val VISIBILITIES_MODIFIERS = arrayOf(
+    PsiModifier.PUBLIC,
+    PsiModifier.PACKAGE_LOCAL,
+    PsiModifier.PRIVATE,
+    PsiModifier.PROTECTED,
+)
+
+internal val PsiModifierListOwner.modality: Modality
+    get() {
+        if (this is PsiMember && this.containingClass?.isInterface == true) {
+            return Modality.OPEN //
+        }
+
+        return when {
+            this.hasModifierProperty(PsiModifier.OPEN) -> Modality.OPEN
+            this.hasModifierProperty(PsiModifier.FINAL) -> Modality.FINAL
+            this.hasModifierProperty(PsiModifier.ABSTRACT) -> Modality.ABSTRACT
+            this.hasModifierProperty("sealed") -> Modality.ABSTRACT
+            else -> Modality.FINAL
+        }
+    }
