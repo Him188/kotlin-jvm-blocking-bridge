@@ -29,7 +29,7 @@ dependencies {
     api(ktor("client-json", "1.3.2"))
 
     compileOnly(gradleApi())
-    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0-rc")
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0")
     compileOnly("com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5")
 
     implementation("com.github.jengelman.gradle.plugins:shadow:6.0.0")

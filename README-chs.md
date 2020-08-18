@@ -105,7 +105,7 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 
 ## 使用要求
 - Gradle (仅在 6.0+ 环境通过测试)
-- **Kotlin 1.4.0-rc, 1.4.0 或更高**
+- **Kotlin `1.4.0-rc`, `1.4.0` 或更高**
 - IntelliJ IDEA 或 Android Studio (推荐保持新版本)
 
 ## 现在体验
@@ -113,13 +113,13 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 编译器插件已经完成, 可添加 Gradle 插件依赖:
 
 1. **安装 IntelliJ IDEA (或 Android Studio) 插件**
-   本插件支持 IntelliJ IDEA 2019.\* 到 2020.\*
-   It's strongly recommended using the latest IntelliJ or AS, you may update using [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/)  
-   Please note that Eclipse and Visual Studio aren't supported.
+   本插件支持 IntelliJ IDEA 2019.\* 到 2020.\*  
+   强烈建议使用最新版本的 IntelliJ 或 AS, 可以使用 [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/) 获取更新  
+   Eclipse 和 Visual Studio 或其他 IDE 均不受支持.
 
-   1. Open `File->Settings->Plugins->Marketplace` in your IDE
-   2. Search `Kotlin Jvm Blocking Bridge`, download and install
-   3. Restart your IDE
+   1. 打开 `File->Settings->Plugins->Marketplace`
+   2. 搜索 `Kotlin Jvm Blocking Bridge`, 下载并安装
+   3. 重启 IDE
 
 
 2. **安装 Gradle 插件.**

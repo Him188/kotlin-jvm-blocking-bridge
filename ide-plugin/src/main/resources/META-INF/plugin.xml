@@ -12,11 +12,6 @@
     <description>
         This plugin provides @JvmBlockingBridge resolving for Java blocking bridge calls and create gutters for them.
         Find more information on source repository: https://github.com/mamoe/kotlin-jvm-blocking-bridge.
-
-        Note: This plugin depends on the new compiler plugin API which requires Kotlin plugin 1.4.0-M3, 1.4.0-rc or
-        higher and might not work properly with older Kotlin plugins, like 1.3.72
-        Please visit 'Configure your build for EAP' for updating your plugin:
-        https://kotlinlang.org/eap/configure-build-for-eap.html
     </description>
 
     <depends>com.intellij.modules.platform</depends>
