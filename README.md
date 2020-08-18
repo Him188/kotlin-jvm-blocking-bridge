@@ -80,6 +80,7 @@ With the help of the IDE plugin, `suspend fun downloadImage` is not visible to J
 
 - Provides `public annotation class net.mamoe.kjbb.JvmBlockingBridge`
 - Provides `internal annotation class net.mamoe.kjbb.GeneratedBlockingBridge` that is added implicitly to generated bridges.
+- Provides some internal functions used by generated bridges.
 
 ### Compiler plugin
 
@@ -130,7 +131,7 @@ The plugin is ready to use.
 `build.gradle` or `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.8.1"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.0.0"
 }
 ```
 

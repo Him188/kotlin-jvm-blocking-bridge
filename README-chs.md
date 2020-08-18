@@ -81,6 +81,7 @@ IDE (IntelliJ) 插件会帮助为 Java 调用方隐藏 `suspend fun downloadImag
 
 - 提供 `public annotation class net.mamoe.kjbb.JvmBlockingBridge`
 - 提供 `internal annotation class net.mamoe.kjbb.GeneratedBlockingBridge`, 由编译器插件自动添加到生成的方法桥上.
+- 提供编译后的阻塞式方法桥需要调用的一些库函数.
 
 ### 编译器插件
 
@@ -127,7 +128,7 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 `build.gradle` 或 `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "0.8.1"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.0.0"
 }
 ```
 
@@ -142,7 +143,7 @@ pluginManagement {
 
 本插件会自动添加如下的运行时依赖:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:0.8.1")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.0.0")
 ```
 因此只需要安装插件, 而不需要添加依赖即可使用
 
