@@ -28,6 +28,7 @@ sealed class BlockingBridgeAnalyzeResult(
     open fun createDiagnostic(): Diagnostic? = null
 
     object ALLOWED : BlockingBridgeAnalyzeResult(true)
+    object MISSING_ANNOTATION_PSI : BlockingBridgeAnalyzeResult(true, false)
     object FROM_STUB : BlockingBridgeAnalyzeResult(true, false)
     class Inapplicable(
         private val inspectionTarget: PsiElement,
@@ -103,7 +104,8 @@ internal fun ClassDescriptor.isInterface(): Boolean = this.kind == ClassKind.INT
 
 fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeResult {
     val jvmBlockingBridgeAnnotation = jvmBlockingBridgeAnnotation()
-        ?: error("analyzeCapabilityForGeneratingBridges for function $name when jvmBlockingBridgeAnnotation is null")
+        ?: return BlockingBridgeAnalyzeResult.MISSING_ANNOTATION_PSI
+
     if (isGeneratedBlockingBridgeStub()) return BlockingBridgeAnalyzeResult.FROM_STUB
     if (isEffectivelyPrivateApi) return BlockingBridgeAnalyzeResult.RedundantForPrivateDeclarations(
         jvmBlockingBridgeAnnotation)
