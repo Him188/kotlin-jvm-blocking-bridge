@@ -28,33 +28,33 @@ jobs:
         run: ./gradlew build # if test's failed, don't publish
       - name: Check keys
         run: ./gradlew :kotlin-jvm-blocking-bridge:ensureBintrayAvailable
-        :kotlin-jvm-blocking-bridge-compiler:ensureBintrayAvailable
-        :kotlin-jvm-blocking-bridge-compiler-embeddable:ensureBintrayAvailable
-        :kotlin-jvm-blocking-bridge-gradle:ensureBintrayAvailable
-        -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-        -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+          :kotlin-jvm-blocking-bridge-compiler:ensureBintrayAvailable
+          :kotlin-jvm-blocking-bridge-compiler-embeddable:ensureBintrayAvailable
+          :kotlin-jvm-blocking-bridge-gradle:ensureBintrayAvailable
+          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
+          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
       - name: :kotlin-jvm-blocking-bridge:publish
         run: ./gradlew
-        :kotlin-jvm-blocking-bridge:publish
-        -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-        -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+          :kotlin-jvm-blocking-bridge:publish
+          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
+          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
       - name: :kotlin-jvm-blocking-bridge-compiler:bintrayUpload
         run: ./gradlew
-        :kotlin-jvm-blocking-bridge-compiler:bintrayUpload
-        -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-        -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+          :kotlin-jvm-blocking-bridge-compiler:bintrayUpload
+          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
+          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
       - name: :kotlin-jvm-blocking-bridge-compiler-embeddable:bintrayUpload
         run: ./gradlew
-        :kotlin-jvm-blocking-bridge-compiler-embeddable:bintrayUpload
-        -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-        -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+          :kotlin-jvm-blocking-bridge-compiler-embeddable:bintrayUpload
+          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
+          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
       - name: :kotlin-jvm-blocking-bridge-gradle:bintrayUpload
         run: ./gradlew
-        :kotlin-jvm-blocking-bridge-gradle:bintrayUpload
-        -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-        -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+          :kotlin-jvm-blocking-bridge-gradle:bintrayUpload
+          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
+          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
       - name: Publish Gradle plugin
         run: ./gradlew
-        :kotlin-jvm-blocking-bridge-gradle:publishPlugins
-        -Dgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }} -Pgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }}
-        -Dgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }} -Pgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }}
+          :kotlin-jvm-blocking-bridge-gradle:publishPlugins
+          -Dgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }} -Pgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }}
+          -Dgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }} -Pgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }}
