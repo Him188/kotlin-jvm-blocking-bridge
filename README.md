@@ -96,7 +96,9 @@ suspend fun test(a1: Int, a2: Any): String
 This plugin generates the non-suspend bridge function with the same signature (visible only from Java)
 ```kotlin
 @GeneratedBlockingBridge
-fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
+fun test(a1: Int, a2: Any): String = runBlocking { 
+    test(a1, a2) // calls the original suspend `test` 
+} // runBlocking is for demonstration. KJBB compiles your code in a smart way and doesn't require kotlinx-coroutines-core. 
 ```
 
 ### IDE plugin
