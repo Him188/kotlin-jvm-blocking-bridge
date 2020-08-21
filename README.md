@@ -82,6 +82,9 @@ With the help of the IDE plugin, `suspend fun downloadImage` is not visible to J
 - Provides `internal annotation class net.mamoe.kjbb.GeneratedBlockingBridge` that is added implicitly to generated bridges.
 - Provides some internal functions used by generated bridges.
 
+**Important Note**: the runtime library contains not only the annotations, but also coroutine runner functions which is required by the compiler plugin.  
+Therefore, you should not exclude the runtime library in shadowed jars (if your project uses so) or when running your application.
+
 ### Compiler plugin
 
 Given Kotlin `suspend` function:
@@ -112,7 +115,10 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 
 The plugin is ready to use.
 
-1. **Install IntelliJ IDEA (or Android Studio) plugin**  
+### Library users
+If you use a library that uses Kotlin Jvm Blocking Bridge, you need to install the IntelliJ plugin.
+
+#### **Install IntelliJ IDEA (or Android Studio) plugin**
    The plugin currently supports from 2019.\* to 2020.\*  
    It's strongly recommended using the latest IJ or AS, you may update using [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/)  
    Please note that Eclipse and Visual Studio aren't supported.
@@ -125,8 +131,10 @@ The plugin is ready to use.
    2. Search `Kotlin Jvm Blocking Bridge`, download and install
    3. Restart your IDE
 
+### Library authors
+If you're developing a library with KJBB, you need to install the Gradle plugin additionally.
 
-2. **Install Gradle plugin.**
+#### **Install Gradle plugin**
 
 `build.gradle` or `build.gradle.kts`
 ```kotlin
@@ -144,11 +152,11 @@ pluginManagement {
 }
 ```
 
-The plugin will automatically install runtime annotation library for you, as:
+The plugin will automatically install runtime library for you, as:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.0.3")
 ```
-Therefore, you need only to install the plugin.
+Therefore, you need only to install the plugin, and the compiler plugin will work finely.
 
 ## Supported compiler backends
 
@@ -165,3 +173,12 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.useIR = true
 }
 ```
+
+
+## Kotlin mulitplatform projects (MPP)
+
+KJBB compiler and gradle plugins supports Kotlin MPP 'as is'.
+
+The runtime library currently supports targets `jvm`(compatible for `android`), `js`, `native`.
+
+The runtime library is publish in the new layout came from Kotlin 1.4.0, and the dependency is set up auto matically by the gradle plugin.

@@ -111,9 +111,11 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
 
 ## 现在体验
 
-编译器插件已经完成, 可添加 Gradle 插件依赖:
+### 使用者
+**如果一个库使用了 Kotlin Jvm Blocking Bridge (下文简称 KJBB), 则依赖方需要安装 IntelliJ 插件**
 
-1. **安装 IntelliJ IDEA (或 Android Studio) 插件**
+
+#### **安装 IntelliJ IDEA (或 Android Studio) 插件**
    本插件支持 IntelliJ IDEA 2019.\* 到 2020.\*  
    强烈建议使用最新版本的 IntelliJ 或 AS, 可以使用 [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/) 获取更新  
    Eclipse 和 Visual Studio 或其他 IDE 均不受支持.
@@ -123,7 +125,10 @@ fun test(a1: Int, a2: Any): String = runBlocking { test(a1, a2) }
    3. 重启 IDE
 
 
-2. **安装 Gradle 插件.**
+### 库作者
+如果你正开发一个库, 你还需要额外安装 Gradle 插件 (不支持 Maven)
+
+#### **安装 Gradle 插件.**
 
 `build.gradle` 或 `build.gradle.kts`
 ```kotlin
