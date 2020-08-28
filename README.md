@@ -162,7 +162,7 @@ Therefore, you need only to install the plugin, and the compiler plugin will wor
 
 ## Supported compiler backends
 
-Kotlin compiler has two backends, one of which, `JVM`, is the legacy one and is going to be replaced with the new one, named `IR` (Intermediate Representation).  
+Kotlin compiler has two backends, one of which, `JVM`, is the legacy one and is going to be replaced with the new one, named `IR` (Internal Representation).  
 Currently, legacy `JVM` backend is used by default since it's more stable than the `IR`.
 
 This plugin supports both of them.
@@ -181,6 +181,6 @@ tasks.withType<KotlinCompile> {
 
 KJBB compiler and gradle plugins supports Kotlin MPP 'as is'.
 
-The runtime library currently supports targets `jvm`(compatible for `android`), `js`, `native`.
+The runtime library supports all MPP targets.
 
 The runtime library is publish in the new layout came from Kotlin 1.4.0, and the dependency is set up auto matically by the gradle plugin.
