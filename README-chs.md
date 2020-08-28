@@ -4,7 +4,7 @@
 
 为 Kotlin `suspend` 函数快速生成阻塞式方法桥的 Kotlin 编译器插件.
 
-## 截图
+### 截图
 <details>
 
 <summary>点击左侧箭头查看</summary>
@@ -121,6 +121,8 @@ fun test(a1: Int, a2: Any): String = runBlocking {
    本插件支持 IntelliJ IDEA 2019.\* 到 2020.\*  
    强烈建议使用最新版本的 IntelliJ 或 AS, 可以使用 [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/) 获取更新  
    Eclipse 和 Visual Studio 或其他 IDE 均不受支持.
+   
+   一键安装: https://plugins.jetbrains.com/embeddable/install/14816, 或者也可以手动安装:
 
    1. 打开 `File->Settings->Plugins->Marketplace`
    2. 搜索 `Kotlin Jvm Blocking Bridge`, 下载并安装
