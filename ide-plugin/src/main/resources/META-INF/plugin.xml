@@ -17,13 +17,6 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.kotlin</depends>
 
-    <change-notes>
-        New Inspections: INTERFACE_NOT_SUPPORTED, INLINE_CLASSES_NOT_SUPPORTED.
-        Rework analyzer, it now supports overridden methods
-        IDE plugin supports resolving bridges generated in superclasses
-        Compiler plugin supports generating bridges for interfaces
-    </change-notes>
-
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.lineMarkerProvider language="JAVA"
                                         implementationClass="net.mamoe.kjbb.ide.BlockingBridgeLineMarkerProvider"/>

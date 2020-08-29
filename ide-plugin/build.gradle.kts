@@ -54,6 +54,9 @@ tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishTask::class
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
     sinceBuild("193.*")
     untilBuild("205.*")
+    changeNotes("""
+        Fix cancellation on analyzing augments
+    """.trimIndent())
 }
 
 setupPublishing(
