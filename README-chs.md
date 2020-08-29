@@ -101,7 +101,6 @@ fun test(a1: Int, a2: Any): String = runBlocking {
 
 ### IDE (IntelliJ) 插件
 
-- 在发现 `@JvmBlockingBridge` 引用时诊断编译器插件依赖的存在性
 - 为 Java 用户隐藏标记了 `@JvmBlockingBridge` 的 `suspend` 函数
 - 让 Java 用户能引用阻塞式方法桥 (即使它们还没有生成)
 - 为 Kotlin 用户隐藏生成的阻塞式方法桥 (即使它们已经生成)
@@ -158,7 +157,7 @@ implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.0.3")
 
 ## 支持的编译器后端
 
-Kotlin 拥有两个编译器后端, 旧 `JVM` 和新 `IR`(Intermediate Representation).  
+Kotlin 拥有两个编译器后端, 旧 `JVM` 和新 `IR`(Internal Representation).  
 Kotlin 默认使用目前较稳定的 `JVM` 后端, 但将在未来启用 `IR` 后端.
 
 本插件同时支持这两个后端. 若在使用时遇到编译错误 (堆栈中能找到 `net.mamoe.kjbb`), 请切换到 `IR` 后端.
