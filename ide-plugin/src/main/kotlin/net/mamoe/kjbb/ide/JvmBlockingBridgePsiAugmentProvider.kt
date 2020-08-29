@@ -1,6 +1,7 @@
 package net.mamoe.kjbb.ide
 
 import com.intellij.lang.Language
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.RecursionManager
 import com.intellij.psi.*
 import com.intellij.psi.augment.PsiAugmentProvider
@@ -63,7 +64,7 @@ internal fun PsiExtensibleClass.generateAugmentElements(): List<PsiElement> {
     return this.ownMethods.asSequence()
         .filter { it.canHaveBridgeFunctions() }
         .filterIsInstance<KtLightMethod>()
-        .map { it.generateLightMethod() }
+        .mapNotNull { it.generateLightMethod() } // if null, the user is typing a function
         .toList()
 }
 
@@ -128,7 +129,8 @@ internal fun PsiMethod.isSuspend(): Boolean =
 
 internal fun PsiMethod.isJvmStatic(): Boolean = hasAnnotation(JvmStatic::class.qualifiedName!!)
 
-internal fun KtLightMethod.generateLightMethod(): PsiMethod {
+internal fun KtLightMethod.generateLightMethod(): PsiMethod? {
+    ProgressManager.checkCanceled()
     val originMethod = this
 
     return BlockingBridgeStubMethod(
@@ -165,18 +167,20 @@ internal fun KtLightMethod.generateLightMethod(): PsiMethod {
             addException(referenceElement.qualifiedName)
         }
 
-        originMethod.hierarchicalMethodSignature.parameterTypes.last().let { continuationParamType ->
-            val psiClassReferenceType = continuationParamType as PsiClassReferenceType
+        ProgressManager.checkCanceled()
+        originMethod.hierarchicalMethodSignature.parameterTypes.lastOrNull().let { it ?: return null }
+            .let { continuationParamType ->
+                val psiClassReferenceType = continuationParamType as? PsiClassReferenceType ?: return null
 
-            when (val type = psiClassReferenceType.parameters[0]) {
-                is PsiWildcardType -> {
-                    setMethodReturnType(type.bound)
-                }
-                else -> {
-                    setMethodReturnType(type.canonicalText)
+                when (val type = psiClassReferenceType.parameters.getOrNull(0) ?: return null) {
+                    is PsiWildcardType -> {
+                        setMethodReturnType(type.bound)
+                    }
+                    else -> {
+                        setMethodReturnType(type.canonicalText)
+                    }
                 }
             }
-        }
 
         this.containingClass = originMethod.containingClass
 
