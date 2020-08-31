@@ -517,7 +517,7 @@ private fun FunctionDescriptor.bridgesModality(): Int {
         CLASS,
         -> {
             when (containingClass.modality) {
-                Modality.OPEN, Modality.ABSTRACT -> ACC_OPEN
+                Modality.OPEN, Modality.ABSTRACT, Modality.SEALED -> ACC_OPEN
                 else -> ACC_FINAL
             }
         }

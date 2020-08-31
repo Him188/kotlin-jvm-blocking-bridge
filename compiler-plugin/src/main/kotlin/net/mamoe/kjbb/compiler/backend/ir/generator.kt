@@ -109,6 +109,9 @@ internal val IrDeclarationContainer.isAbstract: Boolean
 internal val IrDeclarationContainer.isOpen: Boolean
     get() = (this as? IrClass)?.modality == Modality.OPEN
 
+internal val IrDeclarationContainer.isSealed: Boolean
+    get() = (this as? IrClass)?.modality == Modality.SEALED
+
 internal val IrDeclarationContainer.isPrivate: Boolean
     get() = (this as? IrDeclarationWithVisibility)?.visibility == Visibilities.PRIVATE
 
@@ -119,7 +122,7 @@ internal val IrClass.isInsidePrivateClass: Boolean
 internal fun IrDeclarationContainer.computeModalityForBridgeFunction(): Modality {
     if (isInterface) return Modality.OPEN
     return when {
-        isOpen || isAbstract -> Modality.OPEN
+        isOpen || isAbstract || isSealed -> Modality.OPEN
         else -> Modality.FINAL
     }
 }

@@ -15,7 +15,7 @@ internal sealed class VisibilityAndModalityTest(
     internal class Jvm : VisibilityAndModalityTest(ir = false)
 
     @Test
-    fun `public final bridge for public final function in public final object`() = testJvmCompile(
+    fun `final bridge for final function in final object`() = testJvmCompile(
         """
             object TestData {
                 @JvmBlockingBridge
@@ -30,7 +30,7 @@ internal sealed class VisibilityAndModalityTest(
     }
 
     @Test
-    fun `public open bridge for interfaces`() = testJvmCompile(
+    fun `open bridge for interfaces`() = testJvmCompile(
         """
             interface TestData {
                 @JvmBlockingBridge
@@ -52,9 +52,31 @@ internal sealed class VisibilityAndModalityTest(
     }
 
     @Test
-    fun `public final bridge for abstract classes`() = testJvmCompile(
+    fun `open bridge for abstract classes`() = testJvmCompile(
         """
             abstract class TestData {
+                @JvmBlockingBridge
+                open suspend fun test() {}
+                
+                @JvmBlockingBridge
+                abstract suspend fun test2()
+            }
+        """, noMain = true
+    ) {
+        classLoader.loadClass("TestData").getMethod("test").run {
+            assertEquals(PUBLIC, this.visibility)
+            assertEquals(OPEN, this.modality)
+        }
+        classLoader.loadClass("TestData").getMethod("test2").run {
+            assertEquals(PUBLIC, this.visibility)
+            assertEquals(OPEN, this.modality)
+        }
+    }
+
+    @Test
+    fun `open bridge for sealed classes`() = testJvmCompile(
+        """
+            sealed class TestData {
                 @JvmBlockingBridge
                 open suspend fun test() {}
                 
