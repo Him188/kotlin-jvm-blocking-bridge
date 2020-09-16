@@ -70,6 +70,15 @@ sealed class BlockingBridgeAnalyzeResult(
         override fun createDiagnostic(): Diagnostic? =
             REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS.on(inspectionTarget)
     }
+
+    /**
+     * With JVM backend
+     */
+    class TopLevelFunctionsNotSupported(
+        private val inspectionTarget: PsiElement,
+    ) : BlockingBridgeAnalyzeResult(false, false) {
+        override fun createDiagnostic(): Diagnostic? = TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED.on(inspectionTarget)
+    }
 }
 
 internal fun TargetPlatform.isJvm8OrHigher(): Boolean {
@@ -102,7 +111,7 @@ internal fun PsiElement.isChildOf(parent: PsiElement): Boolean = this.parents.an
 
 internal fun ClassDescriptor.isInterface(): Boolean = this.kind == ClassKind.INTERFACE
 
-fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeResult {
+fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(isIr: Boolean): BlockingBridgeAnalyzeResult {
     val jvmBlockingBridgeAnnotation = jvmBlockingBridgeAnnotation()
         ?: return BlockingBridgeAnalyzeResult.MISSING_ANNOTATION_PSI
 
@@ -110,6 +119,11 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAn
     if (isEffectivelyPrivateApi) return BlockingBridgeAnalyzeResult.RedundantForPrivateDeclarations(
         jvmBlockingBridgeAnnotation)
     val containingClass = containingClass
+    if (containingClass == null) {
+        if (!isIr) {
+            return BlockingBridgeAnalyzeResult.TopLevelFunctionsNotSupported(jvmBlockingBridgeAnnotation)
+        }
+    }
     if (containingClass?.isInlineClass() == true)
         return BlockingBridgeAnalyzeResult.InlineClassesNotSupported(jvmBlockingBridgeAnnotation, containingClass)
     allParameters.firstOrNull { it.type.isInlineClassType() }?.let { param ->

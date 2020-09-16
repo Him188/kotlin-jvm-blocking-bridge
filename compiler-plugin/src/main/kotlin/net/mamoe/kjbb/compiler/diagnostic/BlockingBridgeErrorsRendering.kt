@@ -15,7 +15,7 @@ object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
 
         put(
             OVERRIDING_GENERATED_BLOCKING_BRIDGE,
-            "Overriding generated JvmBlockingBridge: ''{0}''",
+            "Overriding generated JvmBlockingBridge: ''{0}''.",
             Renderers.STRING
         )
 
@@ -26,18 +26,23 @@ object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
 
         put(
             INAPPLICABLE_JVM_BLOCKING_BRIDGE,
-            "@JvmBlockingBridge is not applicable on this declaration"
+            "@JvmBlockingBridge is not applicable on this declaration."
         )
 
         put(
             INLINE_CLASSES_NOT_SUPPORTED,
-            "Inline class is not supported for ''{0}''",
+            "Inline class is not supported for ''{0}''.",
             Renderers.DECLARATION_NAME_WITH_KIND
         )
 
         put(
             INTERFACE_NOT_SUPPORTED,
-            "Interface is not supported for jvm target lower than 8"
+            "Interface is not supported for jvm target lower than 8."
+        )
+
+        put(
+            TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED,
+            "Top-level functions are not yet supported with the legacy JVM compiler backend."
         )
     }
 

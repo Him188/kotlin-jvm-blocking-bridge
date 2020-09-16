@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.container.StorageComponentContainer
 import org.jetbrains.kotlin.container.useInstance
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
@@ -19,7 +20,7 @@ open class JvmBlockingBridgeComponentRegistrar : ComponentRegistrar {
 
     override fun registerProjectComponents(
         project: MockProject,
-        configuration: CompilerConfiguration
+        configuration: CompilerConfiguration,
     ) {
         // if (configuration[KEY_ENABLED] == false) {
         //     return
@@ -31,9 +32,9 @@ open class JvmBlockingBridgeComponentRegistrar : ComponentRegistrar {
             override fun registerModuleComponents(
                 container: StorageComponentContainer,
                 platform: TargetPlatform,
-                moduleDescriptor: ModuleDescriptor
+                moduleDescriptor: ModuleDescriptor,
             ) {
-                container.useInstance(BlockingBridgeDeclarationChecker())
+                container.useInstance(BlockingBridgeDeclarationChecker(configuration[JVMConfigurationKeys.IR, false]))
             }
         })
         IrGenerationExtension.registerExtension(project, JvmBlockingBridgeIrGenerationExtension())

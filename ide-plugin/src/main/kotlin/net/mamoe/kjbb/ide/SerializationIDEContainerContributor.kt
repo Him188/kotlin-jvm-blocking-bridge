@@ -11,8 +11,8 @@ class JvmBlockingBridgeIDEContainerContributor : StorageComponentContainerContri
     override fun registerModuleComponents(
         container: StorageComponentContainer,
         platform: TargetPlatform,
-        moduleDescriptor: ModuleDescriptor
+        moduleDescriptor: ModuleDescriptor,
     ) {
-        container.useInstance(BlockingBridgeDeclarationChecker())
+        container.useInstance(BlockingBridgeDeclarationChecker(false)) // TODO: 2020/9/16 How to check which compiler is in use?
     }
 }

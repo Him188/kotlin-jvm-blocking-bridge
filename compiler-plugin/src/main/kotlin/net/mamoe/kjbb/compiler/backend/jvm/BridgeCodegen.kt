@@ -74,7 +74,7 @@ class BridgeCodegen(
 
         for (function in functions) {
             if (function.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
-                val capability = function.analyzeCapabilityForGeneratingBridges()
+                val capability = function.analyzeCapabilityForGeneratingBridges(false)
                 if (!capability.diagnosticPassed) capability.createDiagnostic()?.let(::report)
                 if (capability.shouldGenerate) function.generateBridge()
             }

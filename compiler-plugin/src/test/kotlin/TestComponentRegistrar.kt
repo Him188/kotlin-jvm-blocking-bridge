@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
 import org.jetbrains.kotlin.com.intellij.mock.MockProject
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.container.StorageComponentContainer
 import org.jetbrains.kotlin.container.useInstance
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
@@ -26,7 +27,7 @@ open class TestComponentRegistrar : ComponentRegistrar {
                 platform: TargetPlatform,
                 moduleDescriptor: ModuleDescriptor,
             ) {
-                container.useInstance(BlockingBridgeDeclarationChecker())
+                container.useInstance(BlockingBridgeDeclarationChecker(configuration[JVMConfigurationKeys.IR, false]))
             }
         })
         IrGenerationExtension.registerExtension(project, JvmBlockingBridgeIrGenerationExtension())

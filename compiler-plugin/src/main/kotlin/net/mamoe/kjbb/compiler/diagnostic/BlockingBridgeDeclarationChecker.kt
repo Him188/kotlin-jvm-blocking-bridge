@@ -13,7 +13,9 @@ import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.resolve.checkers.DeclarationChecker
 import org.jetbrains.kotlin.resolve.checkers.DeclarationCheckerContext
 
-open class BlockingBridgeDeclarationChecker : DeclarationChecker {
+open class BlockingBridgeDeclarationChecker(
+    private val isIr: Boolean,
+) : DeclarationChecker {
     override fun check(
         declaration: KtDeclaration,
         descriptor: DeclarationDescriptor,
@@ -52,7 +54,7 @@ open class BlockingBridgeDeclarationChecker : DeclarationChecker {
             return BREAK
         }
 
-        val result = descriptor.analyzeCapabilityForGeneratingBridges()
+        val result = descriptor.analyzeCapabilityForGeneratingBridges(isIr)
         result.createDiagnostic()?.let(context::report)
         return CONTINUE
     }

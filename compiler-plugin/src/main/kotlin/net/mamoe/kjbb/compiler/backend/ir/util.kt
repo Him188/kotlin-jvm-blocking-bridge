@@ -53,7 +53,7 @@ fun IrFunction.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(JVM_BL
  * - have parent [IrClass]
  */
 fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeResult =
-    descriptor.analyzeCapabilityForGeneratingBridges()
+    descriptor.analyzeCapabilityForGeneratingBridges(true)
 
 
 internal val IrFunction.isFinal get() = this is IrSimpleFunction && this.modality == Modality.FINAL

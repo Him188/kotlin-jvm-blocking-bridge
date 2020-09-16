@@ -35,7 +35,8 @@ internal fun IrDeclaration.transformFlat(context: IrPluginContext): List<IrDecla
             return listOf()
 
         if (declaration.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
-            val capability: BlockingBridgeAnalyzeResult = declaration.descriptor.analyzeCapabilityForGeneratingBridges()
+            val capability: BlockingBridgeAnalyzeResult =
+                declaration.descriptor.analyzeCapabilityForGeneratingBridges(true)
             capability.createDiagnostic()?.let { diagnostic ->
                 DiagnosticSink.THROW_EXCEPTION.report(diagnostic)
             }
