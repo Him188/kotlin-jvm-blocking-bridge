@@ -125,6 +125,18 @@ Reported when `@JvmBlockingBridge` is applied to a function which either:
 #### `INTERFACE_NOT_SUPPORTED`
 Reported when `@JvmBlockingBridge` is applied to a function in an interface, and the JVM target is below 8
 
+#### `TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED`
+*(Since `1.1.0`)*
+Reported using `@JvmBlockingBridge` on top-level functions (as there isn't a way to hack into the file-class codegen).
+
+**Note**:
+Codegen extensions for top-level functions are not available in the old JVM backend. The compiler plugin generate bridges for top-level functions only if using IR backend, otherwise, an error `TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED` will be reported.
+
+However, the IDE plugin cannot decide which compiler backend is currently in use, so the error `TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED` is always reported by the IDE.
+
+If you use IR backend, you can suppress this error by adding `@Suppress("TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED")`.  
+If you use JVM backend, you may change the way designing your API.
+
 ### Warnings
 
 #### `REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS`
