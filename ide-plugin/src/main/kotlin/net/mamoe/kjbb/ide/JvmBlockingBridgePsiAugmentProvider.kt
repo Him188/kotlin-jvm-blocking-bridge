@@ -69,8 +69,8 @@ internal fun PsiExtensibleClass.generateAugmentElements(): List<PsiElement> {
 }
 
 internal fun PsiMethod.canHaveBridgeFunctions(): Boolean {
-    return if (isSuspend()
-        && Name.isValidIdentifier(this.name)
+    if (!isSuspend()) return false
+    return if (Name.isValidIdentifier(this.name)
         && this.hasAnnotation(JvmBlockingBridge::class.qualifiedName!!)
     ) {
         true
