@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.diagnostics.rendering.DiagnosticFactoryToRendererMap
 import org.jetbrains.kotlin.diagnostics.rendering.Renderers
 
 object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
-    private val MAP = DiagnosticFactoryToRendererMap("SerializationPlugin").apply {
+    private val MAP = DiagnosticFactoryToRendererMap("JvmBlockingBridge").apply {
         /*put(
             PLUGIN_IS_NOT_ENABLED,
             "JvmBlockingBridge compiler plugin is not applied to the module, so this annotation would not be processed. " +
