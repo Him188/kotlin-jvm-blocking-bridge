@@ -85,18 +85,18 @@ IDE (IntelliJ) 插件会帮助为 Java 调用方隐藏 `suspend fun downloadImag
 
 ### 编译器插件
 
-Given Kotlin `suspend` function:
+对于 Kotlin `suspend` 函数:
 ```kotlin
 @JvmBlockingBridge
 suspend fun test(a1: Int, a2: Any): String
 ```
 
-This plugin generates the non-suspend bridge function with the same signature (visible only from Java)
+本编译器插件生成与原函数具有相同签名的阻塞式方法桥 (仅 Java 可见)
 ```kotlin
 @GeneratedBlockingBridge
 fun test(a1: Int, a2: Any): String = runBlocking { 
     test(a1, a2) // 调用原 suspend `test`  
-} // runBlocking 仅作为演示. KJBB 会更聪明地编译你的代码, 并且不依赖 kotlinx-coroutines-core.
+} // runBlocking 仅作为演示. KJBB 会更聪明地编译代码, 并且不依赖 kotlinx-coroutines-core.
 ```
 
 ### IDE (IntelliJ) 插件
@@ -113,7 +113,11 @@ fun test(a1: Int, a2: Any): String = runBlocking {
 ## 现在体验
 
 ### 使用者
-**如果一个库使用了 Kotlin Jvm Blocking Bridge (下文简称 KJBB), 则依赖方需要安装 IntelliJ 插件**
+**如果一个库使用了 Kotlin Jvm Blocking Bridge (下文简称 KJBB), 则依赖方可以不安装 IntelliJ 插件**
+
+IntelliJ 会自动读取库中的函数信息, 因此 Java 用户可以正常使用一个库中的阻塞桥. 此时安装 IntelliJ 插件可以获得调用时的错误分析等功能, 不安装也不会影响使用.
+
+如果一个项目混用 Java 和 Kotlin, Kotlin 函数使用了 KJBB, 那么必须安装 IntelliJ 插件才能调用这些方法. (如果不安装, 编译正常但源码内会报错)
 
 
 #### **安装 IntelliJ IDEA (或 Android Studio) 插件**
