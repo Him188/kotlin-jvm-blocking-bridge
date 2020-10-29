@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
+
 plugins {
     id("org.jetbrains.intellij") version "0.4.16"
     kotlin("jvm")
@@ -37,7 +39,7 @@ intellij {
     updateSinceUntilBuild = false
 
     setPlugins(
-        "org.jetbrains.kotlin:1.4.0-release-IJ2020.2-1@staging"
+        "org.jetbrains.kotlin:1.4.20-M2-IJ2020.2-1@eap"
     )
 }
 
@@ -64,8 +66,8 @@ setupPublishing(
     artifactId = "kotlin-jvm-blocking-bridge-intellij"
 )
 
-kotlin {
-
+tasks.withType(KotlinJvmCompile::class) {
+    kotlinOptions.freeCompilerArgs += "-Xjvm-default=enable"
 }
 
 val theProject = project

@@ -3,17 +3,24 @@
 
 package net.mamoe.kjbb.compiler.backend.ir
 
+import com.intellij.psi.PsiElement
 import net.mamoe.kjbb.JvmBlockingBridge
 import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeAnalyzeResult
-import net.mamoe.kjbb.compiler.backend.jvm.analyzeCapabilityForGeneratingBridges
+import net.mamoe.kjbb.compiler.backend.jvm.GeneratedBlockingBridgeStubForResolution
+import net.mamoe.kjbb.compiler.backend.jvm.isJvm8OrHigher
+import org.jetbrains.kotlin.backend.common.ir.allParameters
+import org.jetbrains.kotlin.backend.jvm.codegen.psiElement
 import org.jetbrains.kotlin.codegen.topLevelClassAsmType
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.descriptors.effectiveVisibility
+import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
+import org.jetbrains.kotlin.ir.backend.js.utils.realOverrideTarget
+import org.jetbrains.kotlin.ir.declarations.IrAnnotationContainer
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
-import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
-import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
 
 
@@ -45,6 +52,10 @@ fun FunctionDescriptor.isJvmBlockingBridge(): Boolean = annotations.hasAnnotatio
  */
 fun IrFunction.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
 
+@OptIn(ObsoleteDescriptorBasedAPI::class)
+fun IrFunction.isGeneratedBlockingBridgeStub(): Boolean =
+    this.descriptor.getUserData(GeneratedBlockingBridgeStubForResolution) == true
+
 /**
  * Check whether a function is allowed to generate bridges with.
  *
@@ -52,9 +63,43 @@ fun IrFunction.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(JVM_BL
  * - be `final` or `open`
  * - have parent [IrClass]
  */
-fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeResult =
-    descriptor.analyzeCapabilityForGeneratingBridges(true)
+@OptIn(ObsoleteDescriptorBasedAPI::class)
+fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeResult {
+    val jvmBlockingBridgeAnnotation = jvmBlockingBridgeAnnotation()
+        ?: return BlockingBridgeAnalyzeResult.MISSING_ANNOTATION_PSI
 
+    if (isGeneratedBlockingBridgeStub()) return BlockingBridgeAnalyzeResult.FROM_STUB
+    if (visibility.normalize().effectiveVisibility(descriptor, true).privateApi)
+        return BlockingBridgeAnalyzeResult.RedundantForPrivateDeclarations(jvmBlockingBridgeAnnotation)
+    val containingClass = parentClassOrNull
+    if (containingClass?.isInline == true)
+        return BlockingBridgeAnalyzeResult.InlineClassesNotSupported(jvmBlockingBridgeAnnotation,
+            containingClass.descriptor)
+    allParameters.firstOrNull { it.type.isInlined() }?.let { param ->
+        return BlockingBridgeAnalyzeResult.InlineClassesNotSupported(
+            param.psiElement ?: jvmBlockingBridgeAnnotation, param.descriptor)
+    }
+
+    if (containingClass?.isInterface == true) { // null means top-level, which is also accepted
+        if (module.platform?.isJvm8OrHigher() != true)
+            return BlockingBridgeAnalyzeResult.InterfaceNotSupported(jvmBlockingBridgeAnnotation)
+    } else {
+        if (!isSuspend || name.isSpecial || !annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
+            return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotation)
+        }
+
+        val overridden = originalFunction.realOverrideTarget
+
+        if (overridden.analyzeCapabilityForGeneratingBridges() != BlockingBridgeAnalyzeResult.ALLOWED)// overriding a super function
+            return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden.descriptor, isReal)
+    }
+
+    return BlockingBridgeAnalyzeResult.ALLOWED
+}
+
+
+internal fun IrAnnotationContainer.jvmBlockingBridgeAnnotation(): PsiElement? =
+    annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)?.psiElement
 
 internal val IrFunction.isFinal get() = this is IrSimpleFunction && this.modality == Modality.FINAL
 internal val IrFunction.isOpen get() = this is IrSimpleFunction && this.modality == Modality.OPEN

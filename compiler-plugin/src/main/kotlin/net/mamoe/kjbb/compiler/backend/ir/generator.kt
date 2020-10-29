@@ -6,14 +6,12 @@ import org.jetbrains.kotlin.backend.common.ir.*
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.backend.common.lower.parents
 import org.jetbrains.kotlin.backend.jvm.codegen.fileParent
-import org.jetbrains.kotlin.descriptors.ClassKind
-import org.jetbrains.kotlin.descriptors.Modality
-import org.jetbrains.kotlin.descriptors.Visibilities
-import org.jetbrains.kotlin.descriptors.Visibility
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.*
 import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.declarations.impl.IrFactoryImpl
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrContainerExpression
@@ -113,7 +111,7 @@ internal val IrDeclarationContainer.isSealed: Boolean
     get() = (this as? IrClass)?.modality == Modality.SEALED
 
 internal val IrDeclarationContainer.isPrivate: Boolean
-    get() = (this as? IrDeclarationWithVisibility)?.visibility == Visibilities.PRIVATE
+    get() = (this as? IrDeclarationWithVisibility)?.visibility?.delegate == Visibilities.Private
 
 internal val IrClass.isInsidePrivateClass: Boolean
     get() =
@@ -127,15 +125,15 @@ internal fun IrDeclarationContainer.computeModalityForBridgeFunction(): Modality
     }
 }
 
-internal fun IrFunction.computeVisibilityForBridgeFunction(): Visibility {
-    if (parentFileOrClass.isInterface) return Visibilities.PUBLIC
+internal fun IrFunction.computeVisibilityForBridgeFunction(): DescriptorVisibility {
+    if (parentFileOrClass.isInterface) return DescriptorVisibilities.PUBLIC
     return this.visibility
 }
 
 fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List<IrDeclaration> {
     val containingFileOrClass = originFunction.parentFileOrClass
 
-    val bridgeFunction = buildFun {
+    val bridgeFunction = IrFactoryImpl.buildFun {
         startOffset = originFunction.startOffset
         endOffset = originFunction.endOffset
 
@@ -243,7 +241,7 @@ internal fun IrPluginContext.createSuspendLambdaWithCoroutineScope(
     lambdaType: IrSimpleType,
     originFunction: IrFunction,
 ): IrClass {
-    return buildClass {
+    return IrFactoryImpl.buildClass {
         name = SpecialNames.NO_NAME_PROVIDED
         kind = ClassKind.CLASS
         //isInner = true

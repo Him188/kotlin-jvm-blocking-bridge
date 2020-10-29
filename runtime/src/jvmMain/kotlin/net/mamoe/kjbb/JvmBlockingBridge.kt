@@ -1,5 +1,3 @@
-@file:Suppress("RedundantVisibilityModifier")
-
 package net.mamoe.kjbb
 
 /**

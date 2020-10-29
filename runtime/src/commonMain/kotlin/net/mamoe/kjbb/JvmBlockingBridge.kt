@@ -1,4 +1,3 @@
-@file:Suppress("RedundantVisibilityModifier")
 @file:OptIn(ExperimentalMultiplatform::class)
 
 package net.mamoe.kjbb

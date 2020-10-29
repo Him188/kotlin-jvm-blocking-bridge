@@ -140,7 +140,8 @@ class BridgeCodegen(
             ),
             originFunction.valueParameters,
             codegen,
-            generationState
+            generationState,
+            false
         )
 
         for ((index, param) in originFunction.extensionReceiverAndValueParameters().withIndex()) {
@@ -250,11 +251,11 @@ internal val FunctionDescriptor.asmStaticFlag: Int
         else -> 0
     }
 
-internal val Visibility.asmFlag: Int
+internal val DescriptorVisibility.asmFlag: Int
     get() = when (this) {
-        Visibilities.PUBLIC -> ACC_PUBLIC
-        Visibilities.PRIVATE -> ACC_PRIVATE
-        Visibilities.PROTECTED -> ACC_PROTECTED
+        DescriptorVisibilities.PUBLIC -> ACC_PUBLIC
+        DescriptorVisibilities.PRIVATE -> ACC_PRIVATE
+        DescriptorVisibilities.PROTECTED -> ACC_PROTECTED
         else -> ACC_PUBLIC
     }
 

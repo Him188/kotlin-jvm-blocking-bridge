@@ -131,10 +131,10 @@ fun testJvmCompile(
 
 internal val Method.visibility: Visibility
     get() = when {
-        Modifier.isPublic(this.modifiers) -> Visibilities.PUBLIC
-        Modifier.isPrivate(this.modifiers) -> Visibilities.PRIVATE
-        Modifier.isProtected(this.modifiers) -> Visibilities.PROTECTED
-        else -> Visibilities.PRIVATE_TO_THIS
+        Modifier.isPublic(this.modifiers) -> Visibilities.Public
+        Modifier.isPrivate(this.modifiers) -> Visibilities.Private
+        Modifier.isProtected(this.modifiers) -> Visibilities.Protected
+        else -> Visibilities.PrivateToThis
     }
 
 internal val Method.modality: Modality

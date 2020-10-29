@@ -1,9 +1,7 @@
 package net.mamoe.kjbb.compiler.backend.ir
 
 import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeAnalyzeResult
-import net.mamoe.kjbb.compiler.backend.jvm.analyzeCapabilityForGeneratingBridges
 import net.mamoe.kjbb.compiler.backend.jvm.followedBy
-import net.mamoe.kjbb.compiler.backend.jvm.isGeneratedBlockingBridgeStub
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -31,12 +29,12 @@ class JvmBlockingBridgeFileLoweringPass(
 internal fun IrDeclaration.transformFlat(context: IrPluginContext): List<IrDeclaration> {
     val declaration = this
     if (declaration is IrSimpleFunction) {
-        if (declaration.descriptor.isGeneratedBlockingBridgeStub())
+        if (declaration.isGeneratedBlockingBridgeStub())
             return listOf()
 
         if (declaration.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
             val capability: BlockingBridgeAnalyzeResult =
-                declaration.descriptor.analyzeCapabilityForGeneratingBridges(true)
+                declaration.analyzeCapabilityForGeneratingBridges()
             capability.createDiagnostic()?.let { diagnostic ->
                 DiagnosticSink.THROW_EXCEPTION.report(diagnostic)
             }

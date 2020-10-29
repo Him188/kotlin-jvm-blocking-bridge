@@ -3,7 +3,7 @@ package compiler
 import modality
 import org.jetbrains.kotlin.descriptors.Modality.FINAL
 import org.jetbrains.kotlin.descriptors.Modality.OPEN
-import org.jetbrains.kotlin.descriptors.Visibilities.PUBLIC
+import org.jetbrains.kotlin.descriptors.Visibilities
 import org.junit.jupiter.api.Test
 import visibility
 import kotlin.test.assertEquals
@@ -24,7 +24,7 @@ internal sealed class VisibilityAndModalityTest(
         """, noMain = true
     ) {
         classLoader.loadClass("TestData").getMethod("test").run {
-            assertEquals(PUBLIC, this.visibility)
+            assertEquals(Visibilities.Public, this.visibility)
             assertEquals(FINAL, this.modality)
         }
     }
@@ -42,11 +42,11 @@ internal sealed class VisibilityAndModalityTest(
         """, noMain = true
     ) {
         classLoader.loadClass("TestData").getMethod("test").run {
-            assertEquals(PUBLIC, this.visibility)
+            assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
         }
         classLoader.loadClass("TestData").getMethod("test2").run {
-            assertEquals(PUBLIC, this.visibility)
+            assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
         }
     }
@@ -64,11 +64,11 @@ internal sealed class VisibilityAndModalityTest(
         """, noMain = true
     ) {
         classLoader.loadClass("TestData").getMethod("test").run {
-            assertEquals(PUBLIC, this.visibility)
+            assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
         }
         classLoader.loadClass("TestData").getMethod("test2").run {
-            assertEquals(PUBLIC, this.visibility)
+            assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
         }
     }
@@ -86,11 +86,11 @@ internal sealed class VisibilityAndModalityTest(
         """, noMain = true
     ) {
         classLoader.loadClass("TestData").getMethod("test").run {
-            assertEquals(PUBLIC, this.visibility)
+            assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
         }
         classLoader.loadClass("TestData").getMethod("test2").run {
-            assertEquals(PUBLIC, this.visibility)
+            assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
         }
     }
