@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.name.FqName
 
 
@@ -66,7 +67,7 @@ fun IrFunction.isGeneratedBlockingBridgeStub(): Boolean =
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeResult {
     val jvmBlockingBridgeAnnotation = jvmBlockingBridgeAnnotation()
-        ?: return BlockingBridgeAnalyzeResult.MISSING_ANNOTATION_PSI
+        ?: descriptor.findPsi() ?: return BlockingBridgeAnalyzeResult.MISSING_ANNOTATION_PSI
 
     if (isGeneratedBlockingBridgeStub()) return BlockingBridgeAnalyzeResult.FROM_STUB
     if (visibility.normalize().effectiveVisibility(descriptor, true).privateApi)
@@ -90,7 +91,7 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
 
         val overridden = originalFunction.realOverrideTarget
 
-        if (overridden.analyzeCapabilityForGeneratingBridges() != BlockingBridgeAnalyzeResult.ALLOWED)// overriding a super function
+        if (overridden === this || overridden.analyzeCapabilityForGeneratingBridges() != BlockingBridgeAnalyzeResult.ALLOWED)// overriding a super function
             return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden.descriptor, isReal)
     }
 

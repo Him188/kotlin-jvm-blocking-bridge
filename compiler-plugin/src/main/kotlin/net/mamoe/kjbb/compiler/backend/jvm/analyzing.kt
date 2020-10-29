@@ -33,7 +33,7 @@ sealed class BlockingBridgeAnalyzeResult(
     class Inapplicable(
         private val inspectionTarget: PsiElement,
     ) : BlockingBridgeAnalyzeResult(false) {
-        override fun createDiagnostic(): Diagnostic? = INAPPLICABLE_JVM_BLOCKING_BRIDGE.on(inspectionTarget)
+        override fun createDiagnostic(): Diagnostic = INAPPLICABLE_JVM_BLOCKING_BRIDGE.on(inspectionTarget)
     }
 
     /**
@@ -50,7 +50,7 @@ sealed class BlockingBridgeAnalyzeResult(
     class InterfaceNotSupported(
         private val inspectionTarget: PsiElement,
     ) : BlockingBridgeAnalyzeResult(false) {
-        override fun createDiagnostic(): Diagnostic? = INTERFACE_NOT_SUPPORTED.on(inspectionTarget)
+        override fun createDiagnostic(): Diagnostic = INTERFACE_NOT_SUPPORTED.on(inspectionTarget)
     }
 
     class InlineClassesNotSupported(
@@ -60,14 +60,14 @@ sealed class BlockingBridgeAnalyzeResult(
         private val inspectionTarget: PsiElement,
         private val causeDeclaration: DeclarationDescriptor,
     ) : BlockingBridgeAnalyzeResult(false) {
-        override fun createDiagnostic(): Diagnostic? =
+        override fun createDiagnostic(): Diagnostic =
             INLINE_CLASSES_NOT_SUPPORTED.on(inspectionTarget, causeDeclaration)
     }
 
     class RedundantForPrivateDeclarations(
         private val inspectionTarget: PsiElement,
     ) : BlockingBridgeAnalyzeResult(false, false) {
-        override fun createDiagnostic(): Diagnostic? =
+        override fun createDiagnostic(): Diagnostic =
             REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS.on(inspectionTarget)
     }
 
@@ -77,7 +77,7 @@ sealed class BlockingBridgeAnalyzeResult(
     class TopLevelFunctionsNotSupported(
         private val inspectionTarget: PsiElement,
     ) : BlockingBridgeAnalyzeResult(false, false) {
-        override fun createDiagnostic(): Diagnostic? = TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED.on(inspectionTarget)
+        override fun createDiagnostic(): Diagnostic = TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED.on(inspectionTarget)
     }
 }
 
