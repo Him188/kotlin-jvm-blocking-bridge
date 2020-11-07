@@ -10,8 +10,10 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.util.companionObject
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.transformDeclarationsFlat
+import org.jetbrains.kotlin.utils.addToStdlib.cast
 
 /**
  * For top-level functions
@@ -58,5 +60,6 @@ class JvmBlockingBridgeClassLoweringPass(
         irClass.transformDeclarationsFlat { declaration ->
             declaration.transformFlat(context)
         }
+        irClass.companionObject()?.cast<IrClass>()?.let(::lower)
     }
 }
