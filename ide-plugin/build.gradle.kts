@@ -39,7 +39,7 @@ intellij {
     updateSinceUntilBuild = false
 
     setPlugins(
-        "org.jetbrains.kotlin:1.4.20-M2-IJ2020.2-1@eap"
+        "org.jetbrains.kotlin:1.4.20-RC-IJ2020.2-1@eap"
     )
 }
 
