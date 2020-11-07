@@ -114,99 +114,6 @@ internal sealed class BasicsTest(
     )
 
     @Test
-    fun `static`() = testJvmCompile(
-        """
-    object TestData {
-        @JvmStatic
-        @JvmBlockingBridge
-        suspend fun String.test(arg: String): String{
-            assertEquals("receiver", this)
-            assertEquals("p0", arg)
-            return "OK"
-        }
-        
-        fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
-    }
-"""
-    )
-
-    @Test
-    fun `static function in class`() = testJvmCompile(
-        """
-    class TestData {
-        companion object {
-            @JvmStatic
-            @JvmBlockingBridge
-            suspend fun String.test(arg: String): String{
-                assertEquals("receiver", this)
-                assertEquals("p0", arg)
-                return "OK"
-            }
-        }
-        
-        fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
-    }
-"""
-    )
-
-    @Test
-    fun `member function in class companion`() = testJvmCompile(
-        """
-    class TestData {
-        companion object {
-            @JvmStatic
-            @JvmBlockingBridge
-            suspend fun String.test(arg: String): String{
-                assertEquals("receiver", this)
-                assertEquals("p0", arg)
-                return "OK"
-            }
-        
-            fun main(): String = this.runFunction("test", "receiver", "p0")
-        }
-    }
-"""
-    )
-
-    @Test
-    fun `static function in interface`() = testJvmCompile(
-        """
-    interface TestData {
-        companion object {
-            @JvmStatic
-            @JvmBlockingBridge
-            suspend fun String.test(arg: String): String{
-                assertEquals("receiver", this)
-                assertEquals("p0", arg)
-                return "OK"
-            }
-        
-            fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
-        }
-    }
-"""
-    )
-
-    @Test
-    fun `member function in interface companion`() = testJvmCompile(
-        """
-    interface TestData {
-        companion object {
-            @JvmStatic
-            @JvmBlockingBridge
-            suspend fun String.test(arg: String): String{
-                assertEquals("receiver", this)
-                assertEquals("p0", arg)
-                return "OK"
-            }
-        
-            fun main(): String = this.runFunction("test", "receiver", "p0")
-        }
-    }
-"""
-    )
-
-    @Test
     fun `jvm name`() = testJvmCompile(
         """
     object TestData {
@@ -221,29 +128,6 @@ internal sealed class BasicsTest(
         fun main(): String = this.runFunction("test", "receiver", "p0")
     }
 """
-    )
-
-    @Test
-    fun `with Java`() = testJvmCompile(
-        """
-        //package test
-        object TestData {
-            @JvmBlockingBridge
-            suspend fun test() = "OK"
-            
-            fun main() = TestDataJ.main()
-        }
-    """,
-        """
-        //package test;
-        //import TestDataKt;
-        public class TestDataJ {
-            
-            public static String main() {
-                return TestData.INSTANCE.test();
-            }
-        }
-    """
     )
 
     @Test
