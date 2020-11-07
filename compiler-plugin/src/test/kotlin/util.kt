@@ -12,7 +12,9 @@ import java.io.File
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.*
-import kotlin.reflect.full.createInstance
+import kotlin.reflect.KClass
+import kotlin.reflect.KParameter
+import kotlin.reflect.full.companionObjectInstance
 import kotlin.test.assertEquals
 
 // Expose to top-package for TestData
@@ -121,13 +123,26 @@ fun testJvmCompile(
         val test = result.classLoader.loadClass("TestData")
         assertEquals(
             "OK",
-            (test.kotlin.objectInstance ?: test.kotlin.createInstance()).run {
-                this::class.java.methods.first { it.name == "main" }.invoke(this)
-            } as String)
+            listOfNotNull(
+                test.kotlin.objectInstance, test.kotlin.companionObjectInstance, test.kotlin.createInstanceOrNull()
+            ).associateWith { obj ->
+                obj::class.java.methods.find { it.name == "main" }
+            }.entries.find { it.value != null }?.let { (instance, method) ->
+                method!!.invoke(instance)
+            } as String? ?: error("Cannot find a `main`"))
     }
     block(result)
 }
 
+
+@SinceKotlin("1.1")
+fun <T : Any> KClass<T>.createInstanceOrNull(): T? {
+    // TODO: throw a meaningful exception
+    val noArgsConstructor = constructors.singleOrNull { it.parameters.all(KParameter::isOptional) }
+        ?: return null
+
+    return noArgsConstructor.callBy(emptyMap())
+}
 
 internal val Method.visibility: Visibility
     get() = when {
