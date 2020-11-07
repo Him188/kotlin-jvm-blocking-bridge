@@ -18,17 +18,20 @@ import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.ClassKind.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
+import org.jetbrains.kotlin.descriptors.impl.SimpleFunctionDescriptorImpl
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils
+import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.annotations.hasJvmStaticAnnotation
 import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
 import org.jetbrains.kotlin.resolve.constants.ArrayValue
 import org.jetbrains.kotlin.resolve.constants.KClassValue
 import org.jetbrains.kotlin.resolve.descriptorUtil.builtIns
+import org.jetbrains.kotlin.resolve.descriptorUtil.isCompanionObject
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
@@ -95,13 +98,11 @@ class BridgeCodegen(
             parametersForJvmOverload = extensionReceiverAndValueParameters().toKtParameterList()
         )
         //val methodSignature = originFunction.computeJvmDescriptor(withName = true)
-        val staticFlag = originFunction.asmStaticFlag
-
-        val isStatic = staticFlag != 0
+        val shouldGenerateAsStatic = isJvmStaticIn { !it.isCompanionObject() }
 
         val mv = v.newMethod(
             methodOrigin,
-            originFunction.bridgesModality() or originFunction.visibility.asmFlag or staticFlag,
+            originFunction.bridgesModality() or originFunction.visibility.asmFlag or (if (shouldGenerateAsStatic) ACC_STATIC else 0),
             methodName,
             extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
                 typeMapper,
@@ -158,10 +159,10 @@ class BridgeCodegen(
             visible = false
         )
 
-        originFunction.annotations
+        val newAnnotations = originFunction.annotations
             .filterNot { it.type.asmType().descriptor == GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor }
             .filterNot { it.type.asmType().descriptor == JVM_BLOCKING_BRIDGE_ASM_TYPE.descriptor }
-            .let { annotations ->
+            .also { annotations ->
                 AnnotationCodegen.forMethod(mv, codegen, generationState)
                     .genAnnotations(
                         AnnotatedImpl(Annotations.create(annotations)),
@@ -181,6 +182,35 @@ class BridgeCodegen(
             return
         }
 
+
+        // static bridge for static in companion
+        val newFunctionDescriptor = SimpleFunctionDescriptorImpl.create(
+            originFunction.containingDeclaration,
+            Annotations.create(newAnnotations),
+            originFunction.name,
+            originFunction.kind,
+            originFunction.source,
+        ).apply {
+            initialize(
+                originFunction.extensionReceiverParameter,
+                if (shouldGenerateAsStatic) null else clazz.thisAsReceiverParameter,
+                originFunction.typeParameters,
+                originFunction.valueParameters,
+                originFunction.returnTypeOrNothing,
+                originFunction.modality,
+                originFunction.visibility
+            )
+        }
+        if (isJvmStaticInCompanionObject()) {
+            val parentCodegen = codegen.parentCodegen as ImplementationBodyCodegen
+            parentCodegen.addAdditionalTask(
+                JvmStaticInCompanionObjectGenerator(newFunctionDescriptor,
+                    methodOrigin,
+                    generationState,
+                    codegen.parentCodegen as ImplementationBodyCodegen)
+            )
+        }
+
         // body
 
         val ownerType = clazz.defaultType.asmType()
@@ -193,7 +223,7 @@ class BridgeCodegen(
             codegen.v.thisName,
             codegen.context.contextKind,
             ownerType,
-            if (isStatic) null else clazz.thisAsReceiverParameter
+            if (shouldGenerateAsStatic) null else clazz.thisAsReceiverParameter
         ).let { Type.getObjectType(it) }
 
         //mv.visitParameter("\$\$this", 1)
@@ -210,7 +240,7 @@ class BridgeCodegen(
             anew(lambdaClassDescriptor)
             dup()
 
-            if (!isStatic) {
+            if (!shouldGenerateAsStatic) {
                 val thisIndex = stack.enterTemp(AsmTypes.OBJECT_TYPE)
                 load(thisIndex, ownerType) // dispatch
             }
@@ -244,12 +274,6 @@ class BridgeCodegen(
         FunctionCodegen.endVisit(mv, methodName, methodOrigin.element)
     }
 }
-
-internal val FunctionDescriptor.asmStaticFlag: Int
-    get() = when {
-        this.isJvmStatic() -> ACC_STATIC
-        else -> 0
-    }
 
 internal val DescriptorVisibility.asmFlag: Int
     get() = when (this) {
@@ -302,13 +326,14 @@ internal fun List<ParameterDescriptor>.toKtParameterList(): List<KtParameter?> {
 }
 
 internal fun FunctionDescriptor.allRequiredParameters(dispatchReceiver: ReceiverParameterDescriptor?): List<ParameterDescriptor> {
-    return if (!isJvmStatic()) dispatchReceiver!!.followedBy(extensionReceiverParameter.followedBy(valueParameters)) else extensionReceiverParameter.followedBy(
+    return if (!isJvmStaticInNonCompanionObject()) dispatchReceiver!!.followedBy(extensionReceiverParameter.followedBy(
+        valueParameters)) else extensionReceiverParameter.followedBy(
         valueParameters
     )
 }
 
-internal fun FunctionDescriptor.isJvmStatic(): Boolean =
-    isJvmStaticIn { true }
+fun CallableDescriptor.isJvmStaticInNonCompanionObject(): Boolean =
+    isJvmStaticIn { !DescriptorUtils.isCompanionObject(it) }
 
 private fun CallableDescriptor.isJvmStaticIn(predicate: (DeclarationDescriptor) -> Boolean): Boolean =
     when (this) {
@@ -349,7 +374,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     methodOwnerType: Type,
     dispatchReceiverParameterDescriptor: ReceiverParameterDescriptor?,
 ): String {
-    val isStatic = AsmUtil.isStaticMethod(contextKind, originFunction)
+    val isGeneratedAsStatic = originFunction.isJvmStaticIn { !it.isCompanionObject() }
 
     val internalName = originFunction.mangleBridgeLambdaClassname(parentName)
     val lambdaBuilder = state.factory.newVisitor(
@@ -486,7 +511,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
         // call origin function
         visitMethodInsn(
             when {
-                isStatic -> INVOKESTATIC
+                isGeneratedAsStatic -> INVOKESTATIC
                 originFunction.containingClass?.isInterface() == true -> INVOKEINTERFACE
                 else -> INVOKEVIRTUAL
             },

@@ -19,6 +19,26 @@ internal sealed class BasicsTest(
         ) {
             assertEquals("OK", classLoader.loadClass("TestDataKt").getDeclaredMethod("test").invoke(null))
         }
+
+
+        @Test
+        fun `static companion2`() = testJvmCompile(
+            """
+    class TestData {
+        companion object {
+            @JvmStatic
+            @JvmBlockingBridge
+            suspend fun String.test(arg: String): String{
+                assertEquals("receiver", this)
+                assertEquals("p0", arg)
+                return "OK"
+            }
+        }
+        
+        fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
+    }
+""", ir = false
+        )
     }
 
     internal class Jvm : BasicsTest(false)
@@ -123,6 +143,25 @@ internal sealed class BasicsTest(
             assertEquals("receiver", this)
             assertEquals("p0", arg)
             return "OK"
+        }
+        
+        fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
+    }
+"""
+    )
+
+    @Test
+    fun `static companion`() = testJvmCompile(
+        """
+    class TestData {
+        companion object {
+            @JvmStatic
+            @JvmBlockingBridge
+            suspend fun String.test(arg: String): String{
+                assertEquals("receiver", this)
+                assertEquals("p0", arg)
+                return "OK"
+            }
         }
         
         fun main(): String = Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
