@@ -12,6 +12,7 @@ import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import net.mamoe.kjbb.JvmBlockingBridge
 import org.jetbrains.kotlin.asJava.builder.LightMemberOriginForDeclaration
+import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
@@ -19,6 +20,7 @@ import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 
 /**
@@ -38,7 +40,7 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
         val ret =
             CachedValuesManager.getCachedValue(
                 element,
-                JvmBlockingBridgeCachedValueProvider(element) { element.generateAugmentElements() }
+                JvmBlockingBridgeCachedValueProvider(element) { element.generateAugmentElements(element.ownMethods) }
             ).orEmpty().toMutableList()
         return ret as MutableList<Psi>
     }
@@ -60,11 +62,29 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
 
 }
 
-internal fun PsiExtensibleClass.generateAugmentElements(): List<PsiElement> {
-    return this.ownMethods.asSequence()
+internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): List<PsiElement> {
+    val result = ArrayList<PsiElement>()
+
+    /*
+    val originalElement = this.originalElement
+    if (originalElement is KtUltraLightClass) {
+        val companions = originalElement.kotlinOrigin.companionObjects
+        result.addAll(companions.flatMap { companion ->
+            companion.declarations
+                .asSequence()
+                .map { it.getRepresentativeLightMethod() }
+                .filterIsInstance<KtLightMethod>()
+                .filter { it.isJvmStaticInCompanion() }
+                .flatMap { it.generateLightMethod(it.containingClass, true).asSequence() }
+                .toList()
+        })
+        result.clear()
+    }*/
+
+    return result + ownMethods.asSequence()
         .filter { it.canHaveBridgeFunctions() }
         .filterIsInstance<KtLightMethod>()
-        .mapNotNull { it.generateLightMethod() } // if null, the user is typing a function
+        .flatMap { it.generateLightMethod(it.containingClass).asSequence() }
         .toList()
 }
 
@@ -129,72 +149,99 @@ internal fun PsiMethod.isSuspend(): Boolean =
 
 internal fun PsiMethod.isJvmStatic(): Boolean = hasAnnotation(JvmStatic::class.qualifiedName!!)
 
-internal fun KtLightMethod.generateLightMethod(): PsiMethod? {
+internal fun KtLightMethod.isJvmStaticInNonCompanionObject(): Boolean {
+    val containingKotlinOrigin = containingClass.kotlinOrigin
+
+    return hasAnnotation(JvmStatic::class.qualifiedName!!)
+            && containingKotlinOrigin is KtObjectDeclaration
+            && !containingKotlinOrigin.isCompanion()
+}
+
+internal fun KtLightMethod.isJvmStaticInCompanion(): Boolean {
+    val containingKotlinOrigin = containingClass.kotlinOrigin
+
+    return hasAnnotation(JvmStatic::class.qualifiedName!!)
+            && containingKotlinOrigin is KtObjectDeclaration
+            && containingKotlinOrigin.isCompanion()
+}
+
+internal fun KtLightMethod.generateLightMethod(
+    containingClass: KtLightClass,
+    generateAsStatic: Boolean = this.isJvmStatic(),
+): List<KtLightMethodImpl> {
     ProgressManager.checkCanceled()
     val originMethod = this
 
-    return BlockingBridgeStubMethod(
-        originMethod.manager,
-        originMethod.language,
-        originMethod.name
-    ).apply {
-        for (it in originMethod.parameterList.parameters.dropLast(1)) {
-            addParameter(it)
-        }
-
-        if (isJvmStatic() || originMethod.parent is KtUltraLightClassForFacade) {
-            addModifier(PsiModifier.STATIC)
-        }
-
-        VISIBILITIES_MODIFIERS
-            .filter { originMethod.hasModifierProperty(it) }
-            .forEach { addModifier(it) }
-
-        addModifier(
-            if (containingClass?.isInterface == true) {
-                PsiModifier.OPEN
-            } else when (containingClass?.modality) {
-                Modality.OPEN, Modality.ABSTRACT, Modality.SEALED -> PsiModifier.OPEN
-                else -> PsiModifier.FINAL
+    fun generateImpl(): KtLightMethodImpl? {
+        return BlockingBridgeStubMethod(
+            originMethod.manager,
+            originMethod.language,
+            originMethod.name
+        ).apply {
+            for (it in originMethod.parameterList.parameters.dropLast(1)) {
+                addParameter(it)
             }
-        )
 
-        for (typeParameter in originMethod.typeParameters) {
-            addTypeParameter(typeParameter)
-        }
+            if (generateAsStatic) {
+                addModifier(PsiModifier.STATIC)
+            }
 
-        for (referenceElement in originMethod.throwsList.referenceElements) {
-            addException(referenceElement.qualifiedName)
-        }
+            originMethod.annotations.forEach { annotation ->
+                addAnnotation(annotation)
+            }
 
-        ProgressManager.checkCanceled()
-        originMethod.hierarchicalMethodSignature.parameterTypes.lastOrNull().let { it ?: return null }
-            .let { continuationParamType ->
-                val psiClassReferenceType = continuationParamType as? PsiClassReferenceType ?: return null
+            VISIBILITIES_MODIFIERS
+                .filter { originMethod.hasModifierProperty(it) }
+                .forEach { addModifier(it) }
 
-                when (val type = psiClassReferenceType.parameters.getOrNull(0) ?: return null) {
-                    is PsiWildcardType -> {
-                        setMethodReturnType(type.bound)
-                    }
-                    else -> {
-                        setMethodReturnType(type.canonicalText)
+            addModifier(
+                if (containingClass.isInterface) {
+                    PsiModifier.OPEN
+                } else when (containingClass.modality) {
+                    Modality.OPEN, Modality.ABSTRACT, Modality.SEALED -> PsiModifier.OPEN
+                    else -> PsiModifier.FINAL
+                }
+            )
+
+            for (typeParameter in originMethod.typeParameters) {
+                addTypeParameter(typeParameter)
+            }
+
+            for (referenceElement in originMethod.throwsList.referenceElements) {
+                addException(referenceElement.qualifiedName)
+            }
+
+            ProgressManager.checkCanceled()
+            originMethod.hierarchicalMethodSignature.parameterTypes.lastOrNull().let { it ?: return null }
+                .let { continuationParamType ->
+                    val psiClassReferenceType = continuationParamType as? PsiClassReferenceType ?: return null
+
+                    when (val type = psiClassReferenceType.parameters.getOrNull(0) ?: return null) {
+                        is PsiWildcardType -> {
+                            setMethodReturnType(type.bound)
+                        }
+                        else -> {
+                            setMethodReturnType(type.canonicalText)
+                        }
                     }
                 }
+
+            this.containingClass = containingClass
+
+            navigationElement = originMethod
+
+            setBody(JavaPsiFacade.getElementFactory(project).createCodeBlock())
+        }.let {
+            val kotlinOrigin = originMethod.kotlinOrigin?.let { kotlinOrigin ->
+                LightMemberOriginForDeclaration(kotlinOrigin, JvmDeclarationOriginKind.BRIDGE) // // TODO: 2020/8/4
             }
+            KtLightMethodImpl.create(it, kotlinOrigin, containingClass).apply {
 
-        this.containingClass = originMethod.containingClass
-
-        navigationElement = originMethod
-
-        setBody(JavaPsiFacade.getElementFactory(project).createCodeBlock())
-    }.let {
-        val kotlinOrigin = originMethod.kotlinOrigin?.let { kotlinOrigin ->
-            LightMemberOriginForDeclaration(kotlinOrigin, JvmDeclarationOriginKind.BRIDGE) // // TODO: 2020/8/4
-        }
-        KtLightMethodImpl.create(it, kotlinOrigin, originMethod.containingClass).apply {
-
+            }
         }
     }
+
+    return listOfNotNull(generateImpl())
 }
 
 
@@ -202,6 +249,7 @@ class BlockingBridgeStubMethod(manager: PsiManager, language: Language, name: St
     LightMethodBuilder(manager, language, name) {
 
     private var _body: PsiCodeBlock? = null
+    private var _annotations: Array<PsiAnnotation> = emptyArray()
 
     fun setBody(body: PsiCodeBlock) {
         _body = body
@@ -211,6 +259,14 @@ class BlockingBridgeStubMethod(manager: PsiManager, language: Language, name: St
         return _body ?: super.getBody()
     }
 
+    fun addAnnotation(annotation: PsiAnnotation) {
+        _annotations += annotation
+    }
+
+    override fun getAnnotations(): Array<PsiAnnotation> = _annotations
+    override fun hasAnnotation(fqn: String): Boolean {
+        return _annotations.any { it.hasQualifiedName(fqn) }
+    }
 }
 
 internal val VISIBILITIES_MODIFIERS = arrayOf(
