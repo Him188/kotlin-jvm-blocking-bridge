@@ -141,7 +141,7 @@ If you're developing a library with KJBB, you need to install the Gradle plugin 
 `build.gradle` or `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.4.0"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.4.1"
 }
 ```
 
@@ -156,7 +156,7 @@ pluginManagement {
 
 The plugin will automatically install runtime library for you, as:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.4.0")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.4.1")
 ```
 Therefore, you need only to install the plugin, and the compiler plugin will work finely.
 
