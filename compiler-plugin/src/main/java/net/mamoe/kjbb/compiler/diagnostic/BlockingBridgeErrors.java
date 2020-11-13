@@ -11,7 +11,7 @@ import static org.jetbrains.kotlin.diagnostics.Severity.WARNING;
 
 
 public interface BlockingBridgeErrors {
-    // DiagnosticFactory0<PsiElement> PLUGIN_IS_NOT_ENABLED = DiagnosticFactory0.create(WARNING);
+    DiagnosticFactory0<PsiElement> BLOCKING_BRIDGE_PLUGIN_NOT_ENABLED = DiagnosticFactory0.create(WARNING);
     DiagnosticFactory0<PsiElement> INAPPLICABLE_JVM_BLOCKING_BRIDGE = DiagnosticFactory0.create(ERROR);
     DiagnosticFactory1<PsiElement, DeclarationDescriptor> INLINE_CLASSES_NOT_SUPPORTED = DiagnosticFactory1.create(ERROR);
     DiagnosticFactory0<PsiElement> INTERFACE_NOT_SUPPORTED = DiagnosticFactory0.create(ERROR);

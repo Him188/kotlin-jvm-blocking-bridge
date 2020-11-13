@@ -6,6 +6,7 @@ import net.mamoe.kjbb.compiler.backend.jvm.jvmBlockingBridgeAnnotation
 import net.mamoe.kjbb.compiler.backend.jvm.report
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeDeclarationChecker.CheckResult.BREAK
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeDeclarationChecker.CheckResult.CONTINUE
+import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.BLOCKING_BRIDGE_PLUGIN_NOT_ENABLED
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.INAPPLICABLE_JVM_BLOCKING_BRIDGE
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
@@ -22,7 +23,6 @@ open class BlockingBridgeDeclarationChecker(
         context: DeclarationCheckerContext,
     ) {
         when (BREAK) {
-            checkIsPluginEnabled(declaration, descriptor, context),
             checkApplicability(declaration, descriptor, context),
             -> return
             else -> return
@@ -35,11 +35,9 @@ open class BlockingBridgeDeclarationChecker(
     }
 
     protected open fun checkIsPluginEnabled(
-        declaration: KtDeclaration,
         descriptor: DeclarationDescriptor,
-        context: DeclarationCheckerContext,
-    ): CheckResult {
-        return CONTINUE
+    ): Boolean {
+        return true // in CLI compiler, always enabled
     }
 
     private fun checkApplicability(
@@ -48,8 +46,14 @@ open class BlockingBridgeDeclarationChecker(
         context: DeclarationCheckerContext,
     ): CheckResult {
         if (!descriptor.hasJvmBlockingBridgeAnnotation()) return CONTINUE
+        val inspectionTarget = descriptor.jvmBlockingBridgeAnnotation() ?: declaration
+
+        if (!checkIsPluginEnabled(descriptor)) {
+            context.report(BLOCKING_BRIDGE_PLUGIN_NOT_ENABLED.on(inspectionTarget))
+            return BREAK
+        }
+
         if (descriptor !is FunctionDescriptor) {
-            val inspectionTarget = descriptor.jvmBlockingBridgeAnnotation() ?: declaration
             context.report(INAPPLICABLE_JVM_BLOCKING_BRIDGE.on(inspectionTarget))
             return BREAK
         }

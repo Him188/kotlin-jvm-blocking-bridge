@@ -18,7 +18,9 @@ import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
 import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.idea.caches.project.toDescriptor
 import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
+import org.jetbrains.kotlin.idea.util.module
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
@@ -89,6 +91,9 @@ internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): Li
 }
 
 internal fun PsiMethod.canHaveBridgeFunctions(): Boolean {
+    if (this.module?.toDescriptor()?.isBlockingBridgePluginEnabled() == false) {
+        return false
+    }
     if (!isSuspend()) return false
     return if (Name.isValidIdentifier(this.name)
         && this.hasAnnotation(JvmBlockingBridge::class.qualifiedName!!)
