@@ -110,7 +110,7 @@ fun test(a1: Int, a2: Any): String = runBlocking {
 
 ## Requirements
 - Gradle (`6.0` or higher recommended)
-- **Kotlin `1.4.0-rc`, `1.4.0` or higher**
+- **Kotlin `1.4.20` or higher**
 - IntelliJ IDEA or Android Studio (newer version recommended)
 
 ## Try now
