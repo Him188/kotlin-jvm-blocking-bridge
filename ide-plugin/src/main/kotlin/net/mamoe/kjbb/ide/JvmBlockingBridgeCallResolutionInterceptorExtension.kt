@@ -2,7 +2,6 @@
 
 package net.mamoe.kjbb.ide
 
-import com.google.auto.service.AutoService
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.VariableDescriptor
 import org.jetbrains.kotlin.extensions.internal.CallResolutionInterceptorExtension
@@ -22,7 +21,6 @@ import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValueWithSmartCastI
 /**
  * Hide bridges for Kotlin
  */
-@AutoService(CallResolutionInterceptorExtension::class)
 @OptIn(InternalNonStableExtensionPoints::class)
 class JvmBlockingBridgeCallResolutionInterceptorExtension : CallResolutionInterceptorExtension {
     @Suppress("OverridingDeprecatedMember")

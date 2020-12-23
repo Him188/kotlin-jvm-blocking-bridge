@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm")
-    kotlin("kapt")
     kotlin("plugin.serialization")
     id("java")
     signing
@@ -16,8 +15,6 @@ dependencies includeInShadow@{
 dependencies compileOnly@{
     compileOnly(kotlin("stdlib")) // don't include stdlib in shadow
     compileOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
-    kapt("com.google.auto.service:auto-service:1.0-rc7")
-    compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")
 }
 
 dependencies tests@{

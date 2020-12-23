@@ -1,6 +1,5 @@
 package net.mamoe.kjbb.compiler.extensions
 
-import com.google.auto.service.AutoService
 import net.mamoe.kjbb.compiler.backend.ir.JvmBlockingBridgeClassLoweringPass
 import net.mamoe.kjbb.compiler.backend.ir.JvmBlockingBridgeFileLoweringPass
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
@@ -18,7 +17,6 @@ import org.jetbrains.kotlin.ir.visitors.acceptVoid
 /**
  * For IR backend.
  */
-@AutoService(IrGenerationExtension::class)
 open class JvmBlockingBridgeIrGenerationExtension : IrGenerationExtension {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         for (file in moduleFragment.files) {

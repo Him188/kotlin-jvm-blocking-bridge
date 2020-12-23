@@ -2,7 +2,6 @@
 
 plugins {
     kotlin("multiplatform")
-    kotlin("kapt")
     kotlin("plugin.serialization")
     id("java")
     `maven-publish`

@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.4.20-RC"
-    id("net.mamoe.kotlin-jvm-blocking-bridge") version ""
+    kotlin("jvm") version "1.4.30-M1"
+    // id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.5.0-KT-1.4.30-M1"
 }
 
 group = "me.him188"
@@ -15,6 +15,7 @@ repositories {
 }
 
 dependencies {
+    api("net.mamoe:kotlin-jvm-blocking-bridge:1.5.0-KT-1.4.30-M1")
     testImplementation(kotlin("test-junit"))
 }
 

@@ -1,6 +1,5 @@
 package net.mamoe.kjbb.ide
 
-import com.google.auto.service.AutoService
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
 import net.mamoe.kjbb.compiler.context.CompilerContext
@@ -11,7 +10,6 @@ import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 import org.jetbrains.kotlin.resolve.source.PsiSourceElement
 
-@AutoService(CompilerContext::class)
 open class CompilerContextIntelliJ : CompilerContext {
     companion object : CompilerContextIntelliJ()
 

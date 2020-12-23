@@ -18,7 +18,7 @@ interface CompilerContext {
     fun JvmDeclarationOrigin(
         originKind: JvmDeclarationOriginKind,
         descriptor: DeclarationDescriptor,
-        parametersForJvmOverload: List<KtParameter?>? = listOf()
+        parametersForJvmOverload: List<KtParameter?>? = listOf(),
     ): JvmDeclarationOrigin
 
     sealed class CompilerContextKind {

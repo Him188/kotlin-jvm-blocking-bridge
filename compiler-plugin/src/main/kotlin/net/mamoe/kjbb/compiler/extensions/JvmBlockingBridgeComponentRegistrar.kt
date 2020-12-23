@@ -1,6 +1,5 @@
 package net.mamoe.kjbb.compiler.extensions
 
-import com.google.auto.service.AutoService
 import com.intellij.mock.MockProject
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeDeclarationChecker
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -14,7 +13,6 @@ import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.extensions.StorageComponentContainerContributor
 import org.jetbrains.kotlin.platform.TargetPlatform
 
-@AutoService(ComponentRegistrar::class)
 @Suppress("unused")
 open class JvmBlockingBridgeComponentRegistrar : ComponentRegistrar {
 

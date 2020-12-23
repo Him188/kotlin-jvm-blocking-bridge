@@ -2,7 +2,6 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     kotlin("jvm")
-    kotlin("kapt")
     id("java-gradle-plugin")
     id("com.gradle.plugin-publish")
     id("java")
