@@ -114,6 +114,9 @@ inline fun Project.setupPublishing(
             setPublications("mavenJava")
             setConfigurations("archives")
 
+            publish = true
+            override = true
+
             pkg.apply {
                 userOrg = "mamoe"
                 repo = bintrayRepo
