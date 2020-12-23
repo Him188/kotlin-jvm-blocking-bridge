@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.4.20-RC"
-    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.5.0"
+    id("net.mamoe.kotlin-jvm-blocking-bridge") version ""
 }
 
 group = "me.him188"

@@ -13,9 +13,6 @@ plugins {
     id("com.github.johnrengelman.shadow")
 }
 
-repositories {
-    maven("http://maven.aliyun.com/nexus/content/groups/public/")
-}
 
 dependencies {
     compileOnly(kotlin("stdlib-jdk8"))
@@ -27,19 +24,20 @@ dependencies {
     compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")
 
     compileOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
-    compileOnly(files("libs/ide-common.jar"))
+
+    compileOnly(files("build/idea-sandbox/plugins/Kotlin/lib/ide-common.jar"))
 }
 
 version = Versions.idePlugin
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = "2020.2"
+    version = "2020.3"
     isDownloadSources = true
     updateSinceUntilBuild = false
 
     setPlugins(
-        "org.jetbrains.kotlin:1.4.20-RC-IJ2020.2-1@eap"
+        "org.jetbrains.kotlin:203-1.4.30-M1-IJ5981.133@eap"
     )
 }
 
@@ -54,7 +52,7 @@ tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishTask::class
 }
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
-    sinceBuild("193.*")
+    sinceBuild("201.*")
     untilBuild("205.*")
     changeNotes("""
         Fix cancellation on analyzing augments
