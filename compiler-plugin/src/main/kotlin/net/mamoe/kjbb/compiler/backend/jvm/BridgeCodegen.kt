@@ -221,7 +221,6 @@ class BridgeCodegen(
             originFunction, codegen.state,
             originFunction.findPsi()!!,
             codegen.v.thisName,
-            codegen.context.contextKind,
             ownerType,
             if (shouldGenerateAsStatic) null else clazz.thisAsReceiverParameter
         ).let { Type.getObjectType(it) }
@@ -370,7 +369,6 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     state: GenerationState,
     originElement: PsiElement,
     parentName: String,
-    contextKind: OwnerKind,
     methodOwnerType: Type,
     dispatchReceiverParameterDescriptor: ReceiverParameterDescriptor?,
 ): String {
