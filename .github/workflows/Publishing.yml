@@ -3,7 +3,8 @@ name: Publishing
 on:
   release:
     types:
-      - created
+      - released
+      - prereleased
 
 jobs:
   publish-runtime-on-macos:
