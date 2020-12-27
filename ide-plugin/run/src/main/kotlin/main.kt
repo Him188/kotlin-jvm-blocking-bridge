@@ -21,6 +21,7 @@ open class AClass {
 
         @JvmStatic
         @JvmBlockingBridge
+        @Deprecated("")
         suspend fun comp() {
         }
 

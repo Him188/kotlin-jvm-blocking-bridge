@@ -186,7 +186,7 @@ internal fun KtLightMethod.generateLightMethod(
             originMethod.name
         ).apply {
             this.containingClass = containingClass
-            setDocCommnet(originMethod.docComment)
+            docComment = originMethod.docComment
             navigationElement = originMethod
 
 
@@ -292,7 +292,7 @@ private class BlockingBridgeStubMethodBuilder(
         return docComment
     }
 
-    fun setDocCommnet(docComment: PsiDocComment?) {
+    fun setDocComment(docComment: PsiDocComment?) {
         this.docComment = docComment
     }
 
