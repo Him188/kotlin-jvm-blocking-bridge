@@ -3,7 +3,7 @@ import upload.*
 publishing {
     repositories {
         maven {
-            url = "https://api.bintray.com/maven/mamoe/kotlin-jvm-blocking-bridge/kotlin-jvm-blocking-bridge/;publish=1"
+            url = "https://api.bintray.com/maven/mamoe/kotlin-jvm-blocking-bridge/kotlin-jvm-blocking-bridge/;publish=1;override=1"
 
             credentials {
                 username = Bintray.getUser(project)
