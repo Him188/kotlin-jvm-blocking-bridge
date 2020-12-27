@@ -15,7 +15,9 @@ public class J {
         x.member();
 
         AClass.Companion.f();
-        AClass.comp();
+
+        AClass.comp(); // should report deprecation
+        AClass.comp(null);
 
         AClass.P.f();
         try {

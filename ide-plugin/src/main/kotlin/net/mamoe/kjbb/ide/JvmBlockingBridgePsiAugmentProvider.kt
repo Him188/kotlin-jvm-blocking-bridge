@@ -183,12 +183,12 @@ internal fun KtLightMethod.generateLightMethod(
         val javaMethod = BlockingBridgeStubMethodBuilder(
             originMethod.manager,
             originMethod.language,
-            originMethod.name
+            originMethod.name,
+            originMethod
         ).apply {
             this.containingClass = containingClass
             docComment = originMethod.docComment
             navigationElement = originMethod
-
 
 
             for (it in originMethod.parameterList.parameters.dropLast(1)) {
@@ -200,6 +200,9 @@ internal fun KtLightMethod.generateLightMethod(
             }
 
             originMethod.annotations.forEach { annotation ->
+                if (annotation.hasQualifiedName("kotlin.Deprecated"))
+                    deprecated = true
+
                 addAnnotation(annotation)
             }
 
@@ -245,7 +248,8 @@ internal fun KtLightMethod.generateLightMethod(
             LightMemberOriginForDeclaration(kotlinOrigin, JvmDeclarationOriginKind.BRIDGE) // // TODO: 2020/8/4
         }
 
-        return BlockingBridgeStubMethod({ javaMethod }, kotlinOrigin, containingClass)
+        return BlockingBridgeStubMethod({ javaMethod }, kotlinOrigin, containingClass).apply {
+        }
 //            KtLightMethodImpl.create(it, kotlinOrigin, containingClass).apply {
 //                this.returnType
 //            }
@@ -268,9 +272,8 @@ class BlockingBridgeStubMethod(
 }
 
 private class BlockingBridgeStubMethodBuilder(
-    manager: PsiManager, language: Language, name: String,
-) :
-    LightMethodBuilder(manager, language, name) {
+    manager: PsiManager, language: Language, name: String, private val originalElement: PsiElement,
+) : LightMethodBuilder(manager, language, name) {
 
     private var _body: PsiCodeBlock? = null
     private var _annotations: Array<PsiAnnotation> = emptyArray()
@@ -278,6 +281,10 @@ private class BlockingBridgeStubMethodBuilder(
 
     fun setBody(body: PsiCodeBlock) {
         _body = body
+    }
+
+    override fun getOriginalElement(): PsiElement {
+        return this.originalElement
     }
 
     override fun getBody(): PsiCodeBlock? {
@@ -296,9 +303,19 @@ private class BlockingBridgeStubMethodBuilder(
         this.docComment = docComment
     }
 
+    var deprecated = false
+
+    override fun isDeprecated(): Boolean {
+        return deprecated
+    }
+
     override fun getAnnotations(): Array<PsiAnnotation> = _annotations
     override fun hasAnnotation(fqn: String): Boolean {
         return _annotations.any { it.hasQualifiedName(fqn) }
+    }
+
+    override fun getAnnotation(fqn: String): PsiAnnotation? {
+        return _annotations.find { it.hasQualifiedName(fqn) }
     }
 }
 
