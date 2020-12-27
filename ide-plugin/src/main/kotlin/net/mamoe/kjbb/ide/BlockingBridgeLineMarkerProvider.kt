@@ -7,7 +7,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.*
-import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.psi.KtForExpression
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
@@ -68,7 +67,7 @@ class BlockingBridgeLineMarkerProvider : LineMarkerProvider {
         null,
         GutterIconRenderer.Alignment.RIGHT
     ) {
-        override fun createGutterRenderer(): GutterIconRenderer? {
+        override fun createGutterRenderer(): GutterIconRenderer {
             return object : LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>(this) {
                 override fun getClickAction(): AnAction? = null
             }
@@ -78,9 +77,11 @@ class BlockingBridgeLineMarkerProvider : LineMarkerProvider {
 }
 
 fun PsiReferenceExpression.hasBridgeCalls(): Boolean {
-    val resolved = this.resolve() as? KtLightMethod ?: return false
+    val resolved = this.resolve() as? PsiMethod ?: return false
 
-    return resolved.canHaveBridgeFunctions()
+    if (resolved is BlockingBridgeStubMethod) return true
+
+    return false // resolved.canHaveBridgeFunctions()
 }
 
 fun PsiElement.getLineNumber(start: Boolean = true): Int {

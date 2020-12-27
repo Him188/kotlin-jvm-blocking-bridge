@@ -1,4 +1,8 @@
+@file:Suppress("RedundantSuspendModifier")
+
 import net.mamoe.kjbb.JvmBlockingBridge
+import java.io.IOException
+import kotlin.jvm.Throws
 
 fun main() {
 
@@ -6,6 +10,9 @@ fun main() {
 
 open class AClass {
 
+    /**
+     * K fun
+     */
     @JvmBlockingBridge
     open suspend fun member() {
     }
@@ -14,7 +21,7 @@ open class AClass {
 
         @JvmStatic
         @JvmBlockingBridge
-        open suspend fun comp() {
+        suspend fun comp() {
         }
 
         @JvmStatic
@@ -26,7 +33,8 @@ open class AClass {
 
         @JvmStatic
         @JvmBlockingBridge
-        open suspend fun comp() {
+        @Throws(IOException::class)
+        suspend fun compThrows() {
         }
 
         @JvmStatic

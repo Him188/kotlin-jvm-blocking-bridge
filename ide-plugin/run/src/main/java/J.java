@@ -1,0 +1,41 @@
+import kotlin.Unit;
+import kotlin.coroutines.Continuation;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+
+public class J {
+    public static void main(String[] args) {
+        var x = new AClass();
+        x.member();
+
+        AClass.Companion.f();
+        AClass.comp();
+
+        AClass.P.f();
+        try {
+            AClass.P.compThrows();
+        } catch (IOException ignored) {
+
+        }
+
+        AClass.f();
+
+        String s = TestRet.INSTANCE.test();
+
+        new AClass() {
+            @Nullable
+            @Override
+            public Object member(@NotNull Continuation<? super Unit> $completion) {
+                return super.member($completion);
+            }
+
+            @Nullable
+            @Override
+            public Unit member() {
+                return super.member();
+            }
+        };
+    }
+}

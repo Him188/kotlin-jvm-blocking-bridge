@@ -8,9 +8,11 @@ import com.intellij.psi.augment.PsiAugmentProvider
 import com.intellij.psi.impl.light.LightMethodBuilder
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.impl.source.PsiExtensibleClass
+import com.intellij.psi.javadoc.PsiDocComment
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import net.mamoe.kjbb.JvmBlockingBridge
+import org.jetbrains.kotlin.asJava.builder.LightMemberOrigin
 import org.jetbrains.kotlin.asJava.builder.LightMemberOriginForDeclaration
 import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
@@ -173,16 +175,22 @@ internal fun KtLightMethod.isJvmStaticInCompanion(): Boolean {
 internal fun KtLightMethod.generateLightMethod(
     containingClass: KtLightClass,
     generateAsStatic: Boolean = this.isJvmStatic(),
-): List<KtLightMethodImpl> {
+): List<PsiMethod> {
     ProgressManager.checkCanceled()
     val originMethod = this
 
-    fun generateImpl(): KtLightMethodImpl? {
-        return BlockingBridgeStubMethod(
+    fun generateImpl(): PsiMethod? {
+        val javaMethod = BlockingBridgeStubMethodBuilder(
             originMethod.manager,
             originMethod.language,
             originMethod.name
         ).apply {
+            this.containingClass = containingClass
+            setDocCommnet(originMethod.docComment)
+            navigationElement = originMethod
+
+
+
             for (it in originMethod.parameterList.parameters.dropLast(1)) {
                 addParameter(it)
             }
@@ -222,8 +230,8 @@ internal fun KtLightMethod.generateLightMethod(
                     val psiClassReferenceType = continuationParamType as? PsiClassReferenceType ?: return null
 
                     when (val type = psiClassReferenceType.parameters.getOrNull(0) ?: return null) {
-                        is PsiWildcardType -> {
-                            setMethodReturnType(type.bound)
+                        is PsiWildcardType -> { // ? super String
+                            setMethodReturnType(type.bound?.canonicalText ?: type.canonicalText)
                         }
                         else -> {
                             setMethodReturnType(type.canonicalText)
@@ -231,30 +239,42 @@ internal fun KtLightMethod.generateLightMethod(
                     }
                 }
 
-            this.containingClass = containingClass
-
-            navigationElement = originMethod
-
             setBody(JavaPsiFacade.getElementFactory(project).createCodeBlock())
-        }.let {
-            val kotlinOrigin = originMethod.kotlinOrigin?.let { kotlinOrigin ->
-                LightMemberOriginForDeclaration(kotlinOrigin, JvmDeclarationOriginKind.BRIDGE) // // TODO: 2020/8/4
-            }
-            KtLightMethodImpl.create(it, kotlinOrigin, containingClass).apply {
-
-            }
         }
+        val kotlinOrigin = originMethod.kotlinOrigin?.let { kotlinOrigin ->
+            LightMemberOriginForDeclaration(kotlinOrigin, JvmDeclarationOriginKind.BRIDGE) // // TODO: 2020/8/4
+        }
+
+        return BlockingBridgeStubMethod({ javaMethod }, kotlinOrigin, containingClass)
+//            KtLightMethodImpl.create(it, kotlinOrigin, containingClass).apply {
+//                this.returnType
+//            }
     }
 
     return listOfNotNull(generateImpl())
 }
 
 
-class BlockingBridgeStubMethod(manager: PsiManager, language: Language, name: String) :
+class BlockingBridgeStubMethod(
+    computeRealDelegate: () -> PsiMethod, lightMemberOrigin: LightMemberOrigin?, containingClass: KtLightClass,
+) : KtLightMethodImpl(computeRealDelegate, lightMemberOrigin, containingClass) {
+    override fun getReturnType(): PsiType? {
+        return clsDelegate.returnType
+    }
+
+    override fun getReturnTypeElement(): PsiTypeElement? {
+        return clsDelegate.returnTypeElement
+    }
+}
+
+private class BlockingBridgeStubMethodBuilder(
+    manager: PsiManager, language: Language, name: String,
+) :
     LightMethodBuilder(manager, language, name) {
 
     private var _body: PsiCodeBlock? = null
     private var _annotations: Array<PsiAnnotation> = emptyArray()
+    private var docComment: PsiDocComment? = null
 
     fun setBody(body: PsiCodeBlock) {
         _body = body
@@ -266,6 +286,14 @@ class BlockingBridgeStubMethod(manager: PsiManager, language: Language, name: St
 
     fun addAnnotation(annotation: PsiAnnotation) {
         _annotations += annotation
+    }
+
+    override fun getDocComment(): PsiDocComment? {
+        return docComment
+    }
+
+    fun setDocCommnet(docComment: PsiDocComment?) {
+        this.docComment = docComment
     }
 
     override fun getAnnotations(): Array<PsiAnnotation> = _annotations
