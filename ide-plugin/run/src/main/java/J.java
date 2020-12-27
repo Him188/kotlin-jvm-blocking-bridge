@@ -7,8 +7,7 @@ import java.io.IOException;
 
 public class J {
     public static void main(String[] args) {
-        String s = new TestRet().test();
-
+        String s = new TestRet().test(); // should report deprecation
 
 
         var x = new AClass();

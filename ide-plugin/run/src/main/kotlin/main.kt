@@ -7,7 +7,6 @@ import kotlin.jvm.Throws
 fun main() {
 
 }
-/*
 
 open class AClass {
 
