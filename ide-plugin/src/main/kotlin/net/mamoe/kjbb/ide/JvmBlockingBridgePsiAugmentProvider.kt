@@ -315,11 +315,14 @@ internal val PsiModifierListOwner.modality: Modality
             return Modality.OPEN //
         }
 
+        val modifierList = this.modifierList?.text
+
         return when {
-            this.hasModifierProperty(PsiModifier.OPEN) -> Modality.OPEN
-            this.hasModifierProperty(PsiModifier.FINAL) -> Modality.FINAL
-            this.hasModifierProperty(PsiModifier.ABSTRACT) -> Modality.ABSTRACT
-            this.hasModifierProperty("sealed") -> Modality.ABSTRACT
+            modifierList == null -> return Modality.FINAL
+            modifierList.contains("open") -> Modality.OPEN
+            modifierList.contains("final") -> Modality.FINAL
+            modifierList.contains("abstract") -> Modality.ABSTRACT
+            modifierList.contains("sealed") -> Modality.ABSTRACT
             else -> Modality.FINAL
         }
     }

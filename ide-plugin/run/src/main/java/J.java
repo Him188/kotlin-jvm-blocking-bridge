@@ -7,6 +7,10 @@ import java.io.IOException;
 
 public class J {
     public static void main(String[] args) {
+        String s = new TestRet().test();
+
+
+
         var x = new AClass();
         x.member();
 
@@ -22,7 +26,6 @@ public class J {
 
         AClass.f();
 
-        String s = TestRet.INSTANCE.test();
 
         new AClass() {
             @Nullable

@@ -1,6 +1,6 @@
 import net.mamoe.kjbb.JvmBlockingBridge
 
-object TestRet {
+open class TestRet {
     @JvmBlockingBridge
-    suspend fun test(): String = ""
+    open suspend fun test(): String = ""
 }
