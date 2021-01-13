@@ -1,12 +1,13 @@
 package net.mamoe.kjbb.ide.line.marker
 
-import com.intellij.codeHighlighting.Pass
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.*
+import net.mamoe.kjbb.ide.BlockingBridgeStubMethod
+import net.mamoe.kjbb.ide.Icons
 import org.jetbrains.kotlin.psi.KtForExpression
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
@@ -53,14 +54,12 @@ class BlockingBridgeLineMarkerProvider : LineMarkerProvider {
         }
     }
 
-    @Suppress("DEPRECATION")
     class BridgeCallLineMarkerInfo(
         callElement: PsiElement
     ) : LineMarkerInfo<PsiElement>(
         callElement,
         callElement.textRange,
         Icons.BridgedSuspendCall,
-        Pass.LINE_MARKERS,
         {
             "Blocking bridge method call"
         },
