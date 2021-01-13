@@ -1,6 +1,7 @@
 package net.mamoe.kjbb.ide.fix
 
 import com.intellij.codeInsight.intention.IntentionAction
+import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.REDUNDANT_JVM_BLOCKING_BRIDGE_WITH_JVM_SYNTHETIC
 import org.jetbrains.kotlin.diagnostics.DiagnosticFactory
 import org.jetbrains.kotlin.idea.quickfix.KotlinIntentionActionsFactory
@@ -18,7 +19,9 @@ class QuickFixRegistrar : QuickFixContributor {
             quickFixes.register(this, *action)
         }
 
-        REDUNDANT_JVM_BLOCKING_BRIDGE_WITH_JVM_SYNTHETIC.registerFactory(RemoveJvmBlockingBridgeFix,
-            RemoveJvmSyntheticFix)
+        REDUNDANT_JVM_BLOCKING_BRIDGE_WITH_JVM_SYNTHETIC
+            .registerFactory(RemoveJvmBlockingBridgeFix, RemoveJvmSyntheticFix)
+
+        REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS.registerFactory(RemoveJvmBlockingBridgeFix)
     }
 }
