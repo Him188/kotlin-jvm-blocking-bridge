@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.*
 
-internal const val JBB_VERSION = "1.5.1"
+internal const val JBB_VERSION = "1.6.0"
 
 internal const val PLUGIN_ID = "net.mamoe.kotlin-jvm-blocking-bridge-compiler-embeddable"
 
