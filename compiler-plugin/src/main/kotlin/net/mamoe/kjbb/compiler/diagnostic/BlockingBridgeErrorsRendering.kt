@@ -25,6 +25,11 @@ object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
         )
 
         put(
+            REDUNDANT_JVM_BLOCKING_BRIDGE_WITH_JVM_SYNTHETIC,
+            "@JvmBlockingBridge is redundant on @JvmSynthetic declarations, as generated bridges are also synthetic and can't be resolved from Java."
+        )
+
+        put(
             INAPPLICABLE_JVM_BLOCKING_BRIDGE,
             "@JvmBlockingBridge is not applicable on this declaration."
         )
