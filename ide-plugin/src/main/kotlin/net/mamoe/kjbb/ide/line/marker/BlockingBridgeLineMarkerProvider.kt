@@ -1,4 +1,4 @@
-package net.mamoe.kjbb.ide
+package net.mamoe.kjbb.ide.line.marker
 
 import com.intellij.codeHighlighting.Pass
 import com.intellij.codeInsight.daemon.LineMarkerInfo

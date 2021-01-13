@@ -19,7 +19,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.lineMarkerProvider language="JAVA"
-                                        implementationClass="net.mamoe.kjbb.ide.BlockingBridgeLineMarkerProvider"/>
+                                        implementationClass="net.mamoe.kjbb.ide.line.marker.BlockingBridgeLineMarkerProvider"/>
         <lang.psiAugmentProvider implementation="net.mamoe.kjbb.ide.JvmBlockingBridgePsiAugmentProvider"/>
     </extensions>
 
