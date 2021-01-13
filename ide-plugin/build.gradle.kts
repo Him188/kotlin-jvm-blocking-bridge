@@ -54,10 +54,14 @@ tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishTask::class
 }
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
-    sinceBuild("193.*")
-    untilBuild("205.*")
+    sinceBuild("201.*") // Kotlin does not support 193 anymore
+    untilBuild("215.*")
     changeNotes("""
-        Fix cancellation on analyzing augments
+        See <a href="">Release notes</a>
+    """.trimIndent())
+    setPluginDescription("""
+        Provides @JvmBlockingBridge calls for Java. <br/>  
+        Find more information on source repository: <a href="https://github.com/him188/kotlin-jvm-blocking-bridge">kotlin-jvm-blocking-bridge</a>.
     """.trimIndent())
 }
 
@@ -67,7 +71,7 @@ setupPublishing(
 )
 
 tasks.withType(KotlinJvmCompile::class) {
-    kotlinOptions.freeCompilerArgs += "-Xjvm-default=enable"
+    kotlinOptions.freeCompilerArgs += "-Xjvm-default=all"
 }
 
 val theProject = project
