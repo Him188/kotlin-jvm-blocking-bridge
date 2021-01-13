@@ -201,6 +201,7 @@ class BridgeCodegen(
                 originFunction.visibility
             )
         }
+
         if (isJvmStaticInCompanionObject()) {
             val parentCodegen = codegen.parentCodegen as ImplementationBodyCodegen
             parentCodegen.addAdditionalTask(
@@ -210,6 +211,10 @@ class BridgeCodegen(
                     codegen.parentCodegen as ImplementationBodyCodegen)
             )
         }
+
+        FunctionCodegen(codegen.context, v, generationState, codegen).generateOverloadsWithDefaultValues(
+            null, newFunctionDescriptor, newFunctionDescriptor
+        )
 
         // body
 
