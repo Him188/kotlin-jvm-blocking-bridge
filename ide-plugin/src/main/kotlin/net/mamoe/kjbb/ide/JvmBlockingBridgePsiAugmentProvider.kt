@@ -237,8 +237,7 @@ internal fun KtLightMethod.generateLightMethod(
                     val psiClassReferenceType = continuationParamType as? PsiClassReferenceType ?: return null
 
                     fun PsiType.coerceUnitToVoid(): PsiType {
-                        return if (this.canonicalText == "kotlin.Unit") PsiPrimitiveType(JvmPrimitiveTypeKind.VOID,
-                            arrayOf()) else this
+                        return if (this.canonicalText == "kotlin.Unit") PsiType.VOID else this
                     }
 
                     when (val type = psiClassReferenceType.parameters.getOrNull(0) ?: return null) {
