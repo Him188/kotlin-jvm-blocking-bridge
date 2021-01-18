@@ -17,7 +17,7 @@ internal abstract class AbstractUnitCoercionTest(ir: Boolean) : AbstractCompiler
         companion object {
             @JvmStatic
             fun main(): String {
-                assertEquals("void", Class.forName("TestData").getFunctionReturnType("test", "receiver", "p0"))
+                Class.forName("TestData").assertHasFunction<Void>("test", String::class.java, String::class.java)
                 return "OK"
             }
         }
@@ -37,7 +37,7 @@ internal abstract class AbstractUnitCoercionTest(ir: Boolean) : AbstractCompiler
         companion object {
             @JvmStatic
             fun main(): String {
-                assertEquals("java.lang.String", Class.forName("TestData").getFunctionReturnType("test", "p0"))
+                 Class.forName("TestData").assertHasFunction<String>("test", String::class.java)
                 return "OK"
             }
         }
@@ -52,12 +52,10 @@ internal abstract class AbstractUnitCoercionTest(ir: Boolean) : AbstractCompiler
         @JvmStatic
         @JvmBlockingBridge
         suspend fun String.test(arg: String) { // returns Unit
-            assertEquals("receiver", this)
-            assertEquals("p0", arg)
         }
         
         fun main(): String {
-            assertEquals("void", Class.forName("TestData").getFunctionReturnType("test", "receiver", "p0"))
+            Class.forName("TestData").assertHasFunction<Void>("test", String::class.java, String::class.java)
             return "OK"
         }
     }
@@ -72,14 +70,12 @@ internal abstract class AbstractUnitCoercionTest(ir: Boolean) : AbstractCompiler
             @JvmStatic
             @JvmBlockingBridge
             suspend fun String.test(arg: String) { // returns Unit
-                assertEquals("receiver", this)
-                assertEquals("p0", arg)
             }
             
             @JvmStatic
             fun main(): String {
-                assertEquals("void", Class.forName("TestData\${"$"}Companion").getFunctionReturnType("test", "receiver", "p0"))
-                assertEquals("void", Class.forName("TestData").getFunctionReturnType("test", "receiver", "p0"))
+                Class.forName("TestData").assertHasFunction<Void>("test", String::class.java, String::class.java)
+                Class.forName("TestData\${'$'}Companion").assertHasFunction<Void>("test", String::class.java, String::class.java)
                 return "OK"
             }
         }
@@ -103,8 +99,8 @@ internal abstract class AbstractUnitCoercionTest(ir: Boolean) : AbstractCompiler
             
             @JvmStatic
             fun main(): String {
-                assertEquals("java.lang.String", Class.forName("TestData\${"$"}Companion").getFunctionReturnType("test", "receiver", "p0"))
-                assertEquals("java.lang.String", Class.forName("TestData").getFunctionReturnType("test", "receiver", "p0"))
+                Class.forName("TestData").assertHasFunction<String>("test", String::class.java, String::class.java)
+                Class.forName("TestData\${'$'}Companion").assertHasFunction<String>("test", String::class.java, String::class.java)
                 
                 return Class.forName("TestData").runStaticFunction("test", "receiver", "p0")
             }
