@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 plugins {
     id("org.jetbrains.intellij") version "0.4.16"
     kotlin("jvm")
-    kotlin("kapt")
     kotlin("plugin.serialization")
     id("java")
     signing
@@ -22,9 +21,6 @@ dependencies {
 
     api(project(":kotlin-jvm-blocking-bridge"))
     api(project(":kotlin-jvm-blocking-bridge-compiler"))
-
-    kapt("com.google.auto.service:auto-service:1.0-rc7")
-    compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")
 
     compileOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
     compileOnly(files("libs/ide-common.jar"))
