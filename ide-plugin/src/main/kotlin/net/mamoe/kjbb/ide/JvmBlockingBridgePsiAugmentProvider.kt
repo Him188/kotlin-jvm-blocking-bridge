@@ -1,7 +1,6 @@
 package net.mamoe.kjbb.ide
 
 import com.intellij.lang.Language
-import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.RecursionManager
 import com.intellij.psi.*
@@ -24,7 +23,7 @@ import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.idea.caches.project.toDescriptor
 import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
 import org.jetbrains.kotlin.idea.util.module
-import org.jetbrains.kotlin.load.java.NOT_NULL_ANNOTATIONS
+import org.jetbrains.kotlin.load.java.JvmAnnotationNames
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
@@ -253,10 +252,8 @@ internal fun KtLightMethod.generateLightMethod(
             originMethod.annotations.forEach { annotation ->
                 if (annotation.hasQualifiedName("kotlin.Deprecated")) deprecated = true
                 if (returnType?.canonicalText == "void"
-                    && NOT_NULL_ANNOTATIONS.any { annotation.hasQualifiedName(it.asString()) }
-                ) {
-                    return@forEach // ignore @NotNull for coerced returnType `void`
-                }
+                    && annotation.hasQualifiedName(JvmAnnotationNames.JETBRAINS_NULLABLE_ANNOTATION.asString())
+                ) return@forEach // ignore @NotNull for coerced returnType `void`
 
                 addAnnotation(annotation)
             }
