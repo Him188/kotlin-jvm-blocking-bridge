@@ -26,7 +26,8 @@ internal sealed class BasicsTest(
     @Test
     fun `simple function in object`() = testJvmCompile(
         """
-        object TestData {
+import java.lang.reflect.Modifier
+object TestData {
             @JvmBlockingBridge
             suspend fun test() {}
             

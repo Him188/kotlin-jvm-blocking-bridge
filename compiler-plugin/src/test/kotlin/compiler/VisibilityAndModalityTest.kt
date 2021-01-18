@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.descriptors.Modality.OPEN
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.junit.jupiter.api.Test
 import visibility
+import java.lang.reflect.Modifier
 import kotlin.test.assertEquals
 
 internal sealed class VisibilityAndModalityTest(
@@ -26,6 +27,7 @@ internal sealed class VisibilityAndModalityTest(
         classLoader.loadClass("TestData").getMethod("test").run {
             assertEquals(Visibilities.Public, this.visibility)
             assertEquals(FINAL, this.modality)
+            assertEquals(Modifier.FINAL or Modifier.PUBLIC, this.modifiers)
         }
     }
 
@@ -44,10 +46,12 @@ internal sealed class VisibilityAndModalityTest(
         classLoader.loadClass("TestData").getMethod("test").run {
             assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
+            assertEquals(Modifier.PUBLIC, this.modifiers)
         }
         classLoader.loadClass("TestData").getMethod("test2").run {
             assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
+            assertEquals(Modifier.PUBLIC, this.modifiers)
         }
     }
 
@@ -66,10 +70,12 @@ internal sealed class VisibilityAndModalityTest(
         classLoader.loadClass("TestData").getMethod("test").run {
             assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
+            assertEquals(Modifier.PUBLIC, this.modifiers)
         }
         classLoader.loadClass("TestData").getMethod("test2").run {
             assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
+            assertEquals(Modifier.PUBLIC, this.modifiers)
         }
     }
 
@@ -88,10 +94,12 @@ internal sealed class VisibilityAndModalityTest(
         classLoader.loadClass("TestData").getMethod("test").run {
             assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
+            assertEquals(Modifier.PUBLIC, this.modifiers)
         }
         classLoader.loadClass("TestData").getMethod("test2").run {
             assertEquals(Visibilities.Public, this.visibility)
             assertEquals(OPEN, this.modality)
+            assertEquals(Modifier.PUBLIC, this.modifiers)
         }
     }
 }

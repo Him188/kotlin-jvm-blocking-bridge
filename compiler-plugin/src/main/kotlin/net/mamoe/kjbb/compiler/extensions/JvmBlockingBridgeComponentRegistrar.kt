@@ -34,7 +34,7 @@ open class JvmBlockingBridgeComponentRegistrar @JvmOverloads constructor(
 
         val actualConfiguration = overrideConfigurations ?: configuration
 
-        println("actualConfiguration.toString(): $actualConfiguration")
+        // println("actualConfiguration.toString(): $actualConfiguration")
 
         val unitCoercion = actualConfiguration[JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION]
             ?.runCatching { UnitCoercion.valueOf(this) }?.getOrNull()

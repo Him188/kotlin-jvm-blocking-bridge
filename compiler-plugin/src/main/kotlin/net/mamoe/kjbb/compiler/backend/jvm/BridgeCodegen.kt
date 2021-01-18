@@ -133,7 +133,7 @@ class BridgeCodegen(
 
         val mv = v.newMethod(
             methodOrigin,
-            originFunction.bridgesModality()
+            originFunction.bridgesModalityAsm()
                 .or(originFunction.visibility.asmFlag)
                 .or(if (shouldGenerateAsStatic) ACC_STATIC else 0)
                 .or(if (synthetic) ACC_SYNTHETIC else 0),
@@ -579,7 +579,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     return lambdaBuilder.thisName
 }
 
-private fun FunctionDescriptor.bridgesModality(): Int {
+private fun FunctionDescriptor.bridgesModalityAsm(): Int {
     val containingClass = containingClass ?: return ACC_FINAL
     return when (containingClass.kind) {
         ENUM_ENTRY,
@@ -589,7 +589,7 @@ private fun FunctionDescriptor.bridgesModality(): Int {
         CLASS,
         -> {
             when (containingClass.modality) {
-                Modality.OPEN, Modality.ABSTRACT, Modality.SEALED -> ACC_OPEN
+                Modality.OPEN, Modality.ABSTRACT, Modality.SEALED -> 0
                 else -> ACC_FINAL
             }
         }
