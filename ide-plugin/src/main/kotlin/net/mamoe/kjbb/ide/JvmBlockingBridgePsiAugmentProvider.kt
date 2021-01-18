@@ -24,8 +24,11 @@ import org.jetbrains.kotlin.idea.caches.project.toDescriptor
 import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
 import org.jetbrains.kotlin.idea.util.module
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
+import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
+import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 /**
  * Allows inserting elements into a PsiElement
@@ -156,6 +159,8 @@ internal fun PsiMethod.isSuspend(): Boolean =
 
 internal fun PsiMethod.isJvmStatic(): Boolean = hasAnnotation(JvmStatic::class.qualifiedName!!)
 
+internal fun PsiMethod.isJvmOverloads(): Boolean = hasAnnotation(JvmOverloads::class.qualifiedName!!)
+
 internal fun KtLightMethod.isJvmStaticInNonCompanionObject(): Boolean {
     val containingKotlinOrigin = containingClass.kotlinOrigin
 
@@ -179,19 +184,23 @@ internal fun KtLightMethod.generateLightMethod(
     ProgressManager.checkCanceled()
     val originMethod = this
 
-    fun generateImpl(): PsiMethod? {
+    fun generateImpl(
+        parameters: List<PsiParameter>,
+        originalElement: PsiElement,
+        kotlinOriginKind: JvmDeclarationOriginKind,
+    ): PsiMethod? {
         val javaMethod = BlockingBridgeStubMethodBuilder(
             originMethod.manager,
             originMethod.language,
             originMethod.name,
-            originMethod
+            originalElement
         ).apply {
             this.containingClass = containingClass
             docComment = originMethod.docComment
             navigationElement = originMethod
 
 
-            for (it in originMethod.parameterList.parameters.dropLast(1)) {
+            for (it in parameters) {
                 addParameter(it)
             }
 
@@ -245,7 +254,7 @@ internal fun KtLightMethod.generateLightMethod(
             setBody(JavaPsiFacade.getElementFactory(project).createCodeBlock())
         }
         val kotlinOrigin = originMethod.kotlinOrigin?.let { kotlinOrigin ->
-            LightMemberOriginForDeclaration(kotlinOrigin, JvmDeclarationOriginKind.BRIDGE) // // TODO: 2020/8/4
+            LightMemberOriginForDeclaration(kotlinOrigin, kotlinOriginKind) // // TODO: 2020/8/4
         }
 
         return BlockingBridgeStubMethod({ javaMethod }, kotlinOrigin, containingClass).apply {
@@ -255,9 +264,53 @@ internal fun KtLightMethod.generateLightMethod(
 //            }
     }
 
-    return listOfNotNull(generateImpl())
+    val overloads = originMethod.kotlinOrigin.safeAs<KtNamedFunction>()?.valueParameters // last is Continuation
+        ?.jvmOverloads(originMethod.parameterList) ?: return emptyList()
+
+    if (overloads.isEmpty()) return emptyList()
+
+    val baseMethodParameters = overloads.first()
+
+    val baseMethod =
+        generateImpl(baseMethodParameters, originMethod, JvmDeclarationOriginKind.BRIDGE) ?: return emptyList()
+
+    return overloads.mapNotNull {
+        if (it === baseMethodParameters) {
+            baseMethod
+        } else {
+            generateImpl(it, baseMethod, JvmDeclarationOriginKind.JVM_OVERLOADS)
+        }
+    }
 }
 
+private fun List<KtParameter>.jvmOverloads(parameterList: PsiParameterList): List<List<PsiParameter>>? {
+    fun findPsiParameter(name: String?): PsiParameter? {
+        return parameterList.parameters.find { it.name == name }
+    }
+
+    fun takeNDefaults(n: Int): List<KtParameter> {
+        val list = mutableListOf<KtParameter>()
+        for (ktParameter in this) {
+            if (ktParameter.hasDefaultValue()) {
+                if (list.size < n) {
+                    list.add(ktParameter)
+                }
+            } else {
+                list.add(ktParameter)
+            }
+        }
+        return list
+    }
+
+    val defaultValueCount = this.count { it.hasDefaultValue() }
+    if (defaultValueCount == 0) return listOf(this.map { findPsiParameter(it.name) ?: return null })
+
+    val result = mutableListOf<List<PsiParameter>>()
+    for (count in defaultValueCount downTo 0) {
+        result += takeNDefaults(count).map { findPsiParameter(it.name) ?: return null }
+    }
+    return result
+}
 
 class BlockingBridgeStubMethod(
     computeRealDelegate: () -> PsiMethod, lightMemberOrigin: LightMemberOrigin?, containingClass: KtLightClass,

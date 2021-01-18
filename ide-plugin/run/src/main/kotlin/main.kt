@@ -10,6 +10,13 @@ fun main() {
 
 open class AClass {
 
+    @JvmBlockingBridge
+    @JvmOverloads
+    suspend fun overloads(x: Int = 1, s: String = "") {
+
+    }
+
+
     /**
      * K fun
      */

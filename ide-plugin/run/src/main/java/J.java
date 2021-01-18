@@ -27,6 +27,9 @@ public class J {
 
         AClass.f();
 
+        x.overloads(1);
+        x.member();
+        x.overloads(1, "");
 
         new AClass() {
             @Nullable
