@@ -261,7 +261,7 @@ internal fun KtLightMethod.generateLightMethod(
 
             setBody(JavaPsiFacade.getElementFactory(project).createCodeBlock())
         }
-        val kotlinOrigin = originMethod.kotlinOrigin?.let { kotlinOrigin ->
+        val kotlinOrigin = originalElement?.kotlinOrigin?.let { kotlinOrigin ->
             LightMemberOriginForDeclaration(kotlinOrigin, kotlinOriginKind, parameters.keys.toList())
         }
 
