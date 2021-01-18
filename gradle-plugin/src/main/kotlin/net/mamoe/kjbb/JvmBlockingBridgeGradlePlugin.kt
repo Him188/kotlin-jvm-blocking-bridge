@@ -8,7 +8,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.*
 
-internal const val KJBB_VERSION = "1.6.0"
+internal const val KJBB_VERSION = "1.7.0"
 
 internal fun BlockingBridgePluginExtension.toSubpluginOptionList(): List<SubpluginOption> {
     return listOf(
@@ -65,7 +65,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
         val project = kotlinCompilation.target.project
         return project.provider {
             mutableListOf<SubpluginOption>()
-            project.extensions.findByType(BlockingBridgePluginExtension::class.java)?.toSubpluginOptionList()
+            project.extensions.findByType(BlockingBridgePluginExtension::class.java).toSubpluginOptionList()
                 ?: emptyList()
         }
     }
