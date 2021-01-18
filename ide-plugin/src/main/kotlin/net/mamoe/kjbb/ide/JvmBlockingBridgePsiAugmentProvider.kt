@@ -1,6 +1,7 @@
 package net.mamoe.kjbb.ide
 
 import com.intellij.lang.Language
+import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.RecursionManager
 import com.intellij.psi.*
@@ -23,6 +24,7 @@ import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.idea.caches.project.toDescriptor
 import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
 import org.jetbrains.kotlin.idea.util.module
+import org.jetbrains.kotlin.load.java.NOT_NULL_ANNOTATIONS
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
@@ -208,13 +210,6 @@ internal fun KtLightMethod.generateLightMethod(
                 addModifier(PsiModifier.STATIC)
             }
 
-            originMethod.annotations.forEach { annotation ->
-                if (annotation.hasQualifiedName("kotlin.Deprecated"))
-                    deprecated = true
-
-                addAnnotation(annotation)
-            }
-
             VISIBILITIES_MODIFIERS
                 .filter { originMethod.hasModifierProperty(it) }
                 .forEach { addModifier(it) }
@@ -241,15 +236,31 @@ internal fun KtLightMethod.generateLightMethod(
                 .let { continuationParamType ->
                     val psiClassReferenceType = continuationParamType as? PsiClassReferenceType ?: return null
 
+                    fun PsiType.coerceUnitToVoid(): PsiType {
+                        return if (this.canonicalText == "kotlin.Unit") PsiPrimitiveType(JvmPrimitiveTypeKind.VOID,
+                            arrayOf()) else this
+                    }
+
                     when (val type = psiClassReferenceType.parameters.getOrNull(0) ?: return null) {
                         is PsiWildcardType -> { // ? super String
-                            setMethodReturnType(type.bound?.canonicalText ?: type.canonicalText)
+                            setMethodReturnType((type.bound ?: type).coerceUnitToVoid())
                         }
                         else -> {
-                            setMethodReturnType(type.canonicalText)
+                            setMethodReturnType(type.coerceUnitToVoid())
                         }
                     }
                 }
+
+            originMethod.annotations.forEach { annotation ->
+                if (annotation.hasQualifiedName("kotlin.Deprecated")) deprecated = true
+                if (returnType?.canonicalText == "void"
+                    && NOT_NULL_ANNOTATIONS.any { annotation.hasQualifiedName(it.asString()) }
+                ) {
+                    return@forEach // ignore @NotNull for coerced returnType `void`
+                }
+
+                addAnnotation(annotation)
+            }
 
             setBody(JavaPsiFacade.getElementFactory(project).createCodeBlock())
         }
