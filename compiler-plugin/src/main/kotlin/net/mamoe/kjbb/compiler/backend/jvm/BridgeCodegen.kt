@@ -208,10 +208,6 @@ class BridgeCodegen(
 
         mv.genAnnotation(GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor, true)
 
-        if (!generationState.classBuilderMode.generateBodies) {
-            FunctionCodegen.endVisit(mv, methodName, methodOrigin.element)
-            return null
-        }
 
         fun createGeneratedBlockingBridgeAnnotation(): AnnotationDescriptorImpl? {
             val type = module.resolveTopLevelClass(GENERATED_BLOCKING_BRIDGE_FQ_NAME,
@@ -257,6 +253,11 @@ class BridgeCodegen(
         FunctionCodegen(codegen.context, v, generationState, codegen).generateOverloadsWithDefaultValues(
             null, newFunctionDescriptor, newFunctionDescriptor
         )
+
+        if (!generationState.classBuilderMode.generateBodies) {
+            FunctionCodegen.endVisit(mv, methodName, methodOrigin.element)
+            return null
+        }
 
         // body
 

@@ -12,7 +12,11 @@ open class AClass {
 
     @JvmBlockingBridge
     @JvmOverloads
-    suspend open fun overloads(x: Int = 1, s: String = "") {
+    open suspend fun overloads(x: Int = 1, s: String = "") {
+
+    }
+
+    fun overloads(x: Int) {
 
     }
 
