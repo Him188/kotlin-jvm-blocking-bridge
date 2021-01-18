@@ -186,10 +186,10 @@ internal fun KtLightMethod.generateLightMethod(
     val originMethod = this
 
     fun generateImpl(
-        parameters: List<PsiParameter>,
-        originalElement: PsiElement,
+        parameters: Map<KtParameter, PsiParameter>,
+        originalElement: KtLightMethod?,
         kotlinOriginKind: JvmDeclarationOriginKind,
-    ): PsiMethod? {
+    ): BlockingBridgeStubMethod? {
         val javaMethod = BlockingBridgeStubMethodBuilder(
             originMethod.manager,
             originMethod.language,
@@ -201,7 +201,7 @@ internal fun KtLightMethod.generateLightMethod(
             navigationElement = originMethod
 
 
-            for (it in parameters) {
+            for ((_, it) in parameters) {
                 addParameter(it)
             }
 
@@ -251,6 +251,7 @@ internal fun KtLightMethod.generateLightMethod(
 
             originMethod.annotations.forEach { annotation ->
                 if (annotation.hasQualifiedName("kotlin.Deprecated")) deprecated = true
+
                 if (returnType?.canonicalText == "void"
                     && annotation.hasQualifiedName(JvmAnnotationNames.JETBRAINS_NULLABLE_ANNOTATION.asString())
                 ) return@forEach // ignore @NotNull for coerced returnType `void`
@@ -261,7 +262,7 @@ internal fun KtLightMethod.generateLightMethod(
             setBody(JavaPsiFacade.getElementFactory(project).createCodeBlock())
         }
         val kotlinOrigin = originMethod.kotlinOrigin?.let { kotlinOrigin ->
-            LightMemberOriginForDeclaration(kotlinOrigin, kotlinOriginKind) // // TODO: 2020/8/4
+            LightMemberOriginForDeclaration(kotlinOrigin, kotlinOriginKind, parameters.keys.toList())
         }
 
         return BlockingBridgeStubMethod({ javaMethod }, kotlinOrigin, containingClass).apply {
@@ -279,7 +280,7 @@ internal fun KtLightMethod.generateLightMethod(
     val baseMethodParameters = overloads.first()
 
     val baseMethod =
-        generateImpl(baseMethodParameters, originMethod, JvmDeclarationOriginKind.BRIDGE) ?: return emptyList()
+        generateImpl(baseMethodParameters, originMethod, JvmDeclarationOriginKind.OTHER) ?: return emptyList()
 
     return overloads.mapNotNull {
         if (it === baseMethodParameters) {
@@ -290,7 +291,7 @@ internal fun KtLightMethod.generateLightMethod(
     }
 }
 
-private fun List<KtParameter>.jvmOverloads(parameterList: PsiParameterList): List<List<PsiParameter>>? {
+private fun List<KtParameter>.jvmOverloads(parameterList: PsiParameterList): List<Map<KtParameter, PsiParameter>>? {
     fun findPsiParameter(name: String?): PsiParameter? {
         return parameterList.parameters.find { it.name == name }
     }
@@ -310,11 +311,11 @@ private fun List<KtParameter>.jvmOverloads(parameterList: PsiParameterList): Lis
     }
 
     val defaultValueCount = this.count { it.hasDefaultValue() }
-    if (defaultValueCount == 0) return listOf(this.map { findPsiParameter(it.name) ?: return null })
+    if (defaultValueCount == 0) return listOf(this.associateWith { findPsiParameter(it.name) ?: return null })
 
-    val result = mutableListOf<List<PsiParameter>>()
+    val result = mutableListOf<Map<KtParameter, PsiParameter>>()
     for (count in defaultValueCount downTo 0) {
-        result += takeNDefaults(count).map { findPsiParameter(it.name) ?: return null }
+        result += takeNDefaults(count).associateWith { findPsiParameter(it.name) ?: return null }
     }
     return result
 }
@@ -332,7 +333,7 @@ class BlockingBridgeStubMethod(
 }
 
 private class BlockingBridgeStubMethodBuilder(
-    manager: PsiManager, language: Language, name: String, private val originalElement: PsiElement,
+    manager: PsiManager, language: Language, name: String, private val originalElement: PsiElement?,
 ) : LightMethodBuilder(manager, language, name) {
 
     private var _body: PsiCodeBlock? = null
@@ -344,7 +345,7 @@ private class BlockingBridgeStubMethodBuilder(
     }
 
     override fun getOriginalElement(): PsiElement {
-        return this.originalElement
+        return this.originalElement ?: this
     }
 
     override fun getBody(): PsiCodeBlock? {

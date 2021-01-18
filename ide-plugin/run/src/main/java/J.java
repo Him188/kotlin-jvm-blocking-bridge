@@ -27,6 +27,7 @@ public class J {
 
         AClass.f();
 
+        x.overloads();
         x.overloads(1);
         x.member();
         x.overloads(1, "");
@@ -36,6 +37,12 @@ public class J {
             @Override
             public Object member(@NotNull Continuation<? super Unit> $completion) {
                 return super.member($completion);
+            }
+
+            @Nullable
+            @Override
+            public void overloads() {
+                super.overloads();
             }
 
             @Nullable
