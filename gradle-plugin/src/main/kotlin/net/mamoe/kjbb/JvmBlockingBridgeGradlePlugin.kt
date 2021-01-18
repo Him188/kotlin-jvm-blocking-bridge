@@ -63,10 +63,11 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
+        val ext: BlockingBridgePluginExtension? =
+            project.extensions.findByType(BlockingBridgePluginExtension::class.java)
         return project.provider {
             mutableListOf<SubpluginOption>()
-            project.extensions.findByType(BlockingBridgePluginExtension::class.java).toSubpluginOptionList()
-                ?: emptyList()
+            ext?.toSubpluginOptionList() ?: emptyList()
         }
     }
 
