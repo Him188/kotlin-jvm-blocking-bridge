@@ -1,6 +1,7 @@
 package net.mamoe.kjbb.compiler.backend.jvm
 
 import com.intellij.psi.PsiElement
+import net.mamoe.kjbb.compiler.UnitCoercion
 import net.mamoe.kjbb.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
@@ -23,6 +24,7 @@ import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils
 import org.jetbrains.kotlin.resolve.DescriptorUtils
@@ -39,6 +41,7 @@ import org.jetbrains.kotlin.resolve.jvm.diagnostics.OtherOrigin
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.expressions.createFunctionType
 import org.jetbrains.kotlin.types.isNullable
+import org.jetbrains.kotlin.types.typeUtil.isUnit
 import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.Label
@@ -58,6 +61,7 @@ internal interface BridgeCodegenExtensions {
 class BridgeCodegen(
     private val codegen: ImplementationBodyCodegen,
     compilerContext: CompilerContext = CompilerContext.INSTANCE,
+    private val unitCoercion: UnitCoercion,
 ) : BridgeCodegenExtensions, CompilerContext by compilerContext {
 
     private val generationState: GenerationState get() = codegen.state
@@ -79,18 +83,40 @@ class BridgeCodegen(
             if (function.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
                 val capability = function.analyzeCapabilityForGeneratingBridges(false)
                 if (!capability.diagnosticPassed) capability.createDiagnostic()?.let(::report)
-                if (capability.shouldGenerate) function.generateBridge()
+                if (capability.shouldGenerate) {
+                    val desc = function.generateBridge(allowUnitCoercion = true, synthetic = false)
+
+                    if (function.returnType?.isUnit() == true) {
+                        if (unitCoercion == UnitCoercion.COMPATIBILITY) {
+                            // for compatibility with <= 1.6
+                            function.generateBridge(allowUnitCoercion = false, synthetic = true, desc)
+                        }
+                    }
+                }
             }
         }
     }
 
-    private fun SimpleFunctionDescriptor.generateBridge() {
+    private fun KotlinType.coerceUnitToVoid(): Type? {
+        return if (this.isUnit()) Type.VOID_TYPE else null
+    }
 
+    private fun SimpleFunctionDescriptor.generateBridge(
+        allowUnitCoercion: Boolean, synthetic: Boolean,
+        originBridgeFunctionDesc: FunctionDescriptor? = null,
+    ): FunctionDescriptor? {
         val originFunction = this
 
         val methodName = originFunction.jvmName ?: originFunction.name.asString()
-        val returnType = originFunction.returnType?.asmType()
-            ?: Nothing::class.asmType
+
+        val returnTypeAsm = if (allowUnitCoercion) {
+            originFunction.returnType?.coerceUnitToVoid()
+                ?: originFunction.returnType?.asmType()
+                ?: Nothing::class.asmType
+        } else {
+            originFunction.returnType?.asmType()
+                ?: Nothing::class.asmType
+        }
 
         val methodOrigin = JvmDeclarationOrigin(
             originKind = JvmDeclarationOriginKind.BRIDGE,
@@ -100,14 +126,19 @@ class BridgeCodegen(
         //val methodSignature = originFunction.computeJvmDescriptor(withName = true)
         val shouldGenerateAsStatic = isJvmStaticIn { !it.isCompanionObject() }
 
+        val bridgeSignature = extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
+            typeMapper,
+            returnTypeDescriptor = returnTypeAsm.descriptor
+        )
+
         val mv = v.newMethod(
             methodOrigin,
-            originFunction.bridgesModality() or originFunction.visibility.asmFlag or (if (shouldGenerateAsStatic) ACC_STATIC else 0),
+            originFunction.bridgesModality()
+                .or(originFunction.visibility.asmFlag)
+                .or(if (shouldGenerateAsStatic) ACC_STATIC else 0)
+                .or(if (synthetic) ACC_SYNTHETIC else 0),
             methodName,
-            extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
-                typeMapper,
-                returnTypeDescriptor = returnType.descriptor
-            ),
+            bridgeSignature,
             null,
             // public annotation class Throws(vararg val exceptionClasses: KClass<out Throwable>)
             originFunction.exceptionsByThrowsAnnotation(typeMapper)
@@ -118,7 +149,7 @@ class BridgeCodegen(
             FunctionCodegen.generateMethodInsideInlineClassWrapper(
                 methodOrigin, this, clazz, mv, typeMapper
             )
-            return
+            return null
         }
 
 
@@ -166,7 +197,7 @@ class BridgeCodegen(
                 AnnotationCodegen.forMethod(mv, codegen, generationState)
                     .genAnnotations(
                         AnnotatedImpl(Annotations.create(annotations)),
-                        returnType,
+                        returnTypeAsm,
                         createFunctionType(
                             builtIns,
                             suspendFunction = false,
@@ -179,15 +210,15 @@ class BridgeCodegen(
 
         if (!generationState.classBuilderMode.generateBodies) {
             FunctionCodegen.endVisit(mv, methodName, methodOrigin.element)
-            return
+            return null
         }
 
 
         // static bridge for static in companion
-        val newFunctionDescriptor = SimpleFunctionDescriptorImpl.create(
+        val newFunctionDescriptor = originBridgeFunctionDesc ?: SimpleFunctionDescriptorImpl.create(
             originFunction.containingDeclaration,
             Annotations.create(newAnnotations),
-            originFunction.name,
+            Name.identifier(methodName),
             originFunction.kind,
             originFunction.source,
         ).apply {
@@ -204,12 +235,18 @@ class BridgeCodegen(
 
         if (isJvmStaticInCompanionObject()) {
             val parentCodegen = codegen.parentCodegen as ImplementationBodyCodegen
-            parentCodegen.addAdditionalTask(
-                JvmStaticInCompanionObjectGenerator(newFunctionDescriptor,
-                    methodOrigin,
-                    generationState,
-                    codegen.parentCodegen as ImplementationBodyCodegen)
-            )
+            if (originBridgeFunctionDesc == null) {
+                // new method, gen returnType `void`
+                parentCodegen.addAdditionalTask(
+                    JvmStaticInCompanionObjectGenerator(
+                        newFunctionDescriptor,
+                        methodOrigin,
+                        generationState,
+                        codegen.parentCodegen as ImplementationBodyCodegen
+                    )
+                )
+            }
+            // else: compatibility method for `Unit` in companion, don't gen
         }
 
         FunctionCodegen(codegen.context, v, generationState, codegen).generateOverloadsWithDefaultValues(
@@ -226,7 +263,6 @@ class BridgeCodegen(
             originFunction, codegen.state,
             originFunction.findPsi()!!,
             codegen.v.thisName,
-            codegen.context.contextKind,
             ownerType,
             if (shouldGenerateAsStatic) null else clazz.thisAsReceiverParameter
         ).let { Type.getObjectType(it) }
@@ -273,10 +309,11 @@ class BridgeCodegen(
             //cast(Type.getType(Any::class.java), originFunction.returnTypeOrNothing.asmType())
             //
 
-            genReturn(returnType)
+            genReturn(returnTypeAsm)
         }
 
         FunctionCodegen.endVisit(mv, methodName, methodOrigin.element)
+        return newFunctionDescriptor
     }
 }
 
@@ -375,7 +412,6 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     state: GenerationState,
     originElement: PsiElement,
     parentName: String,
-    contextKind: OwnerKind,
     methodOwnerType: Type,
     dispatchReceiverParameterDescriptor: ReceiverParameterDescriptor?,
 ): String {

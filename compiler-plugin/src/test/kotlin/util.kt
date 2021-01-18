@@ -3,7 +3,9 @@
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import net.mamoe.kjbb.JvmBlockingBridge
+import net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeComponentRegistrar
 import org.intellij.lang.annotations.Language
+import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.JvmTarget
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
@@ -31,12 +33,37 @@ fun <R> Class<*>.runStaticFunction(name: String, vararg args: Any): R {
     }.invoke(null, *args)!! as R
 }
 
+fun Class<*>.getFunctionReturnType(name: String, vararg args: Any): String {
+    return getMethod(name, *args.map { it::class.java }.toTypedArray()).returnType.canonicalName
+}
+
+inline fun <reified R : Any> Class<*>.assertHasFunction(name: String, vararg args: Class<*>) {
+    return assertHasFunction(name, args = args, returnType = R::class.javaPrimitiveType ?: R::class.java)
+}
+
+fun Class<*>.assertHasFunction(name: String, vararg args: Class<*>, returnType: Class<*>) {
+    val any = declaredMethods.any {
+        it.returnType == returnType &&
+                it.parameterCount == args.size &&
+                it.parameters.zip(args).all { (param, clazz) -> param.type == clazz }
+    }
+    if (!any)
+        throw AssertionError("Class does not has method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}")
+}
+
 fun compile(
     @Language("kt")
     source: String,
     ir: Boolean,
     jvmTarget: JvmTarget = JvmTarget.JVM_1_8,
-) = compile(source, null, ir, jvmTarget)
+    overrideCompilerConfiguration: CompilerConfiguration? = null,
+    config: KotlinCompilation.() -> Unit = {},
+) = compile(source,
+    null,
+    ir,
+    jvmTarget,
+    overrideCompilerConfiguration = overrideCompilerConfiguration,
+    config = config)
 
 fun compile(
     @Language("kt")
@@ -45,6 +72,8 @@ fun compile(
     java: String? = null,
     ir: Boolean,
     jvmTarget: JvmTarget = JvmTarget.JVM_1_8,
+    overrideCompilerConfiguration: CompilerConfiguration? = null,
+    config: KotlinCompilation.() -> Unit = {},
 ): KotlinCompilation.Result {
     val intrinsicImports = listOf(
         "import kotlin.test.*",
@@ -74,7 +103,7 @@ fun compile(
             }
         )
 
-        compilerPlugins = listOf(TestComponentRegistrar())
+        compilerPlugins = listOf(JvmBlockingBridgeComponentRegistrar(overrideCompilerConfiguration))
         verbose = false
 
         this.jvmTarget = jvmTarget.description
@@ -88,8 +117,12 @@ fun compile(
 
         inheritClassPath = true
         messageOutputStream = System.out
+
+        config()
     }.compile().also { result ->
-        assert(result.exitCode == KotlinCompilation.ExitCode.OK)
+        assert(result.exitCode == KotlinCompilation.ExitCode.OK) {
+            "Test data compilation failed."
+        }
     }
 }
 
@@ -102,8 +135,10 @@ fun testIrCompile(
     noMain: Boolean = false,
     ir: Boolean = true,
     jvmTarget: JvmTarget = JvmTarget.JVM_1_8,
+    overrideCompilerConfiguration: CompilerConfiguration? = null,
+    config: KotlinCompilation.() -> Unit = {},
     block: KotlinCompilation.Result.() -> Unit = {},
-) = testJvmCompile(kt, java, noMain, ir, jvmTarget, block)
+) = testJvmCompile(kt, java, noMain, ir, jvmTarget, overrideCompilerConfiguration, config, block)
 
 
 fun testJvmCompile(
@@ -114,9 +149,17 @@ fun testJvmCompile(
     noMain: Boolean = false,
     ir: Boolean = false,
     jvmTarget: JvmTarget = JvmTarget.JVM_1_8,
+    overrideCompilerConfiguration: CompilerConfiguration? = null,
+    config: KotlinCompilation.() -> Unit = {},
     block: KotlinCompilation.Result.() -> Unit = {},
 ) {
-    val result = compile(kt, java, ir, jvmTarget)
+    val result =
+        compile(kt,
+            java,
+            ir,
+            jvmTarget,
+            overrideCompilerConfiguration = overrideCompilerConfiguration,
+            config = config)
 
     if (!noMain) {
         @Suppress("UNCHECKED_CAST")
@@ -124,7 +167,9 @@ fun testJvmCompile(
         assertEquals(
             "OK",
             listOfNotNull(
-                test.kotlin.objectInstance, test.kotlin.companionObjectInstance, test.kotlin.createInstanceOrNull()
+                test.kotlin.objectInstance,
+                test.kotlin.companionObjectInstance,
+                test.kotlin.createInstanceOrNull()
             ).associateWith { obj ->
                 obj::class.java.methods.find { it.name == "main" }
             }.entries.find { it.value != null }?.let { (instance, method) ->
@@ -144,7 +189,8 @@ fun <T : Any> KClass<T>.createInstanceOrNull(): T? {
     return noArgsConstructor.callBy(emptyMap())
 }
 
-internal val Method.visibility: Visibility
+internal
+val Method.visibility: Visibility
     get() = when {
         Modifier.isPublic(this.modifiers) -> Visibilities.Public
         Modifier.isPrivate(this.modifiers) -> Visibilities.Private
@@ -152,7 +198,8 @@ internal val Method.visibility: Visibility
         else -> Visibilities.PrivateToThis
     }
 
-internal val Method.modality: Modality
+internal
+val Method.modality: Modality
     get() = when {
         Modifier.isFinal(this.modifiers) -> Modality.FINAL
         Modifier.isAbstract(this.modifiers) -> Modality.ABSTRACT

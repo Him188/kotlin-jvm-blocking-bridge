@@ -2,6 +2,7 @@ package net.mamoe.kjbb.ide
 
 import com.google.auto.service.AutoService
 import com.intellij.mock.MockProject
+import net.mamoe.kjbb.compiler.UnitCoercion
 import net.mamoe.kjbb.compiler.backend.jvm.BridgeCodegen
 import net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeIrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -32,7 +33,7 @@ open class JvmBlockingBridgeIntelliJComponentRegistrar : ComponentRegistrar {
         IrGenerationExtension.registerExtension(project, JvmBlockingBridgeIrGenerationExtension())
         ExpressionCodegenExtension.registerExtension(project, object : ExpressionCodegenExtension {
             override fun generateClassSyntheticParts(codegen: ImplementationBodyCodegen) {
-                BridgeCodegen(codegen, CompilerContextIntelliJ).generate()
+                BridgeCodegen(codegen, CompilerContextIntelliJ, UnitCoercion.DEFAULT).generate()
             }
 
             override val shouldGenerateClassSyntheticPartsInLightClassesMode: Boolean get() = true
