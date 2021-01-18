@@ -55,8 +55,9 @@ class BlockingBridgeLineMarkerProvider : LineMarkerProvider {
     }
 
     class BridgeCallLineMarkerInfo(
-        callElement: PsiElement
+        callElement: PsiElement,
     ) : LineMarkerInfo<PsiElement>(
+        // this is since 191, new constructor is since 203, which is too high for now
         callElement,
         callElement.textRange,
         Icons.BridgedSuspendCall,
@@ -64,7 +65,7 @@ class BlockingBridgeLineMarkerProvider : LineMarkerProvider {
             "Blocking bridge method call"
         },
         null,
-        GutterIconRenderer.Alignment.RIGHT
+        GutterIconRenderer.Alignment.RIGHT,
     ) {
         override fun createGutterRenderer(): GutterIconRenderer {
             return object : LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>(this) {
