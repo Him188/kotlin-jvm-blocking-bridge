@@ -83,7 +83,7 @@ sealed class BlockingBridgeAnalyzeResult(
 
 internal fun TargetPlatform.isJvm8OrHigher(): Boolean {
     return componentPlatforms
-        .any { (it.targetPlatformVersion as? JvmTarget)?.bytecodeVersion ?: 0 >= JvmTarget.JVM_1_8.bytecodeVersion }
+        .any { it.targetPlatformVersion as? JvmTarget ?: JvmTarget.DEFAULT >= JvmTarget.JVM_1_8 }
 }
 
 /**

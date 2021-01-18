@@ -34,12 +34,12 @@ version = Versions.idePlugin
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = "2020.2"
+    version = "2020.3.1"
     isDownloadSources = true
     updateSinceUntilBuild = false
 
     setPlugins(
-        "org.jetbrains.kotlin:1.4.20-RC-IJ2020.2-1@eap"
+        "org.jetbrains.kotlin:203-1.4.30-RC-IJ6682.9@eap"
     )
 }
 
