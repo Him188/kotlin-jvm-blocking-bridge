@@ -2,10 +2,7 @@ package net.mamoe.kjbb.compiler.backend.jvm
 
 import com.intellij.psi.PsiElement
 import net.mamoe.kjbb.compiler.UnitCoercion
-import net.mamoe.kjbb.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_ASM_TYPE
-import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
-import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
-import net.mamoe.kjbb.compiler.backend.ir.identifierOrMappedSpecialName
+import net.mamoe.kjbb.compiler.backend.ir.*
 import net.mamoe.kjbb.compiler.context.CompilerContext
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
@@ -18,6 +15,7 @@ import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.ClassKind.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
+import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptorImpl
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.descriptors.impl.SimpleFunctionDescriptorImpl
 import org.jetbrains.kotlin.diagnostics.Diagnostic
@@ -34,6 +32,8 @@ import org.jetbrains.kotlin.resolve.constants.ArrayValue
 import org.jetbrains.kotlin.resolve.constants.KClassValue
 import org.jetbrains.kotlin.resolve.descriptorUtil.builtIns
 import org.jetbrains.kotlin.resolve.descriptorUtil.isCompanionObject
+import org.jetbrains.kotlin.resolve.descriptorUtil.module
+import org.jetbrains.kotlin.resolve.descriptorUtil.resolveTopLevelClass
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
@@ -213,11 +213,16 @@ class BridgeCodegen(
             return null
         }
 
+        fun createGeneratedBlockingBridgeAnnotation(): AnnotationDescriptorImpl? {
+            val type = module.resolveTopLevelClass(GENERATED_BLOCKING_BRIDGE_FQ_NAME,
+                NoLookupLocation.FROM_BACKEND)?.defaultType ?: return null
+            return AnnotationDescriptorImpl(type, mapOf(), SourceElement.NO_SOURCE)
+        }
 
         // static bridge for static in companion
         val newFunctionDescriptor = originBridgeFunctionDesc ?: SimpleFunctionDescriptorImpl.create(
             originFunction.containingDeclaration,
-            Annotations.create(newAnnotations),
+            Annotations.create(newAnnotations + listOfNotNull(createGeneratedBlockingBridgeAnnotation())),
             Name.identifier(methodName),
             originFunction.kind,
             originFunction.source,

@@ -1,3 +1,5 @@
+@file:Suppress("RedundantSuspendModifier")
+
 package compiler
 
 import org.junit.jupiter.api.Test
@@ -8,7 +10,7 @@ internal sealed class StaticTest(ir: Boolean) : AbstractCompilerTest(ir) {
 
 
     @Test
-    fun `static`() = testJvmCompile(
+    fun static() = testJvmCompile(
         """
     object TestData {
         @JvmStatic
@@ -99,4 +101,24 @@ internal sealed class StaticTest(ir: Boolean) : AbstractCompilerTest(ir) {
     }
 """
     )
+
+    @Test
+    fun `GeneratedJvmBlockingBridge annotation on static bridge`() = testJvmCompile(
+        """
+    class TestData {
+        companion object {
+            @JvmStatic
+            @JvmBlockingBridge
+            suspend fun test(arg: String) {}
+        }
+        
+        fun main(): String {
+            Class.forName("TestData").getMethod("test", String::class.java). 
+                getAnnotation(Class.forName("net.mamoe.kjbb.GeneratedBlockingBridge") as Class<Annotation>)
+            return "OK"
+        }
+    }
+"""
+    )
+
 }
