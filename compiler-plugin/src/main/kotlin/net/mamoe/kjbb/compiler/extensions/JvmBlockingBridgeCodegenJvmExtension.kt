@@ -10,8 +10,8 @@ import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
  * For JVM backend
  */
 @AutoService(ExpressionCodegenExtension::class)
-open class JvmBlockingBridgeCodegenJvmExtension(
-    private val unitCoercion: UnitCoercion,
+open class JvmBlockingBridgeCodegenJvmExtension @JvmOverloads constructor(
+    private val unitCoercion: UnitCoercion = UnitCoercion.DEFAULT,
 ) :
     ExpressionCodegenExtension {
 
