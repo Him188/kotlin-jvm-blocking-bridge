@@ -1,26 +1,28 @@
 package net.mamoe.kjbb
 
-import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys
+import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION
+import net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCommandLineProcessor
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.*
 
-internal const val JBB_VERSION = "1.6.0"
-
-internal const val PLUGIN_ID = "net.mamoe.kotlin-jvm-blocking-bridge-compiler-embeddable"
+internal const val KJBB_VERSION = "1.6.0"
 
 internal fun BlockingBridgePluginExtension.toSubpluginOptionList(): List<SubpluginOption> {
     return listOf(
-        SubpluginOption(JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION.toString(), unitCoercion.name)
+        SubpluginOption(UNIT_COERCION.toString(), unitCoercion.name)
     )
 }
 
+/**
+ * Would download from jcenter
+ */
 private val pluginArtifact = SubpluginArtifact(
-    groupId = PLUGIN_ID.substringBeforeLast('.'),
-    artifactId = PLUGIN_ID.substringAfterLast('.'),
-    version = JBB_VERSION
+    groupId = "net.mamoe",
+    artifactId = "kotlin-jvm-blocking-bridge-compiler-embeddable",
+    version = KJBB_VERSION
 )  // .also { log("Adding: " + it.groupId + ":${it.artifactId}:${it.version}") }
 
 
@@ -38,7 +40,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
                 for (applicableTarget in applicableTargets) {
                     applicableTarget.compilations.flatMap { it.allKotlinSourceSets }.forEach {
                         it.dependencies {
-                            implementation("net.mamoe:kotlin-jvm-blocking-bridge:$JBB_VERSION")
+                            implementation("net.mamoe:kotlin-jvm-blocking-bridge:$KJBB_VERSION")
                         }
                     }
                 }
@@ -49,7 +51,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
             }, onFailure = {
                 if (kotlin.runCatching { target.extensions.getByType(KotlinJvmProjectExtension::class.java) }.isSuccess) {
                     // when JVM
-                    target.dependencies.add("implementation", "net.mamoe:kotlin-jvm-blocking-bridge:$JBB_VERSION")
+                    target.dependencies.add("implementation", "net.mamoe:kotlin-jvm-blocking-bridge:$KJBB_VERSION")
                     target.repositories.maven { it.setUrl("https://dl.bintray.com/mamoe/kotlin-jvm-blocking-bridge") }
                 } // else: neither JVM nor MPP. Don't apply
             })
@@ -57,7 +59,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
         target.extensions.create("blockingBridge", BlockingBridgePluginExtension::class.java)
     }
 
-    override fun getCompilerPluginId(): String = PLUGIN_ID
+    override fun getCompilerPluginId(): String = JvmBlockingBridgeCommandLineProcessor.COMPILER_PLUGIN_ID
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project

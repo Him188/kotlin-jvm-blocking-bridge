@@ -3,8 +3,9 @@ package net.mamoe.kjbb.compiler
 import org.jetbrains.kotlin.config.CompilerConfigurationKey
 
 object JvmBlockingBridgeCompilerConfigurationKeys {
-    private const val NAMESPACE = "kjbb"
-
     @JvmStatic
-    val UNIT_COERCION = CompilerConfigurationKey<String>("$NAMESPACE.unit-coercion")
+    val UNIT_COERCION = CompilerConfigurationKeyWithName<String>("unitCoercion")
 }
+
+// don't data
+class CompilerConfigurationKeyWithName<T>(val name: String) : CompilerConfigurationKey<T>(name)

@@ -37,8 +37,8 @@ public class J {
 
             @Nullable
             @Override
-            public Unit member() {
-                return super.member();
+            public void member() {
+                super.member();
             }
         };
     }

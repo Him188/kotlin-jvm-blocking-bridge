@@ -26,13 +26,15 @@ open class JvmBlockingBridgeComponentRegistrar @JvmOverloads constructor(
         project: MockProject,
         configuration: CompilerConfiguration,
     ) {
-        // if (configuration[KEY_ENABLED] == false) {
+        // if (configuratio[KEY_ENABLED] == false) {
         //     return
         // }
 
         //SyntheticResolveExtension.registerExtension(project, JvmBlockingBridgeResolveExtension())
 
         val actualConfiguration = overrideConfigurations ?: configuration
+
+        println("actualConfiguration.toString(): $actualConfiguration")
 
         val unitCoercion = actualConfiguration[JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION]
             ?.runCatching { UnitCoercion.valueOf(this) }?.getOrNull()

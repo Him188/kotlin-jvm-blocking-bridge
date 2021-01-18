@@ -118,7 +118,12 @@ fun test(a1: Int, a2: Any): String = runBlocking {
 The plugin is ready to use.
 
 ### Library users
-If you use a library that uses Kotlin Jvm Blocking Bridge, you need to install the IntelliJ plugin.
+
+If you use a library that uses Kotlin Jvm Blocking Bridge, it is not compulsory to install this plugin. IDE will retrieve bridges from library binaries.
+
+### Library authors
+
+If you're developing a library or using both Java and Kotlin with KJBB, you need to install the Gradle plugin and the IntelliJ plugin.
 
 #### **Install IntelliJ IDEA (or Android Studio) plugin**
    The plugin currently supports from 2019.\* to 2020.\*  
@@ -132,9 +137,6 @@ If you use a library that uses Kotlin Jvm Blocking Bridge, you need to install t
    1. Open `File->Settings->Plugins->Marketplace` in your IDE
    2. Search `Kotlin Jvm Blocking Bridge`, download and install
    3. Restart your IDE
-
-### Library authors
-If you're developing a library with KJBB, you need to install the Gradle plugin additionally.
 
 #### **Install Gradle plugin**
 

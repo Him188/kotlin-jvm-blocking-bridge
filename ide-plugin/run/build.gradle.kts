@@ -1,8 +1,13 @@
+import net.mamoe.kjbb.compiler.UnitCoercion.COMPATIBILITY
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.4.21"
     id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.6.0"
+}
+
+blockingBridge {
+    unitCoercion = COMPATIBILITY
 }
 
 group = "me.him188"
