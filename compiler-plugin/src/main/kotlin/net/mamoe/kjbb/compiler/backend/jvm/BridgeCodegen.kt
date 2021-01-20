@@ -234,10 +234,10 @@ class BridgeCodegen(
             )
         }
 
-        if (isJvmStaticInCompanionObject()) {
-            val parentCodegen = codegen.parentCodegen as ImplementationBodyCodegen
-            if (originBridgeFunctionDesc == null) {
-                // new method, gen returnType `void`
+        if (originBridgeFunctionDesc == null) {
+            // new method, gen returnType `void`
+            if (isJvmStaticInCompanionObject()) {
+                val parentCodegen = codegen.parentCodegen as ImplementationBodyCodegen
                 parentCodegen.addAdditionalTask(
                     JvmStaticInCompanionObjectGenerator(
                         newFunctionDescriptor,
@@ -247,12 +247,12 @@ class BridgeCodegen(
                     )
                 )
             }
-            // else: compatibility method for `Unit` in companion, don't gen
-        }
 
-        FunctionCodegen(codegen.context, v, generationState, codegen).generateOverloadsWithDefaultValues(
-            null, newFunctionDescriptor, newFunctionDescriptor
-        )
+            FunctionCodegen(codegen.context, v, generationState, codegen).generateOverloadsWithDefaultValues(
+                null, newFunctionDescriptor, newFunctionDescriptor
+            )
+        }
+        // else: compatibility method for `Unit` in companion, don't gen
 
         if (!generationState.classBuilderMode.generateBodies) {
             FunctionCodegen.endVisit(mv, methodName, methodOrigin.element)
