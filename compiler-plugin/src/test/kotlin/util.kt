@@ -33,22 +33,63 @@ fun <R> Class<*>.runStaticFunction(name: String, vararg args: Any): R {
     }.invoke(null, *args)!! as R
 }
 
-fun Class<*>.getFunctionReturnType(name: String, vararg args: Any): String {
-    return getMethod(name, *args.map { it::class.java }.toTypedArray()).returnType.canonicalName
+fun Class<*>.getFunctionReturnType(name: String, vararg args: Class<*>): String {
+    return getMethod(name, *args).returnType.canonicalName
 }
 
-inline fun <reified R : Any> Class<*>.assertHasFunction(name: String, vararg args: Class<*>) {
-    return assertHasFunction(name, args = args, returnType = R::class.javaPrimitiveType ?: R::class.java)
+inline fun <reified R : Any> Class<*>.assertHasFunction(
+    name: String,
+    vararg args: Class<*>,
+    noinline runIfFound: Method.() -> Unit = {},
+) {
+    return assertHasFunction(name, args = args, returnType = R::class.javaPrimitiveType ?: R::class.java, runIfFound)
 }
 
-fun Class<*>.assertHasFunction(name: String, vararg args: Class<*>, returnType: Class<*>) {
-    val any = declaredMethods.any {
-        it.returnType == returnType &&
+inline fun <reified R : Any> Class<*>.assertNoFunction(name: String, vararg args: Class<*>) {
+    return assertNoFunction(name, args = args, returnType = R::class.javaPrimitiveType ?: R::class.java)
+}
+
+inline fun <reified R : Any> Class<*>.getFunctionWithReturnType(name: String, vararg args: Class<*>): Method {
+    val returnType = R::class.javaPrimitiveType ?: R::class.java
+    val ret = declaredMethods.find {
+        it.name == name &&
+                it.returnType == returnType &&
                 it.parameterCount == args.size &&
                 it.parameters.zip(args).all { (param, clazz) -> param.type == clazz }
     }
-    if (!any)
-        throw AssertionError("Class does not has method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}")
+
+    return ret
+        ?: throw AssertionError("Class does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
+                "\n${methods.joinToString("\n")}")
+}
+
+fun Class<*>.assertHasFunction(
+    name: String,
+    vararg args: Class<*>,
+    returnType: Class<*>,
+    runIfFound: Method.() -> Unit,
+) {
+    val any = declaredMethods.find {
+        it.name == name &&
+                it.returnType == returnType &&
+                it.parameterCount == args.size &&
+                it.parameters.zip(args).all { (param, clazz) -> param.type == clazz }
+    }
+        ?: throw AssertionError("Class does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
+                "\n${methods.joinToString("\n")}")
+
+    runIfFound(any)
+}
+
+fun Class<*>.assertNoFunction(name: String, vararg args: Class<*>, returnType: Class<*>) {
+    val any = declaredMethods.any {
+        it.name == name &&
+                it.returnType == returnType &&
+                it.parameterCount == args.size &&
+                it.parameters.zip(args).all { (param, clazz) -> param.type == clazz }
+    }
+    if (any)
+        throw AssertionError("Class does has method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}")
 }
 
 fun compile(

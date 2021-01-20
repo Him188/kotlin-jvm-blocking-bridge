@@ -1,9 +1,12 @@
 package compiler.unit
 
+import assertHasFunction
+import assertNoFunction
 import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys
 import net.mamoe.kjbb.compiler.UnitCoercion
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Test
+import kotlin.test.assertTrue
 
 internal sealed class UnitCoercionCompatibilityTest(ir: Boolean) : AbstractUnitCoercionTest(ir) {
     override val overrideCompilerConfiguration: CompilerConfiguration = CompilerConfiguration().apply {
@@ -16,7 +19,7 @@ internal sealed class UnitCoercionCompatibilityTest(ir: Boolean) : AbstractUnitC
 
         @Test
         fun test() {
-            `static companion comp`()
+            `jvm overloads comp`()
         }
     }
 
@@ -39,6 +42,31 @@ internal sealed class UnitCoercionCompatibilityTest(ir: Boolean) : AbstractUnitC
     }
 """
     )
+
+    @Test
+    fun `jvm overloads comp`() = testJvmCompile(
+        """
+    class TestData {
+        @JvmOverloads
+        @JvmBlockingBridge
+        suspend fun test(b: Boolean = true, arg: String = "") { // returns Unit
+        }
+    }
+""", noMain = true
+    ) {
+        classLoader.loadClass("TestData").run {
+            assertHasFunction<Void>("test", Boolean::class.javaPrimitiveType!!, String::class.java)
+            assertHasFunction<Void>("test", Boolean::class.javaPrimitiveType!!)
+            assertHasFunction<Void>("test")
+
+            assertHasFunction<Unit>("test", Boolean::class.javaPrimitiveType!!, String::class.java) {
+                assertTrue(isSynthetic, "unit compatibility bridge is not synthetic")
+            }
+            assertNoFunction<Unit>("test", Boolean::class.javaPrimitiveType!!)
+            assertNoFunction<Unit>("test")
+
+        }
+    }
 
     @Test
     fun `static comp`() = testJvmCompile(
