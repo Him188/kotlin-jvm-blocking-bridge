@@ -7,11 +7,13 @@ import net.mamoe.kjbb.compiler.context.CompilerContext
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedString
+import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.codegen.coroutines.continuationAsmType
 import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
+import org.jetbrains.kotlin.config.continuationInterfaceFqName
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.ClassKind.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
@@ -227,7 +229,14 @@ class BridgeCodegen(
                 originFunction.extensionReceiverParameter,
                 if (shouldGenerateAsStatic) null else clazz.thisAsReceiverParameter,
                 originFunction.typeParameters,
-                originFunction.valueParameters,
+                originFunction.valueParameters.run {
+                    when {
+                        isEmpty() -> emptyList()
+                        KotlinBuiltIns.isConstructedFromGivenClass(last().type,
+                            generationState.languageVersionSettings.continuationInterfaceFqName()) -> dropLast(1)
+                        else -> this
+                    }
+                }, // last is Continuation
                 originFunction.returnTypeOrNothing,
                 originFunction.modality,
                 originFunction.visibility
@@ -248,9 +257,18 @@ class BridgeCodegen(
                 )
             }
 
-            FunctionCodegen(codegen.context, v, generationState, codegen).generateOverloadsWithDefaultValues(
-                null, newFunctionDescriptor, newFunctionDescriptor
-            )
+            FunctionCodegen(codegen.context, v, generationState, codegen).run {
+                generateDefaultIfNeeded1(
+                    codegen.context.intoFunction(newFunctionDescriptor),
+                    newFunctionDescriptor,
+                    codegen.kind,
+                    DefaultParameterValueLoader.DEFAULT,
+                    null
+                )
+                generateOverloadsWithDefaultValues(
+                    null, newFunctionDescriptor, newFunctionDescriptor
+                )
+            }
         }
         // else: compatibility method for `Unit` in companion, don't gen
 

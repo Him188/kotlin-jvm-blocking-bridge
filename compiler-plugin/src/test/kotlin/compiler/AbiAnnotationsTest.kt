@@ -8,6 +8,7 @@ import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys
 import net.mamoe.kjbb.compiler.UnitCoercion
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Test
+import runFunction
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -16,7 +17,12 @@ internal sealed class AbiAnnotationsTest(
     ir: Boolean,
 ) : AbstractCompilerTest(ir) {
     internal class Ir : AbiAnnotationsTest(ir = true)
-    internal class Jvm : AbiAnnotationsTest(ir = false)
+    internal class Jvm : AbiAnnotationsTest(ir = false) {
+        @Test
+        fun test() {
+            `jvm overloads`()
+        }
+    }
 
     @Test
     open fun `exceptions`() = testJvmCompile(
@@ -36,7 +42,7 @@ internal sealed class AbiAnnotationsTest(
     @Test
     open fun `jvm overloads`() = testJvmCompile(
         """
-            object TestData {
+            class TestData {
                 @JvmOverloads
                 @JvmBlockingBridge
                 suspend fun test(a: String = "") {}
@@ -47,6 +53,9 @@ internal sealed class AbiAnnotationsTest(
             assertHasFunction<Void>("test", String::class.java)
             assertNoFunction<Unit>("test", String::class.java)
             assertHasFunction<Void>("test")
+
+            this.getConstructor().newInstance().runFunction<Any?>("test", "")
+            this.getConstructor().newInstance().runFunction<Any?>("test")
         }
     }
 

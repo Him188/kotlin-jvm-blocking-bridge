@@ -6,6 +6,7 @@ import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys
 import net.mamoe.kjbb.compiler.UnitCoercion
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Test
+import runFunction
 import kotlin.test.assertTrue
 
 internal sealed class UnitCoercionCompatibilityTest(ir: Boolean) : AbstractUnitCoercionTest(ir) {
@@ -65,6 +66,8 @@ internal sealed class UnitCoercionCompatibilityTest(ir: Boolean) : AbstractUnitC
             assertNoFunction<Unit>("test", Boolean::class.javaPrimitiveType!!)
             assertNoFunction<Unit>("test")
 
+            this.getConstructor().newInstance().runFunction<Any?>("test", true, "")
+            this.getConstructor().newInstance().runFunction<Any?>("test", true)
         }
     }
 
