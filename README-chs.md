@@ -140,7 +140,7 @@ IntelliJ 会自动读取库中的函数信息, 因此 Java 用户可以正常使
 `build.gradle` 或 `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.7.3"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.7.4-dev-1"
 }
 ```
 
@@ -155,7 +155,7 @@ pluginManagement {
 
 本插件会自动添加如下的运行时依赖:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.7.3")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.7.4-dev-1")
 ```
 因此只需要安装插件, 而不需要添加依赖即可使用
 
