@@ -1,3 +1,5 @@
+@file:Suppress("RedundantSuspendModifier")
+
 package compiler.unit
 
 import assertHasFunction
@@ -20,7 +22,29 @@ internal sealed class UnitCoercionCompatibilityTest(ir: Boolean) : AbstractUnitC
 
         @Test
         fun test() {
-            `jvm overloads comp`()
+            `fake override comp`()
+        }
+    }
+
+    @Test
+    fun `fake override comp`() = testJvmCompile("""
+        interface ATestData : Inter {
+            override suspend fun test(arg: String) { // returns Unit
+            }
+        }
+        interface Inter { 
+            @JvmBlockingBridge suspend fun test(arg: String)
+        }
+    """, noMain = true
+    ) {
+        classLoader.loadClass("Inter").run {
+            assertHasFunction<Void>("test", String::class.java)
+            assertHasFunction<Unit>("test", String::class.java)
+        }
+
+        classLoader.loadClass("ATestData").run {
+            assertHasFunction<Void>("test", String::class.java)
+            assertHasFunction<Unit>("test", String::class.java)
         }
     }
 

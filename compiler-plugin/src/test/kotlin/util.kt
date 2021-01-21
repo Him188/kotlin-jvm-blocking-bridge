@@ -51,7 +51,7 @@ inline fun <reified R : Any> Class<*>.assertNoFunction(name: String, vararg args
 
 inline fun <reified R : Any> Class<*>.getFunctionWithReturnType(name: String, vararg args: Class<*>): Method {
     val returnType = R::class.javaPrimitiveType ?: R::class.java
-    val ret = declaredMethods.find {
+    val ret = allMethods.find {
         it.name == name &&
                 it.returnType == returnType &&
                 it.parameterCount == args.size &&
@@ -59,9 +59,11 @@ inline fun <reified R : Any> Class<*>.getFunctionWithReturnType(name: String, va
     }
 
     return ret
-        ?: throw AssertionError("Class does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
-                "\n${methods.joinToString("\n")}")
+        ?: throw AssertionError("Class '${this.name}' does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
+                "\n${allMethods.joinToString("\n")}")
 }
+
+val Class<*>.allMethods get() = (methods + declaredMethods).toSet()
 
 fun Class<*>.assertHasFunction(
     name: String,
@@ -69,27 +71,27 @@ fun Class<*>.assertHasFunction(
     returnType: Class<*>,
     runIfFound: Method.() -> Unit,
 ) {
-    val any = declaredMethods.find {
+    val any = allMethods.find {
         it.name == name &&
                 it.returnType == returnType &&
                 it.parameterCount == args.size &&
                 it.parameters.zip(args).all { (param, clazz) -> param.type == clazz }
     }
-        ?: throw AssertionError("Class does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
+        ?: throw AssertionError("Class '${this.name}' does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
                 "\n${methods.joinToString("\n")}")
 
     runIfFound(any)
 }
 
 fun Class<*>.assertNoFunction(name: String, vararg args: Class<*>, returnType: Class<*>) {
-    val any = declaredMethods.any {
+    val any = allMethods.any {
         it.name == name &&
                 it.returnType == returnType &&
                 it.parameterCount == args.size &&
                 it.parameters.zip(args).all { (param, clazz) -> param.type == clazz }
     }
     if (any)
-        throw AssertionError("Class does has method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}")
+        throw AssertionError("Class '${this.name}' does has method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}")
 }
 
 fun compile(
