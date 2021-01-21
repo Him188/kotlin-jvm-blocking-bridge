@@ -5,6 +5,9 @@ on:
     types:
       - released
       - prereleased
+  push:
+    tags:
+      - '*-dev*'
 
 jobs:
   publish-runtime-on-macos:
