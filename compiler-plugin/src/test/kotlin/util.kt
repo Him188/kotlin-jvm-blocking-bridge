@@ -63,7 +63,22 @@ inline fun <reified R : Any> Class<*>.getFunctionWithReturnType(name: String, va
                 "\n${allMethods.joinToString("\n")}")
 }
 
-val Class<*>.allMethods get() = (methods + declaredMethods).toSet()
+val Class<*>.allMethods: Set<Method>
+    get() {
+        fun Class<*>?.shouldInclude(): Boolean {
+            if (this == null) return false
+            return !this.packageName.startsWith("java")
+                    && !this.packageName.startsWith("kotlin")
+        }
+
+        val set = declaredMethods.toMutableSet()
+        set += superclass.takeIf { it.shouldInclude() }?.allMethods.orEmpty()
+        set += interfaces.flatMap {
+            it.takeIf { it.shouldInclude() }?.allMethods.orEmpty()
+        }
+
+        return set
+    }
 
 fun Class<*>.assertHasFunction(
     name: String,
@@ -78,7 +93,7 @@ fun Class<*>.assertHasFunction(
                 it.parameters.zip(args).all { (param, clazz) -> param.type == clazz }
     }
         ?: throw AssertionError("Class '${this.name}' does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
-                "\n${methods.joinToString("\n")}")
+                "\n${allMethods.joinToString("\n")}")
 
     runIfFound(any)
 }

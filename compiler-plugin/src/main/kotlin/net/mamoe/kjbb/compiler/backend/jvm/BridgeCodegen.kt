@@ -243,11 +243,17 @@ class BridgeCodegen(
             )
         }
 
-        if (originBridgeFunctionDesc == null) {
+        if (originBridgeFunctionDesc == null) kotlin.run closure@{
+            FunctionCodegen(codegen.context, v, generationState, codegen).generateOverloadsWithDefaultValues(
+                null, newFunctionDescriptor, newFunctionDescriptor
+            )
+
             // new method, gen returnType `void`
+            val parentCodegen = codegen.parentCodegen as ImplementationBodyCodegen?
+            // might be `null` if triggered by `generateDefaultIfNeeded1`
+
             if (isJvmStaticInCompanionObject()) {
-                val parentCodegen = codegen.parentCodegen as ImplementationBodyCodegen
-                parentCodegen.addAdditionalTask(
+                parentCodegen?.addAdditionalTask(
                     JvmStaticInCompanionObjectGenerator(
                         newFunctionDescriptor,
                         methodOrigin,
@@ -257,17 +263,16 @@ class BridgeCodegen(
                 )
             }
 
-            FunctionCodegen(codegen.context, v, generationState, codegen).run {
-                generateDefaultIfNeeded1(
-                    codegen.context.intoFunction(newFunctionDescriptor),
-                    newFunctionDescriptor,
-                    codegen.kind,
-                    DefaultParameterValueLoader.DEFAULT,
-                    null
-                )
-                generateOverloadsWithDefaultValues(
-                    null, newFunctionDescriptor, newFunctionDescriptor
-                )
+            (parentCodegen ?: codegen).addAdditionalTask { codegen, v ->
+                FunctionCodegen(codegen.context, v, generationState, codegen).run {
+                    generateDefaultIfNeeded1(
+                        codegen.context.intoFunction(newFunctionDescriptor),
+                        newFunctionDescriptor,
+                        codegen.kind,
+                        DefaultParameterValueLoader.DEFAULT,
+                        null
+                    )
+                }
             }
         }
         // else: compatibility method for `Unit` in companion, don't gen
