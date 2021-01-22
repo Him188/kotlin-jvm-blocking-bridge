@@ -45,8 +45,15 @@ inline fun <reified R : Any> Class<*>.assertHasFunction(
     return assertHasFunction(name, args = args, returnType = R::class.javaPrimitiveType ?: R::class.java, runIfFound)
 }
 
-inline fun <reified R : Any> Class<*>.assertNoFunction(name: String, vararg args: Class<*>) {
-    return assertNoFunction(name, args = args, returnType = R::class.javaPrimitiveType ?: R::class.java)
+inline fun <reified R : Any> Class<*>.assertNoFunction(
+    name: String,
+    vararg args: Class<*>,
+    declaredOnly: Boolean = false,
+) {
+    return assertNoFunction(name,
+        args = args,
+        returnType = R::class.javaPrimitiveType ?: R::class.java,
+        declaredOnly = declaredOnly)
 }
 
 inline fun <reified R : Any> Class<*>.getFunctionWithReturnType(name: String, vararg args: Class<*>): Method {
@@ -98,8 +105,13 @@ fun Class<*>.assertHasFunction(
     runIfFound(any)
 }
 
-fun Class<*>.assertNoFunction(name: String, vararg args: Class<*>, returnType: Class<*>) {
-    val any = allMethods.any {
+fun Class<*>.assertNoFunction(
+    name: String,
+    vararg args: Class<*>,
+    returnType: Class<*>,
+    declaredOnly: Boolean = false,
+) {
+    val any = (if (declaredOnly) declaredMethods.toSet() else allMethods).any {
         it.name == name &&
                 it.returnType == returnType &&
                 it.parameterCount == args.size &&

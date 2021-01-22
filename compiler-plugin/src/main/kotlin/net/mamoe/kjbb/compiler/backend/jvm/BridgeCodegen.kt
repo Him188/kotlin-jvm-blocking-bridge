@@ -263,15 +263,18 @@ class BridgeCodegen(
                 )
             }
 
-            (parentCodegen ?: codegen).addAdditionalTask { codegen, v ->
-                FunctionCodegen(codegen.context, v, generationState, codegen).run {
-                    generateDefaultIfNeeded1(
-                        codegen.context.intoFunction(newFunctionDescriptor),
-                        newFunctionDescriptor,
-                        codegen.kind,
-                        DefaultParameterValueLoader.DEFAULT,
-                        null
-                    )
+            if (containingClass?.isInterface() != true) {
+                // file-class or non-interface class
+                (parentCodegen ?: codegen).addAdditionalTask { codegen, v ->
+                    FunctionCodegen(codegen.context, v, generationState, codegen).run {
+                        generateDefaultIfNeeded1(
+                            codegen.context.intoFunction(newFunctionDescriptor),
+                            newFunctionDescriptor,
+                            codegen.kind,
+                            DefaultParameterValueLoader.DEFAULT,
+                            null
+                        )
+                    }
                 }
             }
         }

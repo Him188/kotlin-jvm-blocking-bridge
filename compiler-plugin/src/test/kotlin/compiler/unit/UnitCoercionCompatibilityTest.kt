@@ -29,20 +29,17 @@ internal sealed class UnitCoercionCompatibilityTest(ir: Boolean) : AbstractUnitC
     @Test
     fun `fake override comp`() = testJvmCompile("""
         interface ATestData : Inter {
-            override suspend fun test(arg: String) { // returns Unit
-            }
+            @JvmBlockingBridge override suspend fun test2(arg: String)
         }
         interface Inter { 
             @JvmBlockingBridge suspend fun test(arg: String)
+            @JvmBlockingBridge suspend fun test2(arg: String)
         }
     """, noMain = true
     ) {
-        classLoader.loadClass("Inter").run {
-            assertHasFunction<Void>("test", String::class.java)
-            assertHasFunction<Unit>("test", String::class.java)
-        }
-
-        classLoader.loadClass("ATestData").run {
+        classLoader.loadClass("Inter").apply {
+            assertHasFunction<Void>("test2", String::class.java)
+            assertHasFunction<Unit>("test2", String::class.java)
             assertHasFunction<Void>("test", String::class.java)
             assertHasFunction<Unit>("test", String::class.java)
         }
