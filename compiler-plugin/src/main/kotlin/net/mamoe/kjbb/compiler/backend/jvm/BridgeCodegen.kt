@@ -1,6 +1,7 @@
 package net.mamoe.kjbb.compiler.backend.jvm
 
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import net.mamoe.kjbb.compiler.UnitCoercion
 import net.mamoe.kjbb.compiler.backend.ir.*
 import net.mamoe.kjbb.compiler.context.CompilerContext
@@ -32,10 +33,7 @@ import org.jetbrains.kotlin.resolve.annotations.hasJvmStaticAnnotation
 import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
 import org.jetbrains.kotlin.resolve.constants.ArrayValue
 import org.jetbrains.kotlin.resolve.constants.KClassValue
-import org.jetbrains.kotlin.resolve.descriptorUtil.builtIns
-import org.jetbrains.kotlin.resolve.descriptorUtil.isCompanionObject
-import org.jetbrains.kotlin.resolve.descriptorUtil.module
-import org.jetbrains.kotlin.resolve.descriptorUtil.resolveTopLevelClass
+import org.jetbrains.kotlin.resolve.descriptorUtil.*
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
@@ -82,17 +80,15 @@ class BridgeCodegen(
             names.flatMap { members.getContributedFunctions(it, NoLookupLocation.WHEN_GET_ALL_DESCRIPTORS) }.toSet()
 
         for (function in functions) {
-            if (function.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
-                val capability = function.analyzeCapabilityForGeneratingBridges(false)
-                if (!capability.diagnosticPassed) capability.createDiagnostic()?.let(::report)
-                if (capability.shouldGenerate) {
-                    val desc = function.generateBridge(allowUnitCoercion = true, synthetic = false)
+            val capability = function.analyzeCapabilityForGeneratingBridges(false, codegen.bindingContext)
+            if (!capability.diagnosticPassed) capability.createDiagnostic()?.let(::report)
+            if (capability.shouldGenerate) {
+                val desc = function.generateBridge(allowUnitCoercion = true, synthetic = false)
 
-                    if (function.returnType?.isUnit() == true) {
-                        if (unitCoercion == UnitCoercion.COMPATIBILITY) {
-                            // for compatibility with <= 1.6
-                            function.generateBridge(allowUnitCoercion = false, synthetic = true, desc)
-                        }
+                if (function.returnType?.isUnit() == true) {
+                    if (unitCoercion == UnitCoercion.COMPATIBILITY) {
+                        // for compatibility with <= 1.6
+                        function.generateBridge(allowUnitCoercion = false, synthetic = true, desc)
                     }
                 }
             }
@@ -293,7 +289,10 @@ class BridgeCodegen(
 
         val lambdaClassDescriptor = generateLambdaForRunBlocking(
             originFunction, codegen.state,
-            originFunction.findPsi()!!,
+            originFunction.findPsi(),
+            clazz.findPsi()?.containingFile ?: error("Could not find source file for class ${
+                clazz.fqNameOrNull()?.asString() ?: clazz.name
+            }"),
             codegen.v.thisName,
             ownerType,
             if (shouldGenerateAsStatic) null else clazz.thisAsReceiverParameter
@@ -442,7 +441,8 @@ internal const val DISPATCH_RECEIVER_VAR_NAME = "p\$"
 private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     originFunction: FunctionDescriptor,
     state: GenerationState,
-    originElement: PsiElement,
+    originElement: PsiElement?,
+    sourceFile: PsiFile,
     parentName: String,
     methodOwnerType: Type,
     dispatchReceiverParameterDescriptor: ReceiverParameterDescriptor?,
@@ -453,7 +453,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     val lambdaBuilder = state.factory.newVisitor(
         OtherOrigin(originFunction),
         Type.getObjectType(internalName),
-        originElement.containingFile
+        sourceFile
     )
 
     val arity = 1

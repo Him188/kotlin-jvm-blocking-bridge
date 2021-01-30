@@ -22,6 +22,28 @@ import kotlin.test.assertEquals
 // Expose to top-package for TestData
 typealias JvmBlockingBridge = JvmBlockingBridge
 
+fun <T : Any> Class<T>.createInstance(): T {
+    return kotlin.objectInstance ?: kotlin.createInstanceOrNull() ?: getConstructor().newInstance()
+}
+
+@Deprecated(
+    "runFunction on class is an error.",
+    replaceWith = ReplaceWith("createInstance().run { \n runFunction<R>(name)\n }"),
+    level = DeprecationLevel.ERROR
+)
+fun <R> Class<*>.runFunction(name: String): Nothing {
+    error("runFunction on class is an error.")
+}
+
+@Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@kotlin.internal.LowPriorityInOverloadResolution
+@Deprecated("runFunction on class is an error.",
+    replaceWith = ReplaceWith("createInstance().run { \n runFunction<R>(name, args)\n }"),
+    level = DeprecationLevel.ERROR)
+inline fun <reified R> Class<*>.runFunction(name: String, vararg args: Any): Nothing {
+    error("runFunction on class is an error.")
+}
+
 fun <R> Any.runFunction(name: String, vararg args: Any): R {
     return this::class.java.getMethod(name, *args.map { it::class.javaPrimitiveType ?: it::class.java }.toTypedArray())
         .invoke(this, *args) as R
@@ -43,6 +65,19 @@ inline fun <reified R : Any> Class<*>.assertHasFunction(
     noinline runIfFound: Method.() -> Unit = {},
 ) {
     return assertHasFunction(name, args = args, returnType = R::class.javaPrimitiveType ?: R::class.java, runIfFound)
+}
+
+@Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@kotlin.internal.LowPriorityInOverloadResolution
+inline fun <reified R : Any> Class<*>.assertHasFunction(
+    name: String,
+    vararg args: KClass<*>,
+    noinline runIfFound: Method.() -> Unit = {},
+) {
+    return assertHasFunction(name,
+        args = args.map { it.javaPrimitiveType ?: it.java }.toTypedArray(),
+        returnType = R::class.javaPrimitiveType ?: R::class.java,
+        runIfFound)
 }
 
 inline fun <reified R : Any> Class<*>.assertNoFunction(
@@ -135,9 +170,12 @@ fun compile(
     overrideCompilerConfiguration = overrideCompilerConfiguration,
     config = config)
 
+@Suppress("ObjectPropertyName")
+const val FILE_SPLITTER = "-------------------------------------"
+
 fun compile(
     @Language("kt")
-    source: String,
+    sources: String,
     @Language("java")
     java: String? = null,
     ir: Boolean,
@@ -150,21 +188,35 @@ fun compile(
         "import JvmBlockingBridge"
     )
 
-    val kotlinSource = if (source.trim().startsWith("package")) {
-        SourceFile.kotlin("TestData.kt", run {
-            source.trimIndent().lines().mapTo(LinkedList()) { it }
-                .apply { addAll(1, intrinsicImports) }
-                .joinToString("\n")
-        })
-    } else {
-        SourceFile.kotlin(
-            "TestData.kt", "${intrinsicImports.joinToString("\n")}\n${source.trimIndent()}"
-        )
+    val kotlinSources = sources.split(FILE_SPLITTER).mapIndexed { index, source ->
+        when {
+            source.trim().startsWith("package") -> {
+                SourceFile.kotlin("TestData${index}.kt", run {
+                    source.trimIndent().lines().mapTo(LinkedList()) { it }
+                        .apply { addAll(1, intrinsicImports) }
+                        .joinToString("\n")
+                })
+            }
+            source.trim().startsWith("@file:") -> {
+                SourceFile.kotlin("TestData${index}.kt", run {
+                    source.trim().trimIndent().lines().mapTo(LinkedList()) { it }
+                        .apply { addAll(1, intrinsicImports) }
+                        .joinToString("\n")
+                })
+            }
+            else -> {
+                SourceFile.kotlin(
+                    name = "TestData${index}.kt",
+                    contents = "${intrinsicImports.joinToString("\n")}\n${source.trimIndent()}"
+                )
+            }
+        }
     }
 
+
     return KotlinCompilation().apply {
-        sources = listOfNotNull(
-            kotlinSource,
+        this.sources = listOfNotNull(
+            *kotlinSources.toTypedArray(),
             java?.let { javaSource ->
                 SourceFile.java(
                     Regex("""class\s*(.*?)\s*\{""").find(javaSource)!!.groupValues[1].let { "$it.java" },

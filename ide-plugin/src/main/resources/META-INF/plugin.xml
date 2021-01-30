@@ -21,6 +21,10 @@
         <codeInsight.lineMarkerProvider language="JAVA"
                                         implementationClass="net.mamoe.kjbb.ide.line.marker.BlockingBridgeLineMarkerProvider"/>
         <lang.psiAugmentProvider implementation="net.mamoe.kjbb.ide.JvmBlockingBridgePsiAugmentProvider"/>
+
+        <codeInsight.inlayProvider
+                language="kotlin"
+                implementationClass="net.mamoe.kjbb.ide.JvmBlockingBridgeInlayHintsCollector"></codeInsight.inlayProvider>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">

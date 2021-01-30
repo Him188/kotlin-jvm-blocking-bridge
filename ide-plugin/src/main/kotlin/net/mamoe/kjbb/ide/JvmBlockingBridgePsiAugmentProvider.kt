@@ -11,7 +11,8 @@ import com.intellij.psi.impl.source.PsiExtensibleClass
 import com.intellij.psi.javadoc.PsiDocComment
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
-import net.mamoe.kjbb.JvmBlockingBridge
+import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
+import net.mamoe.kjbb.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation
 import org.jetbrains.kotlin.asJava.builder.LightMemberOrigin
 import org.jetbrains.kotlin.asJava.builder.LightMemberOriginForDeclaration
 import org.jetbrains.kotlin.asJava.classes.KtLightClass
@@ -22,9 +23,11 @@ import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.idea.caches.project.toDescriptor
 import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
+import org.jetbrains.kotlin.idea.util.findAnnotation
 import org.jetbrains.kotlin.idea.util.module
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtParameter
@@ -73,6 +76,12 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
 internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): List<PsiElement> {
     val result = ArrayList<PsiElement>()
 
+    val moduleDescriptor = this.module?.toDescriptor()
+    if (moduleDescriptor?.isBlockingBridgePluginEnabled() == false) {
+        return emptyList()
+    }
+    val isIr = moduleDescriptor?.isIr() == true
+
     /*
     val originalElement = this.originalElement
     if (originalElement is KtUltraLightClass) {
@@ -90,24 +99,31 @@ internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): Li
     }*/
 
     return result + ownMethods.asSequence()
-        .filter { it.canHaveBridgeFunctions() }
         .filterIsInstance<KtLightMethod>()
+        .filter { it.canHaveBridgeFunctions(isIr).has }
         .flatMap { it.generateLightMethod(it.containingClass).asSequence() }
         .toList()
 }
 
-internal fun PsiMethod.canHaveBridgeFunctions(): Boolean {
-    if (this.module?.toDescriptor()?.isBlockingBridgePluginEnabled() == false) {
-        return false
+internal fun PsiMethod.canHaveBridgeFunctions(isIr: Boolean): HasJvmBlockingBridgeAnnotation {
+    if (!isSuspend()) return HasJvmBlockingBridgeAnnotation.NONE
+    if (!Name.isValidIdentifier(this.name)) return HasJvmBlockingBridgeAnnotation.NONE
+    if (this.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME.asString())) return HasJvmBlockingBridgeAnnotation.FROM_FUNCTION
+
+    val containingClass = this.containingClass
+    if (containingClass != null) {
+        if (containingClass.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME.asString())) return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
     }
-    if (!isSuspend()) return false
-    return if (Name.isValidIdentifier(this.name)
-        && this.hasAnnotation(JvmBlockingBridge::class.qualifiedName!!)
-    ) {
-        true
-    } else {
-        return findOverrides()?.any { it.canHaveBridgeFunctions() } == true
+
+    val containingFile = containingFile
+    if (containingFile is KtFile) {
+        if (containingFile.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) != null) return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
     }
+
+    val fromSuper = findOverrides()?.map { it.canHaveBridgeFunctions(isIr) }?.firstOrNull { it.has }
+    if (fromSuper?.has == true) return fromSuper
+
+    return HasJvmBlockingBridgeAnnotation.NONE
 }
 
 /**

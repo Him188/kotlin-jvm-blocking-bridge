@@ -15,6 +15,6 @@ package net.mamoe.kjbb
  * fun foo( params ) = `$runSuspend$` { foo(params) }
  * ```
  */
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS, AnnotationTarget.FILE)
 @Retention(AnnotationRetention.BINARY)
 public actual annotation class JvmBlockingBridge actual constructor()

@@ -17,7 +17,7 @@ internal sealed class BasicsTest(
     suspend fun test() = "OK"
 """, noMain = true, ir = true
         ) {
-            assertEquals("OK", classLoader.loadClass("TestDataKt").getDeclaredMethod("test").invoke(null))
+            assertEquals("OK", classLoader.loadClass("TestData0Kt").getDeclaredMethod("test").invoke(null))
         }
     }
 

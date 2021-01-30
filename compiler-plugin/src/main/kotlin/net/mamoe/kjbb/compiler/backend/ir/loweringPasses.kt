@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.util.companionObject
-import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.transformDeclarationsFlat
 import org.jetbrains.kotlin.utils.addToStdlib.cast
 
@@ -34,16 +33,14 @@ internal fun IrDeclaration.transformFlat(context: IrPluginContext): List<IrDecla
         if (declaration.isGeneratedBlockingBridgeStub())
             return listOf()
 
-        if (declaration.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
-            val capability: BlockingBridgeAnalyzeResult =
-                declaration.analyzeCapabilityForGeneratingBridges()
-            capability.createDiagnostic()?.let { diagnostic ->
-                DiagnosticSink.THROW_EXCEPTION.report(diagnostic)
-            }
+        val capability: BlockingBridgeAnalyzeResult =
+            declaration.analyzeCapabilityForGeneratingBridges()
+        capability.createDiagnostic()?.let { diagnostic ->
+            DiagnosticSink.THROW_EXCEPTION.report(diagnostic)
+        }
 
-            if (capability.shouldGenerate) {
-                return declaration.followedBy(context.generateJvmBlockingBridges(declaration))
-            }
+        if (capability.shouldGenerate) {
+            return declaration.followedBy(context.generateJvmBlockingBridges(declaration))
         }
     }
 

@@ -1,5 +1,3 @@
-@file:Suppress("RemoveRedundantBackticks", "RedundantSuspendModifier", "MainFunctionReturnUnit")
-
 package compiler
 
 import assertHasFunction
@@ -9,18 +7,71 @@ import runFunction
 import kotlin.coroutines.Continuation
 import kotlin.test.assertFailsWith
 
-internal sealed class InheritanceTest(
+internal sealed class BridgeAnnotationOnClassTest(
     ir: Boolean,
 ) : AbstractCompilerTest(ir) {
+    internal class Ir : BridgeAnnotationOnClassTest(ir = true) {
+        @Test
+        fun test() {
+            `suspend gen`()
+        }
+    }
 
-    internal class Ir : InheritanceTest(true)
-    internal class Jvm : InheritanceTest(false)
+    internal class Jvm : BridgeAnnotationOnClassTest(ir = false) {
+        @Test
+        fun test() {
+            `bridge for interface overriding`()
+        }
+    }
+
+    @Test
+    open fun `suspend gen`() = testJvmCompile(
+        """
+            @JvmBlockingBridge
+            object TestData {
+                suspend fun test() {}
+            }
+        """, noMain = true
+    ) {
+        classLoader.loadClass("TestData").kotlin.objectInstance!!.runFunction<Void?>("test")
+    }
+
+    @Test
+    open fun `non suspend should be ok`() = testJvmCompile(
+        """
+            @JvmBlockingBridge
+            object TestData {
+                fun test() {}
+            }
+        """, noMain = true
+    )
+
+    @Test
+    open fun `no inspection even inapplicable`() = testJvmCompile(
+        """
+            @JvmBlockingBridge
+            object TestData {
+                @JvmSynthetic
+                suspend fun test() {}
+            
+                private suspend fun test2() {}
+            }
+        """, noMain = true
+    ) {
+        classLoader.loadClass("TestData")
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // inheritance
+    // copied from InheritanceTest and changed places of annotations
+    ///////////////////////////////////////////////////////////////////////////
 
     @Test
     fun `bridge for abstract`() = testJvmCompile(
         """
-    abstract class Abstract {
         @JvmBlockingBridge
+    abstract class Abstract {
         abstract suspend fun test(): String
     }
     object TestData : Abstract() {
@@ -44,8 +95,8 @@ internal sealed class InheritanceTest(
     abstract class Abstract {
         abstract suspend fun test(): String
     }
-    object TestData : Abstract() {
         @JvmBlockingBridge
+    object TestData : Abstract() {
         override suspend fun test() = "OK"
         
         fun main(): String = TestData.runFunction("test")
@@ -63,13 +114,11 @@ internal sealed class InheritanceTest(
     interface Interface3 {
         suspend fun test(): String
     }
-    object TestData : Interface3 {
         @JvmBlockingBridge
+    object TestData : Interface3 {
         override suspend fun test() = "OK"
-        
-        fun main(): String = TestData.runFunction("test")
     }
-"""
+""", noMain = true
     ) {
         classLoader.loadClass("TestData").run {
             assertHasFunction<String>("test")
@@ -82,8 +131,8 @@ internal sealed class InheritanceTest(
     @Test
     open fun `bridge for interface inheritance`() = testJvmCompile(
         """
-    interface Interface2 {
         @JvmBlockingBridge
+    interface Interface2 {
         suspend fun test(): String
     }
     object TestData : Interface2 {
@@ -109,8 +158,8 @@ internal sealed class InheritanceTest(
     @Test
     fun `interface codegen`() = testJvmCompile(
         """
-    interface Interface {
         @JvmBlockingBridge
+    interface Interface {
         suspend fun test(): String
     }
 """, noMain = true

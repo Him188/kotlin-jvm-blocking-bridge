@@ -20,15 +20,8 @@ class JvmBlockingBridgeIDEContainerContributor : StorageComponentContainerContri
         platform: TargetPlatform,
         moduleDescriptor: ModuleDescriptor,
     ) {
-        fun isIr(): Boolean {
-            val module =
-                moduleDescriptor.getCapability(ModuleInfo.Capability)?.unwrapModuleSourceInfo()?.module ?: return false
-            val facet = KotlinFacet.get(module) ?: return false
-            val compilerArguments = facet.configuration.settings.compilerArguments ?: return false
-            return compilerArguments.castSafelyTo<K2JVMCompilerArguments>()?.useIR ?: return false
-        }
 
-        container.useInstance(object : BlockingBridgeDeclarationChecker(isIr()) {
+        container.useInstance(object : BlockingBridgeDeclarationChecker(moduleDescriptor.isIr()) {
             override fun checkIsPluginEnabled(
                 descriptor: DeclarationDescriptor,
             ): Boolean {
@@ -36,6 +29,14 @@ class JvmBlockingBridgeIDEContainerContributor : StorageComponentContainerContri
             }
         })
     }
+}
+
+fun ModuleDescriptor.isIr(): Boolean {
+    val module =
+        getCapability(ModuleInfo.Capability)?.unwrapModuleSourceInfo()?.module ?: return false
+    val facet = KotlinFacet.get(module) ?: return false
+    val compilerArguments = facet.configuration.settings.compilerArguments ?: return false
+    return compilerArguments.castSafelyTo<K2JVMCompilerArguments>()?.useIR ?: return false
 }
 
 fun ModuleDescriptor.isBlockingBridgePluginEnabled(): Boolean {

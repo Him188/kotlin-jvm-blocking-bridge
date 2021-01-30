@@ -84,9 +84,11 @@ fun PsiReferenceExpression.hasBridgeCalls(): Boolean {
     return false // resolved.canHaveBridgeFunctions()
 }
 
+val PsiElement.document
+    get() = containingFile.viewProvider.document ?: PsiDocumentManager.getInstance(project).getDocument(containingFile)
+
 fun PsiElement.getLineNumber(start: Boolean = true): Int {
-    val document =
-        containingFile.viewProvider.document ?: PsiDocumentManager.getInstance(project).getDocument(containingFile)
+    val document = document
     val index = if (start) this.startOffset else this.endOffset
     if (index > document?.textLength ?: 0) return 0
     return document?.getLineNumber(index) ?: 0

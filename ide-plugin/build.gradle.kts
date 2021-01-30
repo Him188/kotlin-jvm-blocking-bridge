@@ -56,7 +56,7 @@ tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
         See <a href="">Release notes</a>
     """.trimIndent())
     setPluginDescription("""
-        Provides @JvmBlockingBridge calls for Java. <br/>  
+        Kotlin compiler plugin for generating blocking bridges for calling suspend functions from Java with minimal effort. <br />
         Find more information on source repository: <a href="https://github.com/him188/kotlin-jvm-blocking-bridge">kotlin-jvm-blocking-bridge</a>.
     """.trimIndent())
 }
