@@ -8,10 +8,12 @@ import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.*
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.resolve.checkers.DeclarationChecker
 import org.jetbrains.kotlin.resolve.checkers.DeclarationCheckerContext
+import org.jetbrains.kotlin.resolve.descriptorUtil.module
 import org.jetbrains.kotlin.resolve.jvm.annotations.hasJvmSyntheticAnnotation
 
 open class BlockingBridgeDeclarationChecker(
@@ -22,13 +24,25 @@ open class BlockingBridgeDeclarationChecker(
         descriptor: DeclarationDescriptor,
         context: DeclarationCheckerContext,
     ) {
-        if (declaration !is KtNamedFunction) return // @JvmBlockingBridge is only applicable to CLASS and FUNCTION, no need to check for CLASS
-
-        when (BREAK) {
-            checkApplicability(declaration, descriptor, context),
-            checkJvmSynthetic(declaration, descriptor, context),
-            -> return
-            else -> return
+        when (declaration) {
+            is KtClass -> {
+                if (declaration.isInterface()) {
+                    val annotation = descriptor.jvmBlockingBridgeAnnotationPsi() ?: return
+                    if (descriptor.module.platform?.isJvm8OrHigher() != true) {
+                        // below 8
+                        context.report(INTERFACE_NOT_SUPPORTED.on(annotation))
+                        return
+                    }
+                }
+            }
+            is KtNamedFunction -> {
+                when (BREAK) {
+                    checkApplicability(declaration, descriptor, context),
+                    checkJvmSynthetic(declaration, descriptor, context),
+                    -> return
+                    else -> return
+                }
+            }
         }
     }
 
@@ -37,7 +51,7 @@ open class BlockingBridgeDeclarationChecker(
         BREAK
     }
 
-    protected open fun checkIsPluginEnabled(
+    protected open fun isPluginEnabled(
         descriptor: DeclarationDescriptor,
     ): Boolean {
         return true // in CLI compiler, always enabled
@@ -48,13 +62,16 @@ open class BlockingBridgeDeclarationChecker(
         descriptor: DeclarationDescriptor,
         context: DeclarationCheckerContext,
     ): CheckResult {
-        val inspectionTarget = when (descriptor.hasJvmBlockingBridgeAnnotation()) {
+        val inspectionTarget = when (descriptor.hasJvmBlockingBridgeAnnotation(context.trace.bindingContext)) {
             NONE -> return CONTINUE
-            FROM_CONTAINING_DECLARATION -> return CONTINUE // no need to check applicability for inherited from containing class or file
+            FROM_CONTAINING_DECLARATION -> {
+                // no need to check applicability for inherited from containing class or file
+                return CONTINUE
+            }
             FROM_FUNCTION -> descriptor.jvmBlockingBridgeAnnotationPsi() ?: declaration
         }
 
-        if (!checkIsPluginEnabled(descriptor)) {
+        if (!isPluginEnabled(descriptor)) {
             context.report(BLOCKING_BRIDGE_PLUGIN_NOT_ENABLED.on(inspectionTarget))
             return BREAK
         }
@@ -79,7 +96,7 @@ open class BlockingBridgeDeclarationChecker(
         descriptor: DeclarationDescriptor,
         context: DeclarationCheckerContext,
     ): CheckResult {
-        val inspectionTarget = when (descriptor.hasJvmBlockingBridgeAnnotation()) {
+        val inspectionTarget = when (descriptor.hasJvmBlockingBridgeAnnotation(context.trace.bindingContext)) {
             NONE -> return CONTINUE
             FROM_CONTAINING_DECLARATION, FROM_FUNCTION -> descriptor.jvmBlockingBridgeAnnotationPsi()
                 ?: descriptor.annotations.findAnnotation(JVM_SYNTHETIC)?.findPsi()

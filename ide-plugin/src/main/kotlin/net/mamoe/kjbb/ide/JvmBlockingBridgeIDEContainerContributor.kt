@@ -22,7 +22,7 @@ class JvmBlockingBridgeIDEContainerContributor : StorageComponentContainerContri
     ) {
 
         container.useInstance(object : BlockingBridgeDeclarationChecker(moduleDescriptor.isIr()) {
-            override fun checkIsPluginEnabled(
+            override fun isPluginEnabled(
                 descriptor: DeclarationDescriptor,
             ): Boolean {
                 return descriptor.module.isBlockingBridgePluginEnabled()

@@ -20,7 +20,7 @@ object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
         )
 
         put(
-            REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS,
+            REDUNDANT_JVM_BLOCKING_BRIDGE_ON_NON_PUBLIC_DECLARATIONS,
             "@JvmBlockingBridge is redundant on private declarations, as generated bridges are also private and can't be resolved from Java."
         )
 

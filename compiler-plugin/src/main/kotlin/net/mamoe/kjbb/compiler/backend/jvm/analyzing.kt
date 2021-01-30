@@ -10,12 +10,12 @@ import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.load.kotlin.toSourceElement
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.psiUtil.parents
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.checkers.DeclarationCheckerContext
-import org.jetbrains.kotlin.resolve.descriptorUtil.isEffectivelyPrivateApi
 import org.jetbrains.kotlin.resolve.descriptorUtil.module
 import org.jetbrains.kotlin.resolve.descriptorUtil.parents
 import org.jetbrains.kotlin.resolve.isInlineClass
@@ -40,7 +40,9 @@ sealed class BlockingBridgeAnalyzeResult(
      *
      * @since 1.8
      */
-    object BridgeAnnotationFromContainingDeclaration : BlockingBridgeAnalyzeResult(true, false)
+    class BridgeAnnotationFromContainingDeclaration(
+        val original: BlockingBridgeAnalyzeResult,
+    ) : BlockingBridgeAnalyzeResult(true, false)
 
     class Inapplicable(
         private val inspectionTarget: PsiElement,
@@ -76,11 +78,11 @@ sealed class BlockingBridgeAnalyzeResult(
             INLINE_CLASSES_NOT_SUPPORTED.on(inspectionTarget, causeDeclaration)
     }
 
-    class RedundantForPrivateDeclarations(
+    class RedundantForNonPublicDeclarations(
         private val inspectionTarget: PsiElement,
     ) : BlockingBridgeAnalyzeResult(false, false) {
         override fun createDiagnostic(): Diagnostic =
-            REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS.on(inspectionTarget)
+            REDUNDANT_JVM_BLOCKING_BRIDGE_ON_NON_PUBLIC_DECLARATIONS.on(inspectionTarget)
     }
 
     /**
@@ -113,8 +115,7 @@ fun FunctionDescriptor.jvmBlockingBridgeAnnotationOnContainingDeclaration(
             val ann = containingDeclaration.annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
             if (ann != null) return ann
 
-            containingDeclaration.containingFileAnnotations(bindingContext)
-                ?.find { it.fqName == JVM_BLOCKING_BRIDGE_FQ_NAME }
+            containingDeclaration.findFileAnnotation(bindingContext, JVM_BLOCKING_BRIDGE_FQ_NAME)
         }
         is PackageFragmentDescriptor -> {
             // top-level function
@@ -125,8 +126,15 @@ fun FunctionDescriptor.jvmBlockingBridgeAnnotationOnContainingDeclaration(
     }
 }
 
+fun DeclarationDescriptorWithSource.findFileAnnotation(
+    bindingContext: BindingContext,
+    fqName: FqName,
+): AnnotationDescriptor? {
+    return containingFileAnnotations(bindingContext)?.find { it.fqName == fqName }
+}
+
 // ((((this.containingDeclaration as LazyClassDescriptor).source as KotlinSourceElement).containingFile as PsiSourceFile).psiFile as KtFile).annotationEntries
-fun ClassDescriptor.containingFileAnnotations(bindingContext: BindingContext): List<AnnotationDescriptor>? {
+fun DeclarationDescriptorWithSource.containingFileAnnotations(bindingContext: BindingContext): List<AnnotationDescriptor>? {
     val sourceFile = (source as? KotlinSourceElement)?.containingFile as? PsiSourceFile ?: return null
     val file = sourceFile.psiFile as? KtFile ?: return null
     return file.annotationEntries.mapNotNull {
@@ -154,14 +162,14 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
 
     fun impl(): BlockingBridgeAnalyzeResult {
         if (isGeneratedBlockingBridgeStub()) return BlockingBridgeAnalyzeResult.FromStub
-        if (isEffectivelyPrivateApi) return BlockingBridgeAnalyzeResult.RedundantForPrivateDeclarations(
-            jvmBlockingBridgeAnnotationPsi)
         val containingClass = containingClass
         if (containingClass == null) {
             if (!isIr) {
                 return BlockingBridgeAnalyzeResult.TopLevelFunctionsNotSupported(jvmBlockingBridgeAnnotationPsi)
             }
         }
+        if (!visibility.effectiveVisibility(this, true).publicApi)
+            return BlockingBridgeAnalyzeResult.RedundantForNonPublicDeclarations(jvmBlockingBridgeAnnotationPsi)
         if (containingClass?.isInlineClass() == true)
             return BlockingBridgeAnalyzeResult.InlineClassesNotSupported(jvmBlockingBridgeAnnotationPsi,
                 containingClass)
@@ -191,7 +199,7 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
     val result = impl()
     if (annotationFromContainingClass) {
         if (!result.diagnosticPassed) {
-            return BlockingBridgeAnalyzeResult.BridgeAnnotationFromContainingDeclaration
+            return BlockingBridgeAnalyzeResult.BridgeAnnotationFromContainingDeclaration(result)
         }
     }
     return result

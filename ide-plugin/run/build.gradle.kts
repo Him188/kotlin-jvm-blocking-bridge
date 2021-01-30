@@ -13,18 +13,13 @@ blockingBridge {
 group = "me.him188"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven { url = uri("https://dl.bintray.com/kotlin/kotlin-eap") }
-}
+allprojects {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url = uri("https://dl.bintray.com/kotlin/kotlin-eap") }
+    }
 
-dependencies {
-    testImplementation(kotlin("test-junit"))
-}
-
-tasks.test {
-    useJUnit()
 }
 
 tasks.withType<KotlinCompile>() {

@@ -17,5 +17,14 @@ object TestAnnotationsOnClass {
         suspend fun test() {
 
         }
+
+        internal suspend fun test2() {
+
+        }
+
+        @PublishedApi
+        internal suspend fun test3() {
+
+        }
     }
 }

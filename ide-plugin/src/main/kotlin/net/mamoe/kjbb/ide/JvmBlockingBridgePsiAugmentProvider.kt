@@ -20,18 +20,21 @@ import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
+import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
+import org.jetbrains.kotlin.descriptors.effectiveVisibility
 import org.jetbrains.kotlin.idea.caches.project.toDescriptor
 import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
+import org.jetbrains.kotlin.idea.search.usagesSearch.descriptor
 import org.jetbrains.kotlin.idea.util.findAnnotation
 import org.jetbrains.kotlin.idea.util.module
+import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames
 import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.KtObjectDeclaration
-import org.jetbrains.kotlin.psi.KtParameter
+import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
+import org.jetbrains.kotlin.resolve.lazy.LazyDeclarationResolver
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 /**
@@ -105,14 +108,35 @@ internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): Li
         .toList()
 }
 
+private fun KtClassOrObject.classDescriptor(): ClassDescriptor? {
+    val resolver = this.module?.getComponent(LazyDeclarationResolver::class.java)
+    return resolver?.getClassDescriptorIfAny(this, NoLookupLocation.FROM_IDE)
+}
+
 internal fun PsiMethod.canHaveBridgeFunctions(isIr: Boolean): HasJvmBlockingBridgeAnnotation {
     if (!isSuspend()) return HasJvmBlockingBridgeAnnotation.NONE
     if (!Name.isValidIdentifier(this.name)) return HasJvmBlockingBridgeAnnotation.NONE
     if (this.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME.asString())) return HasJvmBlockingBridgeAnnotation.FROM_FUNCTION
 
     val containingClass = this.containingClass
+
+    if (this is KtLightMethod) {
+        val descriptor = this.kotlinOrigin?.descriptor as? SimpleFunctionDescriptor
+        if (descriptor != null) {
+            if (!descriptor.effectiveVisibility(checkPublishedApi = true).publicApi) {
+                return HasJvmBlockingBridgeAnnotation.NONE
+            }
+            if (descriptor.containingDeclaration !is ClassDescriptor && !isIr) {
+                return HasJvmBlockingBridgeAnnotation.NONE
+            }
+        }
+    }
+
     if (containingClass != null) {
         if (containingClass.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME.asString())) return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
+    } else {
+        // top-level function
+        if (!isIr) return HasJvmBlockingBridgeAnnotation.NONE
     }
 
     val containingFile = containingFile

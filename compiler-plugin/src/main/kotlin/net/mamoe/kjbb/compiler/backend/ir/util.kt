@@ -4,7 +4,6 @@
 package net.mamoe.kjbb.compiler.backend.ir
 
 import net.mamoe.kjbb.JvmBlockingBridge
-import net.mamoe.kjbb.compiler.backend.ir.isInterface
 import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeAnalyzeResult
 import net.mamoe.kjbb.compiler.backend.jvm.GeneratedBlockingBridgeStubForResolution
 import net.mamoe.kjbb.compiler.backend.jvm.isJvm8OrHigher
@@ -82,8 +81,8 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
     fun impl(): BlockingBridgeAnalyzeResult {
 
         if (isGeneratedBlockingBridgeStub()) return BlockingBridgeAnalyzeResult.FromStub
-        if (visibility.normalize().effectiveVisibility(descriptor, true).privateApi)
-            return BlockingBridgeAnalyzeResult.RedundantForPrivateDeclarations(jvmBlockingBridgeAnnotation)
+        if (!visibility.normalize().effectiveVisibility(descriptor, true).publicApi)
+            return BlockingBridgeAnalyzeResult.RedundantForNonPublicDeclarations(jvmBlockingBridgeAnnotation)
         val containingClass = parentClassOrNull
         if (containingClass?.isInline == true)
             return BlockingBridgeAnalyzeResult.InlineClassesNotSupported(jvmBlockingBridgeAnnotation,
@@ -114,7 +113,7 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
     val result = impl()
     if (annotationFromContainingClass) {
         if (!result.diagnosticPassed) {
-            return BlockingBridgeAnalyzeResult.BridgeAnnotationFromContainingDeclaration
+            return BlockingBridgeAnalyzeResult.BridgeAnnotationFromContainingDeclaration(result)
         }
     }
     return result

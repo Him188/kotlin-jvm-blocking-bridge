@@ -102,7 +102,7 @@ inline fun <reified R : Any> Class<*>.getFunctionWithReturnType(name: String, va
 
     return ret
         ?: throw AssertionError("Class '${this.name}' does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
-                "\n${allMethods.joinToString("\n")}")
+                "\n${allMethods.joinToString("\n")}\n")
 }
 
 val Class<*>.allMethods: Set<Method>
@@ -135,7 +135,7 @@ fun Class<*>.assertHasFunction(
                 it.parameters.zip(args).all { (param, clazz) -> param.type == clazz }
     }
         ?: throw AssertionError("Class '${this.name}' does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
-                "\n${allMethods.joinToString("\n")}")
+                "\n${allMethods.joinToString("\n")}\n")
 
     runIfFound(any)
 }

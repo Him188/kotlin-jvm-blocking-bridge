@@ -21,7 +21,7 @@ class QuickFixRegistrar : QuickFixContributor {
         REDUNDANT_JVM_BLOCKING_BRIDGE_WITH_JVM_SYNTHETIC
             .registerFactory(RemoveJvmBlockingBridgeFix, RemoveJvmSyntheticFix)
 
-        REDUNDANT_JVM_BLOCKING_BRIDGE_ON_PRIVATE_DECLARATIONS.registerFactory(RemoveJvmBlockingBridgeFix)
+        REDUNDANT_JVM_BLOCKING_BRIDGE_ON_NON_PUBLIC_DECLARATIONS.registerFactory(RemoveJvmBlockingBridgeFix)
 
         INAPPLICABLE_JVM_BLOCKING_BRIDGE.registerFactory(RemoveJvmBlockingBridgeFix)
         INLINE_CLASSES_NOT_SUPPORTED.registerFactory(RemoveJvmBlockingBridgeFix)

@@ -1,6 +1,7 @@
 package compiler
 
 import assertHasFunction
+import assertNoFunction
 import createInstance
 import org.junit.jupiter.api.Test
 import runFunction
@@ -13,14 +14,14 @@ internal sealed class BridgeAnnotationOnClassTest(
     internal class Ir : BridgeAnnotationOnClassTest(ir = true) {
         @Test
         fun test() {
-            `suspend gen`()
+            `effectively public`()
         }
     }
 
     internal class Jvm : BridgeAnnotationOnClassTest(ir = false) {
         @Test
         fun test() {
-            `bridge for interface overriding`()
+            `effectively public`()
         }
     }
 
@@ -45,6 +46,23 @@ internal sealed class BridgeAnnotationOnClassTest(
             }
         """, noMain = true
     )
+
+    @Test
+    open fun `effectively public`() = testJvmCompile(
+        """
+            @JvmBlockingBridge
+            object TestData {
+                @PublishedApi
+                internal suspend fun test() {}
+                internal suspend fun test2() {}
+            }
+        """, noMain = true
+    ) {
+        classLoader.loadClass("TestData").run {
+            assertHasFunction<Void>("test")
+            assertNoFunction<Void>("test2")
+        }
+    }
 
     @Test
     open fun `no inspection even inapplicable`() = testJvmCompile(

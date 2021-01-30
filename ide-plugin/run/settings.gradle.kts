@@ -9,3 +9,5 @@ pluginManagement {
 }
 rootProject.name = "TestProject"
 
+
+include(":below8")

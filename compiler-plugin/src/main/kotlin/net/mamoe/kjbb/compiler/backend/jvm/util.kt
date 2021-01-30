@@ -2,12 +2,12 @@ package net.mamoe.kjbb.compiler.backend.jvm
 
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
 import net.mamoe.kjbb.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation.*
-import org.jetbrains.kotlin.backend.common.serialization.findPackage
 import org.jetbrains.kotlin.codegen.state.md5base64
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.load.kotlin.computeJvmDescriptor
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.annotations.argumentValue
 
 internal val FunctionDescriptor.jvmName: String?
@@ -36,23 +36,24 @@ enum class HasJvmBlockingBridgeAnnotation(
     NONE(false)
 }
 
-fun DeclarationDescriptor.hasJvmBlockingBridgeAnnotation(): HasJvmBlockingBridgeAnnotation {
+fun DeclarationDescriptor.hasJvmBlockingBridgeAnnotation(bindingContext: BindingContext): HasJvmBlockingBridgeAnnotation {
     return when (this) {
         is ClassDescriptor -> {
-            if (this.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) FROM_CONTAINING_DECLARATION
-            else this.findPackage().hasJvmBlockingBridgeAnnotation()
+            when {
+                this.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) -> FROM_CONTAINING_DECLARATION
+                findFileAnnotation(bindingContext, JVM_BLOCKING_BRIDGE_FQ_NAME) != null -> FROM_CONTAINING_DECLARATION
+                else -> NONE
+            }
         }
         is FunctionDescriptor -> {
             if (this.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
                 FROM_FUNCTION
-            } else this.containingClass?.hasJvmBlockingBridgeAnnotation() ?: NONE
+            } else this.containingClass?.hasJvmBlockingBridgeAnnotation(bindingContext) ?: NONE
         }
         is PackageFragmentDescriptor -> {
-            if (this.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
+            if (findFileAnnotation(bindingContext, JVM_BLOCKING_BRIDGE_FQ_NAME) != null) {
                 FROM_CONTAINING_DECLARATION
-            } else {
-                NONE
-            }
+            } else NONE
         }
         else -> NONE
     }
