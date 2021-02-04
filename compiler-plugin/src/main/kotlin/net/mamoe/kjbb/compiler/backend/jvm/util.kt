@@ -28,6 +28,21 @@ object GeneratedBlockingBridgeStubForResolution : CallableDescriptor.UserDataKey
 fun FunctionDescriptor.isGeneratedBlockingBridgeStub(): Boolean =
     this.getUserData(GeneratedBlockingBridgeStubForResolution) == true
 
+fun FunctionDescriptor.findOverriddenDescriptorsHierarchically(filter: (FunctionDescriptor) -> Boolean): FunctionDescriptor? {
+    val overridden = this.overriddenDescriptors
+    for (overriddenDescriptor in overridden) {
+        if (filter(overriddenDescriptor)) {
+            return overriddenDescriptor
+        }
+    }
+    for (overriddenDescriptor in overridden) {
+        val got = overriddenDescriptor.findOverriddenDescriptorsHierarchically(filter)
+        if (got != null)
+            return got
+    }
+    return null
+}
+
 enum class HasJvmBlockingBridgeAnnotation(
     val has: Boolean,
 ) {

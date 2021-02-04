@@ -3,18 +3,29 @@
 package compiler
 
 import assertHasFunction
+import assertNoFunction
 import createInstance
 import org.junit.jupiter.api.Test
 import runFunction
 import kotlin.coroutines.Continuation
-import kotlin.test.assertFailsWith
 
 internal sealed class InheritanceTest(
     ir: Boolean,
 ) : AbstractCompilerTest(ir) {
 
-    internal class Ir : InheritanceTest(true)
-    internal class Jvm : InheritanceTest(false)
+    internal class Ir : InheritanceTest(true) {
+        @Test
+        fun test() {
+            `bridge for open fun`()
+        }
+    }
+
+    internal class Jvm : InheritanceTest(false) {
+        @Test
+        fun test() {
+            `bridge for open fun`()
+        }
+    }
 
     @Test
     fun `bridge for abstract`() = testJvmCompile(
@@ -30,11 +41,35 @@ internal sealed class InheritanceTest(
     }
 """
     ) {
-        assertFailsWith<NoSuchMethodException> {
-            classLoader.loadClass("Abstract").run {
-                assertHasFunction<String>("test")
-            }
-            classLoader.loadClass("TestData").getDeclaredMethod("test")
+        classLoader.loadClass("Abstract").run {
+            assertHasFunction<String>("test")
+        }
+        classLoader.loadClass("TestData").assertNoFunction<String>("test", declaredOnly = true)
+    }
+
+    @Test
+    fun `bridge for open fun`() = testJvmCompile(
+        """
+    sealed class S1 {
+        @JvmBlockingBridge
+        open suspend fun test(): String {
+            return "OK"
+        }
+    }
+    sealed class S2 : S1()
+    object TestData : S2() {
+        fun main(): String = TestData.runFunction("test")
+    }
+"""
+    ) {
+        classLoader.loadClass("S1").run {
+            assertHasFunction<String>("test")
+        }
+        classLoader.loadClass("S2").run {
+            assertNoFunction<String>("test", declaredOnly = true)
+        }
+        classLoader.loadClass("TestData").run {
+            assertNoFunction<String>("test", declaredOnly = true)
         }
     }
 
@@ -101,8 +136,35 @@ internal sealed class InheritanceTest(
             assertHasFunction<String>("test")
             assertHasFunction<Any>("test", Continuation::class.java)
         }
-        assertFailsWith<NoSuchMethodException> {
-            classLoader.loadClass("TestData").getDeclaredMethod("test")
+        classLoader.loadClass("TestData").assertNoFunction<String>("test", declaredOnly = true)
+    }
+
+    @Test
+    open fun `gen bridge for overridden`() = testJvmCompile(
+        """
+    interface Interface2 {
+        @JvmBlockingBridge
+        suspend fun test(): String
+    }
+    object TestData : Interface2 {
+        @JvmBlockingBridge
+        override suspend fun test() = "OK"
+        
+        fun main(): String = TestData.runFunction("test")
+    }
+"""
+    ) {
+        classLoader.loadClass("Interface2").run {
+            assertHasFunction<String>("test")
+            assertHasFunction<Any>("test", Continuation::class.java)
+        }
+        classLoader.loadClass("TestData").run {
+            assertHasFunction<String>("test")
+            assertHasFunction<Any>("test", Continuation::class.java)
+        }
+        classLoader.loadClass("TestData").run {
+            assertHasFunction<String>("test", declaredOnly = true)
+            assertHasFunction<Any>("test", Continuation::class.java, declaredOnly = true)
         }
     }
 

@@ -7,6 +7,7 @@ import net.mamoe.kjbb.JvmBlockingBridge
 import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeAnalyzeResult
 import net.mamoe.kjbb.compiler.backend.jvm.GeneratedBlockingBridgeStubForResolution
 import net.mamoe.kjbb.compiler.backend.jvm.isJvm8OrHigher
+import org.jetbrains.kotlin.backend.common.ir.allOverridden
 import org.jetbrains.kotlin.backend.common.ir.allParameters
 import org.jetbrains.kotlin.backend.common.lower.parents
 import org.jetbrains.kotlin.backend.jvm.codegen.psiElement
@@ -15,7 +16,6 @@ import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.effectiveVisibility
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
-import org.jetbrains.kotlin.ir.backend.js.utils.realOverrideTarget
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.util.*
@@ -72,11 +72,14 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
             ?: jvmBlockingBridgeAnnotationOnContainingClass().also { annotationFromContainingClass = true }
             ?: return BlockingBridgeAnalyzeResult.MissingAnnotationPsi
 
+
     val jvmBlockingBridgeAnnotation =
         jvmBlockingBridgeAnnotationIr.psiElement
             ?: psiElement
             ?: descriptor.findPsi()
             ?: return BlockingBridgeAnalyzeResult.MissingAnnotationPsi
+
+    if (this !is IrSimpleFunction) return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotation)
 
     fun impl(): BlockingBridgeAnalyzeResult {
 
@@ -100,11 +103,14 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
                 return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotation)
             }
 
+            val overridden = this.findOverriddenDescriptorsHierarchically {
+                it.analyzeCapabilityForGeneratingBridges().shouldGenerate
+            }
 
-            val overridden = originalFunction.realOverrideTarget
-
-            if (overridden !== this && overridden.analyzeCapabilityForGeneratingBridges() != BlockingBridgeAnalyzeResult.Allowed)// overriding a super function
+            if (overridden != null) {
+                // overriding a super function
                 return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden.descriptor, isReal)
+            }
         }
 
         return BlockingBridgeAnalyzeResult.Allowed
@@ -119,6 +125,17 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
     return result
 }
 
+
+fun IrSimpleFunction.findOverriddenDescriptorsHierarchically(filter: (IrSimpleFunction) -> Boolean): IrSimpleFunction? {
+    for (override in this.allOverridden(false)) {
+        if (filter(override)) {
+            return override
+        }
+        val find = override.findOverriddenDescriptorsHierarchically(filter)
+        if (find != null) return find
+    }
+    return null
+}
 
 internal fun IrAnnotationContainer.jvmBlockingBridgeAnnotation(): IrConstructorCall? =
     annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)

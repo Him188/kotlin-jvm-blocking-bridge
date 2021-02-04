@@ -186,11 +186,13 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
                 return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotationPsi)
             }
 
-            val overridden = original.overriddenDescriptors
-            val shouldGen =
-                overridden.find { it.analyzeCapabilityForGeneratingBridges(isIr, bindingContext).shouldGenerate }
-            if (shouldGen != null)  // overriding a super function
-                return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(shouldGen, isDeclaredFunction())
+            val overridden =
+                original.findOverriddenDescriptorsHierarchically {
+                    it.analyzeCapabilityForGeneratingBridges(isIr,
+                        bindingContext).shouldGenerate
+                }
+            if (overridden != null)
+                return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden, isDeclaredFunction())
         }
 
         return BlockingBridgeAnalyzeResult.Allowed

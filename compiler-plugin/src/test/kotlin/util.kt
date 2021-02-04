@@ -62,9 +62,14 @@ fun Class<*>.getFunctionReturnType(name: String, vararg args: Class<*>): String 
 inline fun <reified R : Any> Class<*>.assertHasFunction(
     name: String,
     vararg args: Class<*>,
+    declaredOnly: Boolean = false,
     noinline runIfFound: Method.() -> Unit = {},
 ) {
-    return assertHasFunction(name, args = args, returnType = R::class.javaPrimitiveType ?: R::class.java, runIfFound)
+    return assertHasFunction(name,
+        args = args,
+        returnType = R::class.javaPrimitiveType ?: R::class.java,
+        declaredOnly,
+        runIfFound = runIfFound)
 }
 
 @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
@@ -72,12 +77,14 @@ inline fun <reified R : Any> Class<*>.assertHasFunction(
 inline fun <reified R : Any> Class<*>.assertHasFunction(
     name: String,
     vararg args: KClass<*>,
+    declaredOnly: Boolean = false,
     noinline runIfFound: Method.() -> Unit = {},
 ) {
     return assertHasFunction(name,
         args = args.map { it.javaPrimitiveType ?: it.java }.toTypedArray(),
         returnType = R::class.javaPrimitiveType ?: R::class.java,
-        runIfFound)
+        declaredOnly,
+        runIfFound = runIfFound)
 }
 
 inline fun <reified R : Any> Class<*>.assertNoFunction(
@@ -126,9 +133,10 @@ fun Class<*>.assertHasFunction(
     name: String,
     vararg args: Class<*>,
     returnType: Class<*>,
+    declaredOnly: Boolean = false,
     runIfFound: Method.() -> Unit,
 ) {
-    val any = allMethods.find {
+    val any = (if (declaredOnly) declaredMethods.toSet() else allMethods).find {
         it.name == name &&
                 it.returnType == returnType &&
                 it.parameterCount == args.size &&
