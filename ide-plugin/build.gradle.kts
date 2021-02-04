@@ -35,7 +35,7 @@ intellij {
     updateSinceUntilBuild = false
 
     setPlugins(
-        "org.jetbrains.kotlin:203-1.4.30-release-IJ7148.5"
+        "org.jetbrains.kotlin:203-1.4.30-release-IJ7148.5","java"
     )
 }
 
