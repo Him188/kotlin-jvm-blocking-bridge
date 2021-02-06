@@ -32,6 +32,21 @@ public class J {
         x.member();
         x.overloads(1, "");
 
+        AnnotationOnInterface i = new AnnotationOnInterface() {
+
+            @Nullable
+            @Override
+            public Object suspend(@NotNull Continuation<? super Unit> $completion) {
+                return null;
+            }
+
+            @Override
+            public void nonSuspend() {
+            }
+        };
+        i.nonSuspend();
+        i.suspend();
+
         new AClass() {
             @Nullable
             @Override

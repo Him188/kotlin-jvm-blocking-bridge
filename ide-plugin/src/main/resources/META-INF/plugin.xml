@@ -33,8 +33,8 @@
                 implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCodegenJvmExtension"/>
         <irGenerationExtension
                 implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeIrGenerationExtension"/>
-        <syntheticResolveExtension
-                implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeResolveExtension"/>
+        <!--        <syntheticResolveExtension-->
+        <!--                implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeResolveExtension"/>-->
         <storageComponentContainerContributor
                 implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeIDEContainerContributor"/>
         <!-- <quickFixContributor implementation="org.jetbrains.kotlinx.serialization.idea.quickfixes.SerializationQuickFixContributor"/> -->

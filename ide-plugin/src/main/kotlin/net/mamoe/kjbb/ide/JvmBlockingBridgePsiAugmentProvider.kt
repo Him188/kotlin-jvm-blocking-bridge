@@ -77,8 +77,6 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
 }
 
 internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): List<PsiElement> {
-    val result = ArrayList<PsiElement>()
-
     val moduleDescriptor = this.module?.toDescriptor()
     if (moduleDescriptor?.isBlockingBridgePluginEnabled() == false) {
         return emptyList()
@@ -101,7 +99,7 @@ internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): Li
         result.clear()
     }*/
 
-    return result + ownMethods.asSequence()
+    return ownMethods.asSequence()
         .filterIsInstance<KtLightMethod>()
         .filter { it.canHaveBridgeFunctions(isIr).has }
         .flatMap { it.generateLightMethod(it.containingClass).asSequence() }

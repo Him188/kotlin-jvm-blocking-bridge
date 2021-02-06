@@ -161,6 +161,10 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
     // now that the function has @JvmBlockingBridge on self or containing declaration
 
     fun impl(): BlockingBridgeAnalyzeResult {
+        if (!isSuspend || name.isSpecial) {
+            return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotationPsi)
+        }
+
         if (isGeneratedBlockingBridgeStub()) return BlockingBridgeAnalyzeResult.FromStub
         val containingClass = containingClass
         if (containingClass == null) {
@@ -178,22 +182,18 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
                 param.findPsi() ?: jvmBlockingBridgeAnnotationPsi, param)
         }
 
-        if (containingClass?.isInterface() == true) { // null means top-level, which is also accepted
+        if (containingClass?.isInterface() == true) {
             if (module.platform?.isJvm8OrHigher() != true)
                 return BlockingBridgeAnalyzeResult.InterfaceNotSupported(jvmBlockingBridgeAnnotationPsi)
-        } else {
-            if (!isSuspend || name.isSpecial) {
-                return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotationPsi)
-            }
-
-            val overridden =
-                original.findOverriddenDescriptorsHierarchically {
-                    it.analyzeCapabilityForGeneratingBridges(isIr,
-                        bindingContext).shouldGenerate
-                }
-            if (overridden != null)
-                return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden, isDeclaredFunction())
         }
+
+        val overridden =
+            original.findOverriddenDescriptorsHierarchically {
+                it.analyzeCapabilityForGeneratingBridges(isIr,
+                    bindingContext).shouldGenerate
+            }
+        if (overridden != null)
+            return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden, isDeclaredFunction())
 
         return BlockingBridgeAnalyzeResult.Allowed
     }

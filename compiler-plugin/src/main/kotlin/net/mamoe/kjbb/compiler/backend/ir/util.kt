@@ -82,6 +82,9 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
     if (this !is IrSimpleFunction) return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotation)
 
     fun impl(): BlockingBridgeAnalyzeResult {
+        if (!isSuspend || name.isSpecial) {
+            return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotation)
+        }
 
         if (isGeneratedBlockingBridgeStub()) return BlockingBridgeAnalyzeResult.FromStub
         if (!visibility.normalize().effectiveVisibility(descriptor, true).publicApi)
@@ -98,19 +101,15 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
         if (containingClass?.isInterface == true) { // null means top-level, which is also accepted
             if (module.platform?.isJvm8OrHigher() != true)
                 return BlockingBridgeAnalyzeResult.InterfaceNotSupported(jvmBlockingBridgeAnnotation)
-        } else {
-            if (!isSuspend || name.isSpecial) {
-                return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotation)
-            }
+        }
 
-            val overridden = this.findOverriddenDescriptorsHierarchically {
-                it.analyzeCapabilityForGeneratingBridges().shouldGenerate
-            }
+        val overridden = this.findOverriddenDescriptorsHierarchically {
+            it.analyzeCapabilityForGeneratingBridges().shouldGenerate
+        }
 
-            if (overridden != null) {
-                // overriding a super function
-                return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden.descriptor, isReal)
-            }
+        if (overridden != null) {
+            // overriding a super function
+            return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden.descriptor, isReal)
         }
 
         return BlockingBridgeAnalyzeResult.Allowed
