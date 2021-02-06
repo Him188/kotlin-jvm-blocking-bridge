@@ -83,6 +83,8 @@ open class BlockingBridgeDeclarationChecker(
 
         val result = descriptor.analyzeCapabilityForGeneratingBridges(isIr, context.trace.bindingContext)
         result.createDiagnostic()?.let(context::report)
+
+        if (result is BlockingBridgeAnalyzeResult.BridgeAnnotationFromContainingDeclaration) return BREAK
         return CONTINUE
     }
 
