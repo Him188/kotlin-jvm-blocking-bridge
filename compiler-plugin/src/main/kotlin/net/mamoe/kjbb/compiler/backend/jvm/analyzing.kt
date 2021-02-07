@@ -41,7 +41,7 @@ sealed class BlockingBridgeAnalyzeResult(
      * @since 1.8
      */
     class BridgeAnnotationFromContainingDeclaration(
-        val original: BlockingBridgeAnalyzeResult,
+        val original: BlockingBridgeAnalyzeResult?,
     ) : BlockingBridgeAnalyzeResult(true, false)
 
     class Inapplicable(
@@ -53,10 +53,7 @@ sealed class BlockingBridgeAnalyzeResult(
     /**
      * When super member has `@JvmBlockingBridge`, but this doesn't.
      */
-    class OriginFunctionOverridesSuperMember(
-        val overridingMethod: FunctionDescriptor,
-        shouldGenerate: Boolean,
-    ) : BlockingBridgeAnalyzeResult(false, shouldGenerate)
+    class OverridesSuper(shouldGenerate: Boolean) : BlockingBridgeAnalyzeResult(true, shouldGenerate)
 
     /**
      * Below Java 8
@@ -161,30 +158,45 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
     // now that the function has @JvmBlockingBridge on self or containing declaration
 
     fun impl(): BlockingBridgeAnalyzeResult {
+        // fun must be suspend and applied to member function
         if (!isSuspend || name.isSpecial) {
             return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotationPsi)
         }
 
-        if (isGeneratedBlockingBridgeStub()) return BlockingBridgeAnalyzeResult.FromStub
+        if (isGeneratedBlockingBridgeStub()) {
+            // @JvmBlockingBridge and @GeneratedBlockingBridge both present
+            return BlockingBridgeAnalyzeResult.FromStub
+        }
+
         val containingClass = containingClass
         if (containingClass == null) {
+            // top-level only supported by IR
             if (!isIr) {
                 return BlockingBridgeAnalyzeResult.TopLevelFunctionsNotSupported(jvmBlockingBridgeAnnotationPsi)
             }
         }
-        if (!visibility.effectiveVisibility(this, true).publicApi)
+        if (!visibility.effectiveVisibility(this, true).publicApi) {
+            // effectively internal api
             return BlockingBridgeAnalyzeResult.RedundantForNonPublicDeclarations(jvmBlockingBridgeAnnotationPsi)
-        if (containingClass?.isInlineClass() == true)
+        }
+
+        if (containingClass?.isInlineClass() == true) {
+            // inside inline class not supported
             return BlockingBridgeAnalyzeResult.InlineClassesNotSupported(jvmBlockingBridgeAnnotationPsi,
                 containingClass)
+        }
+
         allParameters.firstOrNull { it.type.isInlineClassType() }?.let { param ->
+            // inline class param not yet supported
             return BlockingBridgeAnalyzeResult.InlineClassesNotSupported(
                 param.findPsi() ?: jvmBlockingBridgeAnnotationPsi, param)
         }
 
         if (containingClass?.isInterface() == true) {
-            if (module.platform?.isJvm8OrHigher() != true)
+            if (module.platform?.isJvm8OrHigher() != true) {
+                // inside interface and JVM under 8
                 return BlockingBridgeAnalyzeResult.InterfaceNotSupported(jvmBlockingBridgeAnnotationPsi)
+            }
         }
 
         val overridden =
@@ -192,10 +204,22 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
                 it.analyzeCapabilityForGeneratingBridges(isIr,
                     bindingContext).shouldGenerate
             }
-        if (overridden != null)
-            return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden, isDeclaredFunction())
 
-        return BlockingBridgeAnalyzeResult.Allowed
+        if (overridden != null) {
+            // super function has @
+            // generate only if this function has @, or implied from @ on class, which concluded as 'isDeclared'
+            return BlockingBridgeAnalyzeResult.OverridesSuper(isUserDeclaredFunction())
+        }
+
+        // super function no @
+        // this function may has @ or implied from
+        return if (isUserDeclaredFunction()) {
+            // explicit 'override' then generate for it.
+            BlockingBridgeAnalyzeResult.Allowed
+        } else {
+            // implicit override by compiler, don't generate.
+            BlockingBridgeAnalyzeResult.BridgeAnnotationFromContainingDeclaration(null)
+        }
     }
 
     val result = impl()
@@ -207,7 +231,7 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
     return result
 }
 
-internal fun FunctionDescriptor.isDeclaredFunction(): Boolean = original.toSourceElement.getPsi() != null
+internal fun FunctionDescriptor.isUserDeclaredFunction(): Boolean = original.toSourceElement.getPsi() != null
 
 internal val FunctionDescriptor.containingClass: ClassDescriptor?
     get() = this.parents.firstOrNull { it is ClassDescriptor } as ClassDescriptor?

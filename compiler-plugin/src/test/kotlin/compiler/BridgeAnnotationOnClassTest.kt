@@ -14,14 +14,14 @@ internal sealed class BridgeAnnotationOnClassTest(
     internal class Ir : BridgeAnnotationOnClassTest(ir = true) {
         @Test
         fun test() {
-            `effectively public`()
+            `bridge for interface implicit override`()
         }
     }
 
     internal class Jvm : BridgeAnnotationOnClassTest(ir = false) {
         @Test
         fun test() {
-            `effectively public`()
+            `bridge for interface implicit override`()
         }
     }
 
@@ -131,18 +131,113 @@ internal sealed class BridgeAnnotationOnClassTest(
         """
     interface Interface3 {
         suspend fun test(): String
+        suspend fun test2(): String
     }
         @JvmBlockingBridge
-    object TestData : Interface3 {
+    interface TestData : Interface3 {
         override suspend fun test() = "OK"
     }
 """, noMain = true
     ) {
         classLoader.loadClass("TestData").run {
+            assertHasFunction<String>("test", declaredOnly = true)  // explicit override
+            assertNoFunction<String>("test2", declaredOnly = true) // implicit
+        }
+    }
+
+    @Test
+    fun `bridge for interface non-suspend`() = testJvmCompile(
+        """
+    interface Interface3 {
+        suspend fun test(): String
+        fun non(): String
+    }
+        @JvmBlockingBridge
+    object TestData : Interface3 {
+        override suspend fun test() = "OK"
+        override fun non() = "OK"
+    }
+""", noMain = true
+    ) {
+        classLoader.loadClass("TestData").run {
             assertHasFunction<String>("test")
+            assertHasFunction<String>("non")
             createInstance().run {
                 runFunction<String>("test")
+                runFunction<String>("non")
             }
+        }
+    }
+
+    @Test
+    fun `bridge for interface non-suspend complex`() = testJvmCompile(
+        """
+    @JvmBlockingBridge
+    interface Interface3 {
+        suspend fun test(): String
+        suspend fun implicit(): String = "OK"
+        fun non(): String
+    }
+    @JvmBlockingBridge
+    interface Interface4 : Interface3 {
+        override suspend fun test(): String
+        override fun non(): String
+    }
+    @JvmBlockingBridge
+    object TestData : Interface4 {
+        override suspend fun test() = "OK"
+        override fun non() = "OK"
+    }
+    @JvmBlockingBridge
+    object TestData2 : Interface4 {
+        override suspend fun test() = "OK"
+        override suspend fun implicit() = "OK"
+        override fun non() = "OK"
+    }
+""", noMain = true
+    ) {
+        classLoader.loadClass("Interface3").run {
+            assertHasFunction<String>("test", declaredOnly = true)
+            assertHasFunction<String>("implicit", declaredOnly = true)
+        }
+        classLoader.loadClass("Interface4").run {
+            assertHasFunction<String>("test", declaredOnly = true)
+            assertNoFunction<String>("implicit", declaredOnly = true)
+        }
+        classLoader.loadClass("TestData").run {
+            assertHasFunction<String>("test", declaredOnly = true)
+            assertNoFunction<String>("implicit", declaredOnly = true)
+        }
+        classLoader.loadClass("TestData2").run {
+            assertHasFunction<String>("test", declaredOnly = true)
+            assertHasFunction<String>("implicit", declaredOnly = true)
+        }
+    }
+
+
+    @Test
+    fun `bridge for interface implicit override`() = testJvmCompile(
+        """
+    @JvmBlockingBridge
+    interface Interface3 {
+        suspend fun test(): String
+        suspend fun implicit(): String = "OK"
+        fun non(): String
+    }
+    @JvmBlockingBridge
+    interface Interface4 : Interface3 {
+        override suspend fun test(): String
+        override fun non(): String
+    }
+""", noMain = true
+    ) {
+        classLoader.loadClass("Interface3").run {
+            assertHasFunction<String>("test", declaredOnly = true)
+            assertHasFunction<String>("implicit", declaredOnly = true)
+        }
+        classLoader.loadClass("Interface4").run {
+            assertHasFunction<String>("test", declaredOnly = true)
+            assertNoFunction<String>("implicit", declaredOnly = true)
         }
     }
 

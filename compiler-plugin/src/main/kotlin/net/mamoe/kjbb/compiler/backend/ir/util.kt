@@ -82,25 +82,39 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
     if (this !is IrSimpleFunction) return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotation)
 
     fun impl(): BlockingBridgeAnalyzeResult {
+        // fun must be suspend and applied to member function
         if (!isSuspend || name.isSpecial) {
             return BlockingBridgeAnalyzeResult.Inapplicable(jvmBlockingBridgeAnnotation)
         }
 
-        if (isGeneratedBlockingBridgeStub()) return BlockingBridgeAnalyzeResult.FromStub
-        if (!visibility.normalize().effectiveVisibility(descriptor, true).publicApi)
+        if (isGeneratedBlockingBridgeStub()) {
+            // @JvmBlockingBridge and @GeneratedBlockingBridge both present
+            return BlockingBridgeAnalyzeResult.FromStub
+        }
+
+        if (!visibility.normalize().effectiveVisibility(descriptor, true).publicApi) {
+            // effectively internal api
             return BlockingBridgeAnalyzeResult.RedundantForNonPublicDeclarations(jvmBlockingBridgeAnnotation)
+        }
+
         val containingClass = parentClassOrNull
-        if (containingClass?.isInline == true)
+        if (containingClass?.isInline == true) {
+            // inside inline class not supported
             return BlockingBridgeAnalyzeResult.InlineClassesNotSupported(jvmBlockingBridgeAnnotation,
                 containingClass.descriptor)
+        }
+
         allParameters.firstOrNull { it.type.isInlined() }?.let { param ->
+            // inline class param not yet supported
             return BlockingBridgeAnalyzeResult.InlineClassesNotSupported(
                 param.psiElement ?: jvmBlockingBridgeAnnotation, param.descriptor)
         }
 
         if (containingClass?.isInterface == true) { // null means top-level, which is also accepted
-            if (module.platform?.isJvm8OrHigher() != true)
+            if (module.platform?.isJvm8OrHigher() != true) {
+                // inside interface and JVM under 8
                 return BlockingBridgeAnalyzeResult.InterfaceNotSupported(jvmBlockingBridgeAnnotation)
+            }
         }
 
         val overridden = this.findOverriddenDescriptorsHierarchically {
@@ -108,11 +122,20 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
         }
 
         if (overridden != null) {
-            // overriding a super function
-            return BlockingBridgeAnalyzeResult.OriginFunctionOverridesSuperMember(overridden.descriptor, isReal)
+            // super function has @
+            // generate only if this function has @, or implied from @ on class, which concluded as 'isReal'
+            return BlockingBridgeAnalyzeResult.OverridesSuper(isUserDeclaredFunction())
         }
 
-        return BlockingBridgeAnalyzeResult.Allowed
+        // super function no @
+        // this function may has @ or implied from
+        return if (isUserDeclaredFunction()) {
+            // explicit 'override' then generate for it.
+            BlockingBridgeAnalyzeResult.Allowed
+        } else {
+            // implicit override by compiler, don't generate.
+            BlockingBridgeAnalyzeResult.BridgeAnnotationFromContainingDeclaration(null)
+        }
     }
 
     val result = impl()
@@ -124,6 +147,9 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(): BlockingBridgeAnalyzeRes
     return result
 }
 
+fun IrSimpleFunction.isUserDeclaredFunction(): Boolean {
+    return originalFunction.psiElement != null
+}
 
 fun IrSimpleFunction.findOverriddenDescriptorsHierarchically(filter: (IrSimpleFunction) -> Boolean): IrSimpleFunction? {
     for (override in this.allOverridden(false)) {
