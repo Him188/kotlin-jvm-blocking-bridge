@@ -3,8 +3,7 @@ name: Publishing
 on:
   release:
     types:
-      - released
-      - prereleased
+      - created
   push:
     tags:
       - '*-dev*'
