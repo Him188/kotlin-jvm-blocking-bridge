@@ -69,7 +69,10 @@ class JvmBlockingBridgeInlayHintsCollector :
         var anyChanged = false
         val factory = PresentationFactory(editor)
 
-        val isIr = element.module?.toDescriptor()?.isIr() == true
+        val module = element.module?.toDescriptor() ?: return false
+        if (!module.isBlockingBridgePluginEnabled()) return false
+
+        val isIr = module.isIr()
         for (method in element.methods) {
             if (method is BlockingBridgeStubMethod) continue
             if (method.containingClass !== element) continue
