@@ -26,8 +26,12 @@ open class BlockingBridgeDeclarationChecker(
     ) {
         when (declaration) {
             is KtClass -> {
+                val annotation = descriptor.jvmBlockingBridgeAnnotationPsi() ?: return
+                if (!isPluginEnabled(descriptor)) {
+                    context.report(BLOCKING_BRIDGE_PLUGIN_NOT_ENABLED.on(annotation))
+                    return
+                }
                 if (declaration.isInterface()) {
-                    val annotation = descriptor.jvmBlockingBridgeAnnotationPsi() ?: return
                     if (descriptor.module.platform?.isJvm8OrHigher() != true) {
                         // below 8
                         context.report(INTERFACE_NOT_SUPPORTED.on(annotation))
