@@ -7,6 +7,7 @@ import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
@@ -36,11 +37,17 @@ class JvmBlockingBridgeInlayHintsCollector :
 
         if (element is KtFile) {
             var anyChanged = false
-            for (clazz in element.classes) {
+
+            fun collectClass(clazz: PsiClass): Boolean {
                 anyChanged = collect(clazz, editor, sink) || anyChanged
-                for (inner in clazz.allInnerClasses) {
-                    anyChanged = collect(inner, editor, sink) || anyChanged
+                for (inner in clazz.innerClasses) {
+                    anyChanged = collectClass(inner) || anyChanged
                 }
+                return anyChanged
+            }
+
+            for (clazz in element.classes) {
+                collectClass(clazz)
             }
             return anyChanged
         }
@@ -56,6 +63,7 @@ class JvmBlockingBridgeInlayHintsCollector :
         val isIr = element.module?.toDescriptor()?.isIr() == true
         for (method in element.methods) {
             if (method is BlockingBridgeStubMethod) continue
+            if (method.containingClass !== element) continue
             if (method.canHaveBridgeFunctions(isIr) == HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION) {
                 anyChanged = true
                 sink.addBlockElement(
