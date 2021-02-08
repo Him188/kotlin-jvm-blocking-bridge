@@ -12,7 +12,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.impl.source.PsiExtensibleClass
+import com.intellij.util.castSafelyTo
 import net.mamoe.kjbb.JvmBlockingBridge
+import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
 import net.mamoe.kjbb.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation
 import net.mamoe.kjbb.ide.line.marker.document
 import net.mamoe.kjbb.ide.line.marker.getLineNumber
@@ -21,9 +23,16 @@ import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
 import org.jetbrains.kotlin.idea.caches.project.toDescriptor
 import org.jetbrains.kotlin.idea.codeInsight.hints.HintType
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
+import org.jetbrains.kotlin.idea.debugger.sequence.psi.resolveType
+import org.jetbrains.kotlin.idea.util.findAnnotation
 import org.jetbrains.kotlin.idea.util.module
+import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.psi.KtAnnotated
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtTypeReference
+import org.jetbrains.kotlin.psi.KtUserType
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
+import org.jetbrains.kotlin.types.KotlinType
 import javax.swing.JComponent
 import javax.swing.JPanel
 
@@ -79,16 +88,12 @@ class JvmBlockingBridgeInlayHintsCollector :
         return anyChanged
     }.getOrElse { false }
 
-    private fun PsiMethod.renderContainingDeclaration(): String {
-        return when {
-            containingClass != null -> {
-                "class ${containingClass!!.name}"
-            }
-            containingFile != null -> {
-                "file ${containingFile!!.name}"
-            }
-            else -> "<ERROR>"
-        }
+    private fun KtTypeReference.resolveType(): KotlinType? {
+        return (this.typeElement as? KtUserType)?.referenceExpression?.resolveType()
+    }
+
+    private fun KtAnnotated.hasAnnotation(fqName: FqName): Boolean {
+        return this.findAnnotation(fqName) != null
     }
 
     private fun createPresentation(
@@ -103,10 +108,17 @@ class JvmBlockingBridgeInlayHintsCollector :
             // TODO: 2021/1/29 navigate to annotation on containing declaration
         }
 
-        hint = factory.withTooltip(
-            "From @file:JvmBlockingBridge on containing ${method.renderContainingDeclaration()}",
-            hint
-        )
+        if (method.containingClass?.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME.asString()) == true) {
+            hint = factory.withTooltip(
+                "From @JvmBlockingBridge on class ${method.containingClass?.name}",
+                hint
+            )
+        } else if (method.containingFile.castSafelyTo<KtFile>()?.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) == true) {
+            hint = factory.withTooltip(
+                "From @file:JvmBlockingBridge on file ${method.containingFile.name}",
+                hint
+            )
+        }
 
         val alignmentElement = method.modifierList
         val lineStart =
