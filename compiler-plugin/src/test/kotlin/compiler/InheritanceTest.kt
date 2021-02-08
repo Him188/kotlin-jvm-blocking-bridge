@@ -140,6 +140,29 @@ internal sealed class InheritanceTest(
     }
 
     @Test
+    open fun `interface override`() = testJvmCompile(
+        """
+    interface Interface2 {
+        @JvmBlockingBridge
+        suspend fun test(): String
+    }
+    interface TestData : Interface2 {
+        @JvmBlockingBridge
+        override suspend fun test() = "OK"
+    }
+""", noMain = true
+    ) {
+        classLoader.loadClass("Interface2").run {
+            assertHasFunction<String>("test", declaredOnly = true)
+            assertHasFunction<Any>("test", Continuation::class.java, declaredOnly = true)
+        }
+        classLoader.loadClass("TestData").run {
+            assertHasFunction<String>("test", declaredOnly = true)
+            assertHasFunction<Any>("test", Continuation::class.java, declaredOnly = true)
+        }
+    }
+
+    @Test
     open fun `gen bridge for overridden`() = testJvmCompile(
         """
     interface Interface2 {

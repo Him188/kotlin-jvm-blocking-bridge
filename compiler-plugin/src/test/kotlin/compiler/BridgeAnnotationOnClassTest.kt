@@ -242,6 +242,29 @@ internal sealed class BridgeAnnotationOnClassTest(
     }
 
     @Test
+    fun `bridge for interface explicit override`() = testJvmCompile(
+        """
+    @JvmBlockingBridge
+    interface Interface3 {
+        suspend fun explicit(): String = "OK"
+        fun non(): String
+    }
+    interface Interface4 : Interface3 {
+        @JvmBlockingBridge
+        override suspend fun explicit(): String
+        override fun non(): String
+    }
+""", noMain = true
+    ) {
+        classLoader.loadClass("Interface3").run {
+            assertHasFunction<String>("explicit", declaredOnly = true)
+        }
+        classLoader.loadClass("Interface4").run {
+            assertHasFunction<String>("explicit", declaredOnly = true)
+        }
+    }
+
+    @Test
     open fun `bridge for interface inheritance`() = testJvmCompile(
         """
         @JvmBlockingBridge
