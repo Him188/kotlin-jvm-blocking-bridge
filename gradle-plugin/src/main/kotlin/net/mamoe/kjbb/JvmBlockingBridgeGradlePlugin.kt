@@ -1,5 +1,6 @@
 package net.mamoe.kjbb
 
+import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys.ENABLE_FOR_MODULE
 import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION
 import net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCommandLineProcessor
 import org.gradle.api.Project
@@ -12,7 +13,8 @@ internal const val KJBB_VERSION = "1.10.0-dev-1"
 
 internal fun BlockingBridgePluginExtension.toSubpluginOptionList(): List<SubpluginOption> {
     return listOf(
-        SubpluginOption(UNIT_COERCION.toString(), unitCoercion.name)
+        SubpluginOption(UNIT_COERCION.toString(), unitCoercion.name),
+        SubpluginOption(ENABLE_FOR_MODULE.toString(), enableForModule.toString()),
     )
 }
 

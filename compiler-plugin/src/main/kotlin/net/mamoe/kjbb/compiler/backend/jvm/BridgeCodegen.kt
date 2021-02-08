@@ -5,6 +5,8 @@ import com.intellij.psi.PsiFile
 import net.mamoe.kjbb.compiler.UnitCoercion
 import net.mamoe.kjbb.compiler.backend.ir.*
 import net.mamoe.kjbb.compiler.context.CompilerContext
+import net.mamoe.kjbb.compiler.extensions.IJvmBlockingBridgeCodegenJvmExtension
+import net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCodegenJvmExtension
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedString
@@ -61,8 +63,8 @@ internal interface BridgeCodegenExtensions {
 class BridgeCodegen(
     private val codegen: ImplementationBodyCodegen,
     compilerContext: CompilerContext = CompilerContext.INSTANCE,
-    private val unitCoercion: UnitCoercion,
-) : BridgeCodegenExtensions, CompilerContext by compilerContext {
+    ext: JvmBlockingBridgeCodegenJvmExtension,
+) : BridgeCodegenExtensions, CompilerContext by compilerContext, IJvmBlockingBridgeCodegenJvmExtension by ext {
 
     private val generationState: GenerationState get() = codegen.state
     private inline val v get() = codegen.v
@@ -80,7 +82,7 @@ class BridgeCodegen(
             names.flatMap { members.getContributedFunctions(it, NoLookupLocation.WHEN_GET_ALL_DESCRIPTORS) }.toSet()
 
         for (function in functions) {
-            val capability = function.analyzeCapabilityForGeneratingBridges(false, codegen.bindingContext)
+            val capability = function.analyzeCapabilityForGeneratingBridges(false, codegen.bindingContext, this)
             if (!capability.diagnosticPassed) capability.createDiagnostic()?.let(::report)
             if (capability.shouldGenerate) {
                 val desc = function.generateBridge(allowUnitCoercion = true, synthetic = false)

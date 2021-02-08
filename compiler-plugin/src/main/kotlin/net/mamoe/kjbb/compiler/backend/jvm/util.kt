@@ -47,14 +47,27 @@ enum class HasJvmBlockingBridgeAnnotation(
     val has: Boolean,
 ) {
     FROM_FUNCTION(true),
+
+    /**
+     * @since 1.8
+     */
     FROM_CONTAINING_DECLARATION(true),
-    NONE(false)
+
+    /**
+     * @since 1.10
+     */
+    ENABLE_FOR_MODULE(true),
+    NONE(false),
 }
 
-fun DeclarationDescriptor.hasJvmBlockingBridgeAnnotation(bindingContext: BindingContext): HasJvmBlockingBridgeAnnotation {
+fun DeclarationDescriptor.hasJvmBlockingBridgeAnnotation(
+    bindingContext: BindingContext,
+    enableForModule: Boolean,
+): HasJvmBlockingBridgeAnnotation {
     return when (this) {
         is ClassDescriptor -> {
             when {
+                enableForModule -> ENABLE_FOR_MODULE
                 this.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) -> FROM_CONTAINING_DECLARATION
                 findFileAnnotation(bindingContext, JVM_BLOCKING_BRIDGE_FQ_NAME) != null -> FROM_CONTAINING_DECLARATION
                 else -> NONE
@@ -63,7 +76,7 @@ fun DeclarationDescriptor.hasJvmBlockingBridgeAnnotation(bindingContext: Binding
         is FunctionDescriptor -> {
             if (this.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
                 FROM_FUNCTION
-            } else this.containingClass?.hasJvmBlockingBridgeAnnotation(bindingContext) ?: NONE
+            } else this.containingClass?.hasJvmBlockingBridgeAnnotation(bindingContext, enableForModule) ?: NONE
         }
         is PackageFragmentDescriptor -> {
             if (findFileAnnotation(bindingContext, JVM_BLOCKING_BRIDGE_FQ_NAME) != null) {

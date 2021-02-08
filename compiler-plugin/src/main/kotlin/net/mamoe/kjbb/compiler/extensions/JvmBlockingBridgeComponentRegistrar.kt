@@ -6,6 +6,7 @@ import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys
 import net.mamoe.kjbb.compiler.UnitCoercion
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeDeclarationChecker
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
+import org.jetbrains.kotlin.cli.common.toBooleanLenient
 import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -40,16 +41,23 @@ open class JvmBlockingBridgeComponentRegistrar @JvmOverloads constructor(
             ?.runCatching { UnitCoercion.valueOf(this) }?.getOrNull()
             ?: UnitCoercion.DEFAULT
 
+        val enableForModule = actualConfiguration[JvmBlockingBridgeCompilerConfigurationKeys.ENABLE_FOR_MODULE]
+            ?.toBooleanLenient()
+            ?: false
+
+        val ext = JvmBlockingBridgeCodegenJvmExtension(unitCoercion, enableForModule)
+
         StorageComponentContainerContributor.registerExtension(project, object : StorageComponentContainerContributor {
             override fun registerModuleComponents(
                 container: StorageComponentContainer,
                 platform: TargetPlatform,
                 moduleDescriptor: ModuleDescriptor,
             ) {
-                container.useInstance(BlockingBridgeDeclarationChecker(actualConfiguration[JVMConfigurationKeys.IR, false]))
+                container.useInstance(BlockingBridgeDeclarationChecker(actualConfiguration[JVMConfigurationKeys.IR, false],
+                    ext))
             }
         })
-        IrGenerationExtension.registerExtension(project, JvmBlockingBridgeIrGenerationExtension())
-        ExpressionCodegenExtension.registerExtension(project, JvmBlockingBridgeCodegenJvmExtension(unitCoercion))
+        IrGenerationExtension.registerExtension(project, JvmBlockingBridgeIrGenerationExtension(ext))
+        ExpressionCodegenExtension.registerExtension(project, ext)
     }
 }

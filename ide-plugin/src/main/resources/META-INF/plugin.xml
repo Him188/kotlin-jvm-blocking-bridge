@@ -25,18 +25,16 @@
 
         <codeInsight.inlayProvider
                 language="kotlin"
-                implementationClass="net.mamoe.kjbb.ide.JvmBlockingBridgeInlayHintsCollector"></codeInsight.inlayProvider>
+                implementationClass="net.mamoe.kjbb.ide.JvmBlockingBridgeInlayHintsCollector"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <expressionCodegenExtension
                 implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCodegenJvmExtension"/>
-        <irGenerationExtension
-                implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeIrGenerationExtension"/>
+        <!--        <irGenerationExtension-->
+        <!--                implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeIrGenerationExtension"/>-->
         <!--        <syntheticResolveExtension-->
         <!--                implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeResolveExtension"/>-->
-        <storageComponentContainerContributor
-                implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeIDEContainerContributor"/>
         <!-- <quickFixContributor implementation="org.jetbrains.kotlinx.serialization.idea.quickfixes.SerializationQuickFixContributor"/> -->
         <extensions.internal.callResolutionInterceptorExtension
                 implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeCallResolutionInterceptorExtension"/>

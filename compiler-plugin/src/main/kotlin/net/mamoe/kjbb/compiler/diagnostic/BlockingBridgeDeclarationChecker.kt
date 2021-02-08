@@ -5,6 +5,7 @@ import net.mamoe.kjbb.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation.*
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeDeclarationChecker.CheckResult.BREAK
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeDeclarationChecker.CheckResult.CONTINUE
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.*
+import net.mamoe.kjbb.compiler.extensions.IJvmBlockingBridgeCodegenJvmExtension
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.name.FqName
@@ -18,7 +19,8 @@ import org.jetbrains.kotlin.resolve.jvm.annotations.hasJvmSyntheticAnnotation
 
 open class BlockingBridgeDeclarationChecker(
     private val isIr: Boolean,
-) : DeclarationChecker {
+    ext: IJvmBlockingBridgeCodegenJvmExtension,
+) : DeclarationChecker, IJvmBlockingBridgeCodegenJvmExtension by ext {
     override fun check(
         declaration: KtDeclaration,
         descriptor: DeclarationDescriptor,
@@ -66,14 +68,19 @@ open class BlockingBridgeDeclarationChecker(
         descriptor: DeclarationDescriptor,
         context: DeclarationCheckerContext,
     ): CheckResult {
-        val inspectionTarget = when (descriptor.hasJvmBlockingBridgeAnnotation(context.trace.bindingContext)) {
-            NONE -> return CONTINUE
-            FROM_CONTAINING_DECLARATION -> {
-                // no need to check applicability for inherited from containing class or file
-                return CONTINUE
+        val inspectionTarget =
+            when (descriptor.hasJvmBlockingBridgeAnnotation(context.trace.bindingContext, enableForModule)) {
+                NONE -> return CONTINUE
+
+                FROM_CONTAINING_DECLARATION,
+                ENABLE_FOR_MODULE,
+                -> {
+                    // no need to check applicability for inherited from containing class or file or enabled for module.
+                    return CONTINUE
+                }
+
+                FROM_FUNCTION -> descriptor.jvmBlockingBridgeAnnotationPsi() ?: declaration
             }
-            FROM_FUNCTION -> descriptor.jvmBlockingBridgeAnnotationPsi() ?: declaration
-        }
 
         if (!isPluginEnabled(descriptor)) {
             context.report(BLOCKING_BRIDGE_PLUGIN_NOT_ENABLED.on(inspectionTarget))
@@ -85,7 +92,7 @@ open class BlockingBridgeDeclarationChecker(
             return BREAK
         }
 
-        val result = descriptor.analyzeCapabilityForGeneratingBridges(isIr, context.trace.bindingContext)
+        val result = descriptor.analyzeCapabilityForGeneratingBridges(isIr, context.trace.bindingContext, this)
         result.createDiagnostic()?.let(context::report)
 
         if (result is BlockingBridgeAnalyzeResult.BridgeAnnotationFromContainingDeclaration) return BREAK
@@ -102,12 +109,14 @@ open class BlockingBridgeDeclarationChecker(
         descriptor: DeclarationDescriptor,
         context: DeclarationCheckerContext,
     ): CheckResult {
-        val inspectionTarget = when (descriptor.hasJvmBlockingBridgeAnnotation(context.trace.bindingContext)) {
-            NONE -> return CONTINUE
-            FROM_CONTAINING_DECLARATION, FROM_FUNCTION -> descriptor.jvmBlockingBridgeAnnotationPsi()
-                ?: descriptor.annotations.findAnnotation(JVM_SYNTHETIC)?.findPsi()
-                ?: declaration
-        }
+        val inspectionTarget =
+            when (descriptor.hasJvmBlockingBridgeAnnotation(context.trace.bindingContext, enableForModule)) {
+                NONE -> return CONTINUE
+                FROM_FUNCTION -> descriptor.jvmBlockingBridgeAnnotationPsi()
+                    ?: descriptor.annotations.findAnnotation(JVM_SYNTHETIC)?.findPsi()
+                    ?: declaration
+                FROM_CONTAINING_DECLARATION, ENABLE_FOR_MODULE -> return CONTINUE
+            }
 
         if (descriptor.hasJvmSyntheticAnnotation()) {
             context.report(REDUNDANT_JVM_BLOCKING_BRIDGE_WITH_JVM_SYNTHETIC.on(inspectionTarget))
