@@ -5,7 +5,7 @@ import net.mamoe.kjbb.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation.*
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeDeclarationChecker.CheckResult.BREAK
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeDeclarationChecker.CheckResult.CONTINUE
 import net.mamoe.kjbb.compiler.diagnostic.BlockingBridgeErrors.*
-import net.mamoe.kjbb.compiler.extensions.IJvmBlockingBridgeCodegenJvmExtension
+import net.mamoe.kjbb.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.name.FqName
@@ -19,8 +19,9 @@ import org.jetbrains.kotlin.resolve.jvm.annotations.hasJvmSyntheticAnnotation
 
 open class BlockingBridgeDeclarationChecker(
     private val isIr: Boolean,
-    ext: IJvmBlockingBridgeCodegenJvmExtension,
-) : DeclarationChecker, IJvmBlockingBridgeCodegenJvmExtension by ext {
+    private val ext: (KtDeclaration) -> IBridgeConfiguration,
+) : DeclarationChecker {
+
     override fun check(
         declaration: KtDeclaration,
         descriptor: DeclarationDescriptor,
@@ -67,7 +68,7 @@ open class BlockingBridgeDeclarationChecker(
         declaration: KtDeclaration,
         descriptor: DeclarationDescriptor,
         context: DeclarationCheckerContext,
-    ): CheckResult {
+    ): CheckResult = with(ext(declaration)) {
         val inspectionTarget =
             when (descriptor.hasJvmBlockingBridgeAnnotation(context.trace.bindingContext, enableForModule)) {
                 NONE -> return CONTINUE
@@ -108,7 +109,7 @@ open class BlockingBridgeDeclarationChecker(
         declaration: KtDeclaration,
         descriptor: DeclarationDescriptor,
         context: DeclarationCheckerContext,
-    ): CheckResult {
+    ): CheckResult = with(ext(declaration)) {
         val inspectionTarget =
             when (descriptor.hasJvmBlockingBridgeAnnotation(context.trace.bindingContext, enableForModule)) {
                 NONE -> return CONTINUE

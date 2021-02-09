@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.config.CompilerConfiguration
 
 @AutoService(CommandLineProcessor::class)
-class JvmBlockingBridgeCommandLineProcessor : CommandLineProcessor {
+class BridgeCommandLineProcessor : CommandLineProcessor {
     companion object {
         const val COMPILER_PLUGIN_ID: String = "kotlin-jvm-blocking-bridge"
 

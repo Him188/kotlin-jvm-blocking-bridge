@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.platform.TargetPlatform
 
 @AutoService(ComponentRegistrar::class)
 @Suppress("unused")
-open class JvmBlockingBridgeComponentRegistrar @JvmOverloads constructor(
+open class BridgeComponentRegistrar @JvmOverloads constructor(
     private val overrideConfigurations: CompilerConfiguration? = null,
 ) : ComponentRegistrar {
 
@@ -35,17 +35,9 @@ open class JvmBlockingBridgeComponentRegistrar @JvmOverloads constructor(
 
         val actualConfiguration = overrideConfigurations ?: configuration
 
+        val ext = actualConfiguration.createBridgeConfig()
+
         // println("actualConfiguration.toString(): $actualConfiguration")
-
-        val unitCoercion = actualConfiguration[JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION]
-            ?.runCatching { UnitCoercion.valueOf(this) }?.getOrNull()
-            ?: UnitCoercion.DEFAULT
-
-        val enableForModule = actualConfiguration[JvmBlockingBridgeCompilerConfigurationKeys.ENABLE_FOR_MODULE]
-            ?.toBooleanLenient()
-            ?: false
-
-        val ext = JvmBlockingBridgeCodegenJvmExtension(unitCoercion, enableForModule)
 
         StorageComponentContainerContributor.registerExtension(project, object : StorageComponentContainerContributor {
             override fun registerModuleComponents(
@@ -53,11 +45,28 @@ open class JvmBlockingBridgeComponentRegistrar @JvmOverloads constructor(
                 platform: TargetPlatform,
                 moduleDescriptor: ModuleDescriptor,
             ) {
-                container.useInstance(BlockingBridgeDeclarationChecker(actualConfiguration[JVMConfigurationKeys.IR, false],
-                    ext))
+                container.useInstance(
+                    BlockingBridgeDeclarationChecker(actualConfiguration[JVMConfigurationKeys.IR, false]) { ext }
+                )
             }
         })
         IrGenerationExtension.registerExtension(project, JvmBlockingBridgeIrGenerationExtension(ext))
-        ExpressionCodegenExtension.registerExtension(project, ext)
+        ExpressionCodegenExtension.registerExtension(project, BridgeCodegenCliExtension(ext))
     }
+}
+
+fun CompilerConfiguration.createBridgeConfig(): BridgeConfigurationImpl {
+    val actualConfiguration = this
+
+    val unitCoercion = actualConfiguration[JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION]
+        ?.runCatching { UnitCoercion.valueOf(this) }?.getOrNull()
+        ?: UnitCoercion.DEFAULT
+
+    val enableForModule = actualConfiguration[JvmBlockingBridgeCompilerConfigurationKeys.ENABLE_FOR_MODULE]
+        ?.toBooleanLenient()
+        ?: false
+
+    val ext = BridgeConfigurationImpl(unitCoercion, enableForModule)
+
+    return ext
 }

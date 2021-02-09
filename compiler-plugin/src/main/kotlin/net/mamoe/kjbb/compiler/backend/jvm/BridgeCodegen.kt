@@ -4,9 +4,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import net.mamoe.kjbb.compiler.UnitCoercion
 import net.mamoe.kjbb.compiler.backend.ir.*
-import net.mamoe.kjbb.compiler.context.CompilerContext
-import net.mamoe.kjbb.compiler.extensions.IJvmBlockingBridgeCodegenJvmExtension
-import net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCodegenJvmExtension
+import net.mamoe.kjbb.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedString
@@ -62,10 +60,8 @@ internal interface BridgeCodegenExtensions {
 
 class BridgeCodegen(
     private val codegen: ImplementationBodyCodegen,
-    compilerContext: CompilerContext = CompilerContext.INSTANCE,
-    ext: JvmBlockingBridgeCodegenJvmExtension,
-) : BridgeCodegenExtensions, CompilerContext by compilerContext, IJvmBlockingBridgeCodegenJvmExtension by ext {
-
+    private val ext: (DeclarationDescriptor) -> IBridgeConfiguration,
+) : BridgeCodegenExtensions {
     private val generationState: GenerationState get() = codegen.state
     private inline val v get() = codegen.v
     private inline val clazz get() = codegen.descriptor
@@ -82,13 +78,15 @@ class BridgeCodegen(
             names.flatMap { members.getContributedFunctions(it, NoLookupLocation.WHEN_GET_ALL_DESCRIPTORS) }.toSet()
 
         for (function in functions) {
-            val capability = function.analyzeCapabilityForGeneratingBridges(false, codegen.bindingContext, this)
+            val ext = ext(function)
+
+            val capability = function.analyzeCapabilityForGeneratingBridges(false, codegen.bindingContext, ext)
             if (!capability.diagnosticPassed) capability.createDiagnostic()?.let(::report)
             if (capability.shouldGenerate) {
                 val desc = function.generateBridge(allowUnitCoercion = true, synthetic = false)
 
                 if (function.returnType?.isUnit() == true) {
-                    if (unitCoercion == UnitCoercion.COMPATIBILITY) {
+                    if (ext.unitCoercion == UnitCoercion.COMPATIBILITY) {
                         // for compatibility with <= 1.6
                         function.generateBridge(allowUnitCoercion = false, synthetic = true, desc)
                     }
@@ -117,9 +115,9 @@ class BridgeCodegen(
             originFunction.returnType?.asmType()
                 ?: Nothing::class.asmType
         }
-
         val methodOrigin = JvmDeclarationOrigin(
             originKind = JvmDeclarationOriginKind.BRIDGE,
+            element = originFunction.findPsi(),
             descriptor = originFunction,
             parametersForJvmOverload = extensionReceiverAndValueParameters().toKtParameterList()
         )

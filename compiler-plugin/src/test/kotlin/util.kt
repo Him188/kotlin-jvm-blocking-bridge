@@ -3,7 +3,7 @@
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import net.mamoe.kjbb.JvmBlockingBridge
-import net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeComponentRegistrar
+import net.mamoe.kjbb.compiler.extensions.BridgeComponentRegistrar
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.JvmTarget
@@ -233,7 +233,7 @@ fun compile(
             }
         )
 
-        compilerPlugins = listOf(JvmBlockingBridgeComponentRegistrar(overrideCompilerConfiguration))
+        compilerPlugins = listOf(BridgeComponentRegistrar(overrideCompilerConfiguration))
         verbose = false
 
         this.jvmTarget = jvmTarget.description

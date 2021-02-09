@@ -1,17 +1,15 @@
 import net.mamoe.kjbb.JvmBlockingBridge
 
-@JvmBlockingBridge
 interface TestAnnotationsOnClass {
 
     /**
      * x
      */
-    @JvmBlockingBridge // explicitly
+    @JvmSynthetic
     suspend fun test() {
 
     }
 
-    @JvmBlockingBridge
     object X {
 
         suspend fun test() {
@@ -34,7 +32,8 @@ interface TestAnnotationsOnClass {
         @JvmBlockingBridge
         class Inner {
 
-            suspend fun test() {
+            @JvmBlockingBridge
+            private suspend fun test() {
 
             }
         }

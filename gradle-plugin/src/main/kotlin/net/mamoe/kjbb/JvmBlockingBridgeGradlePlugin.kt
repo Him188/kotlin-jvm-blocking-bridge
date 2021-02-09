@@ -2,14 +2,14 @@ package net.mamoe.kjbb
 
 import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys.ENABLE_FOR_MODULE
 import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION
-import net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCommandLineProcessor
+import net.mamoe.kjbb.compiler.extensions.BridgeCommandLineProcessor
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.*
 
-internal const val KJBB_VERSION = "1.10.0-dev-1"
+internal const val KJBB_VERSION = "1.10.0-dev-2"
 
 internal fun BlockingBridgePluginExtension.toSubpluginOptionList(): List<SubpluginOption> {
     return listOf(
@@ -61,7 +61,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
         target.extensions.create("blockingBridge", BlockingBridgePluginExtension::class.java)
     }
 
-    override fun getCompilerPluginId(): String = JvmBlockingBridgeCommandLineProcessor.COMPILER_PLUGIN_ID
+    override fun getCompilerPluginId(): String = BridgeCommandLineProcessor.COMPILER_PLUGIN_ID
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project

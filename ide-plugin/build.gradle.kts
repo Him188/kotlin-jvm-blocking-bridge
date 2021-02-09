@@ -21,8 +21,9 @@ dependencies {
 
     api(project(":kotlin-jvm-blocking-bridge"))
     api(project(":kotlin-jvm-blocking-bridge-compiler"))
+    api(project(":kotlin-jvm-blocking-bridge-gradle"))
 
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
+    // compileOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
     compileOnly(files("libs/ide-common.jar"))
 }
 
@@ -35,7 +36,7 @@ intellij {
     updateSinceUntilBuild = false
 
     setPlugins(
-        "org.jetbrains.kotlin:203-1.4.30-release-IJ7148.5","java"
+        "org.jetbrains.kotlin:203-1.4.30-release-IJ7148.5", "java"
     )
 }
 

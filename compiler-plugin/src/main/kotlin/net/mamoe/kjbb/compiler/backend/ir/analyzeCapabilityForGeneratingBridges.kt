@@ -3,7 +3,7 @@ package net.mamoe.kjbb.compiler.backend.ir
 import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeAnalyzeResult
 import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeAnalyzeResult.*
 import net.mamoe.kjbb.compiler.backend.jvm.isJvm8OrHigher
-import net.mamoe.kjbb.compiler.extensions.IJvmBlockingBridgeCodegenJvmExtension
+import net.mamoe.kjbb.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.kotlin.backend.common.ir.allParameters
 import org.jetbrains.kotlin.backend.jvm.codegen.psiElement
 import org.jetbrains.kotlin.descriptors.effectiveVisibility
@@ -26,7 +26,7 @@ import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
  * - have parent [IrClass]
  */
 @OptIn(ObsoleteDescriptorBasedAPI::class)
-fun IrFunction.analyzeCapabilityForGeneratingBridges(ext: IJvmBlockingBridgeCodegenJvmExtension): BlockingBridgeAnalyzeResult {
+fun IrFunction.analyzeCapabilityForGeneratingBridges(ext: IBridgeConfiguration): BlockingBridgeAnalyzeResult {
     var annotationFromContainingClass = false
 
     val jvmBlockingBridgeAnnotationIr =

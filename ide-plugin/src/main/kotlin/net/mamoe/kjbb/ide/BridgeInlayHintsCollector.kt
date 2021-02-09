@@ -15,17 +15,14 @@ import com.intellij.psi.impl.source.PsiExtensibleClass
 import com.intellij.util.castSafelyTo
 import net.mamoe.kjbb.JvmBlockingBridge
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
-import net.mamoe.kjbb.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation
 import net.mamoe.kjbb.ide.line.marker.document
 import net.mamoe.kjbb.ide.line.marker.getLineNumber
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
-import org.jetbrains.kotlin.idea.caches.project.toDescriptor
 import org.jetbrains.kotlin.idea.codeInsight.hints.HintType
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
 import org.jetbrains.kotlin.idea.debugger.sequence.psi.resolveType
 import org.jetbrains.kotlin.idea.util.findAnnotation
-import org.jetbrains.kotlin.idea.util.module
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtAnnotated
 import org.jetbrains.kotlin.psi.KtFile
@@ -36,7 +33,7 @@ import org.jetbrains.kotlin.types.KotlinType
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-class JvmBlockingBridgeInlayHintsCollector :
+class BridgeInlayHintsCollector :
     InlayHintsProvider<NoSettings>,
     KotlinAbstractHintsProvider<NoSettings>(),
     InlayHintsCollector {
@@ -69,14 +66,13 @@ class JvmBlockingBridgeInlayHintsCollector :
         var anyChanged = false
         val factory = PresentationFactory(editor)
 
-        val module = element.module?.toDescriptor() ?: return false
-        if (!module.isBlockingBridgePluginEnabled()) return false
+        if (element.isBridgeCompilerEnabled != true) return false
 
-        val isIr = module.isIr()
+        val isIr = element.isIr == true
         for (method in element.methods) {
             if (method is BlockingBridgeStubMethod) continue
             if (method.containingClass !== element) continue
-            if (method.canHaveBridgeFunctions(isIr) == HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION) {
+            if (method.canHaveBridgeFunctions(isIr).inlayHints) {
                 anyChanged = true
                 sink.addBlockElement(
                     offset = method.identifyingElement?.startOffset ?: method.startOffset,

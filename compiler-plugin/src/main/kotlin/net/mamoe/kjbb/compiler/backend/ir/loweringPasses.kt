@@ -2,7 +2,7 @@ package net.mamoe.kjbb.compiler.backend.ir
 
 import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeAnalyzeResult
 import net.mamoe.kjbb.compiler.backend.jvm.followedBy
-import net.mamoe.kjbb.compiler.extensions.IJvmBlockingBridgeCodegenJvmExtension
+import net.mamoe.kjbb.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.utils.addToStdlib.cast
  */
 class JvmBlockingBridgeFileLoweringPass(
     private val context: IrPluginContext,
-    private val ext: IJvmBlockingBridgeCodegenJvmExtension,
+    private val ext: IBridgeConfiguration,
 ) : FileLoweringPass {
     override fun lower(irFile: IrFile) {
         irFile.transformDeclarationsFlat { declaration ->
@@ -31,7 +31,7 @@ class JvmBlockingBridgeFileLoweringPass(
 
 internal fun IrDeclaration.transformFlat(
     context: IrPluginContext,
-    ext: IJvmBlockingBridgeCodegenJvmExtension,
+    ext: IBridgeConfiguration,
 ): List<IrDeclaration> {
     val declaration = this
     if (declaration is IrSimpleFunction) {
@@ -57,7 +57,7 @@ internal fun IrDeclaration.transformFlat(
  */
 class JvmBlockingBridgeClassLoweringPass(
     private val context: IrPluginContext,
-    private val ext: IJvmBlockingBridgeCodegenJvmExtension,
+    private val ext: IBridgeConfiguration,
 ) : ClassLoweringPass {
     override fun lower(irClass: IrClass) {
         irClass.transformDeclarationsFlat { declaration ->

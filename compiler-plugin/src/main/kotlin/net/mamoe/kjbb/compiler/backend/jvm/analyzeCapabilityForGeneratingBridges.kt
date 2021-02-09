@@ -1,7 +1,7 @@
 package net.mamoe.kjbb.compiler.backend.jvm
 
 import net.mamoe.kjbb.compiler.backend.jvm.BlockingBridgeAnalyzeResult.*
-import net.mamoe.kjbb.compiler.extensions.IJvmBlockingBridgeCodegenJvmExtension
+import net.mamoe.kjbb.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.kotlin.backend.common.descriptors.allParameters
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.effectiveVisibility
@@ -15,7 +15,7 @@ import org.jetbrains.kotlin.resolve.isInlineClassType
 fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
     isIr: Boolean,
     bindingContext: BindingContext,
-    ext: IJvmBlockingBridgeCodegenJvmExtension,
+    ext: IBridgeConfiguration,
 ): BlockingBridgeAnalyzeResult {
     var annotationFromContainingClass = false
 

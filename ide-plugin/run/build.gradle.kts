@@ -3,10 +3,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.4.21"
-    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.0-dev-1"
+    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.0-dev-2"
 }
 
 blockingBridge {
+    enableForModule = true
+
     unitCoercion = COMPATIBILITY
 }
 

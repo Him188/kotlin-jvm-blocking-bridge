@@ -44,19 +44,20 @@ fun FunctionDescriptor.findOverriddenDescriptorsHierarchically(filter: (Function
 }
 
 enum class HasJvmBlockingBridgeAnnotation(
-    val has: Boolean,
+    val generate: Boolean,
+    val inlayHints: Boolean = false,
 ) {
     FROM_FUNCTION(true),
 
     /**
      * @since 1.8
      */
-    FROM_CONTAINING_DECLARATION(true),
+    FROM_CONTAINING_DECLARATION(true, true),
 
     /**
      * @since 1.10
      */
-    ENABLE_FOR_MODULE(true),
+    ENABLE_FOR_MODULE(true, true),
     NONE(false),
 }
 

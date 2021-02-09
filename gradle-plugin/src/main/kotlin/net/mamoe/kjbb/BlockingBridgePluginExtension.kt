@@ -1,8 +1,9 @@
 package net.mamoe.kjbb
 
 import net.mamoe.kjbb.compiler.UnitCoercion
+import net.mamoe.kjbb.compiler.extensions.IBridgeConfiguration
 
-open class BlockingBridgePluginExtension {
+open class BlockingBridgePluginExtension : IBridgeConfiguration {
     /**
      * Strategy on mapping from `Unit` to `void` in JVM backend.
      *
@@ -13,7 +14,7 @@ open class BlockingBridgePluginExtension {
      * @see UnitCoercion
      * @since 1.7
      */
-    var unitCoercion: UnitCoercion = UnitCoercion.DEFAULT
+    override var unitCoercion: UnitCoercion = UnitCoercion.DEFAULT
 
     /**
      * Generate blocking bridges for all effectively public suspend functions in the module where possible,
@@ -21,7 +22,7 @@ open class BlockingBridgePluginExtension {
      *
      * @since 1.10
      */
-    var enableForModule: Boolean = false
+    override var enableForModule: Boolean = false
 
     // var enabled: Boolean = true
 }

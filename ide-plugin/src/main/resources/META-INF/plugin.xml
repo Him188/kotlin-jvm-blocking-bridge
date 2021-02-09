@@ -25,21 +25,23 @@
 
         <codeInsight.inlayProvider
                 language="kotlin"
-                implementationClass="net.mamoe.kjbb.ide.JvmBlockingBridgeInlayHintsCollector"/>
+                implementationClass="net.mamoe.kjbb.ide.BridgeInlayHintsCollector"/>
+        <moduleService serviceImplementation="net.mamoe.kjbb.ide.BridgeModuleCacheService"/>
+        <externalSystemTaskNotificationListener implementation="net.mamoe.kjbb.ide.BridgeProjectImportListener"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <expressionCodegenExtension
-                implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeCodegenJvmExtension"/>
+                implementation="net.mamoe.kjbb.ide.BridgeCodegenIdeExtension"/>
         <!--        <irGenerationExtension-->
         <!--                implementation="net.mamoe.kjbb.compiler.extensions.JvmBlockingBridgeIrGenerationExtension"/>-->
         <!--        <syntheticResolveExtension-->
         <!--                implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeResolveExtension"/>-->
         <!-- <quickFixContributor implementation="org.jetbrains.kotlinx.serialization.idea.quickfixes.SerializationQuickFixContributor"/> -->
-        <extensions.internal.callResolutionInterceptorExtension
-                implementation="net.mamoe.kjbb.ide.JvmBlockingBridgeCallResolutionInterceptorExtension"/>
+        <storageComponentContainerContributor
+                implementation="net.mamoe.kjbb.ide.BridgeStorageComponentContainerContributor"/>
         <quickFixContributor implementation="net.mamoe.kjbb.ide.fix.QuickFixRegistrar"/>
     </extensions>
 
-    <idea-version since-build="193.*" until-build="203.*"/>
+    <idea-version since-build="201.*" until-build="203.*"/>
 </idea-plugin>

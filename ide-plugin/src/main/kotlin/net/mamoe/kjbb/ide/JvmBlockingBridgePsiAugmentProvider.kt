@@ -24,8 +24,6 @@ import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
 import org.jetbrains.kotlin.descriptors.effectiveVisibility
-import org.jetbrains.kotlin.idea.caches.project.toDescriptor
-import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingMethod
 import org.jetbrains.kotlin.idea.search.usagesSearch.descriptor
 import org.jetbrains.kotlin.idea.util.findAnnotation
 import org.jetbrains.kotlin.idea.util.module
@@ -77,11 +75,9 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
 }
 
 internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): List<PsiElement> {
-    val moduleDescriptor = this.module?.toDescriptor()
-    if (moduleDescriptor?.isBlockingBridgePluginEnabled() == false) {
+    if (!this.isBridgeCompilerEnabled) {
         return emptyList()
     }
-    val isIr = moduleDescriptor?.isIr() == true
 
     /*
     val originalElement = this.originalElement
@@ -101,7 +97,7 @@ internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): Li
 
     return ownMethods.asSequence()
         .filterIsInstance<KtLightMethod>()
-        .filter { it.canHaveBridgeFunctions(isIr).has }
+        .filter { it.canHaveBridgeFunctions(this.isIr).generate }
         .flatMap { it.generateLightMethod(it.containingClass).asSequence() }
         .toList()
 }
@@ -137,13 +133,15 @@ internal fun PsiMethod.canHaveBridgeFunctions(isIr: Boolean): HasJvmBlockingBrid
         if (!isIr) return HasJvmBlockingBridgeAnnotation.NONE
     }
 
+    if (bridgeConfiguration.enableForModule) return HasJvmBlockingBridgeAnnotation.ENABLE_FOR_MODULE
+
     val containingFile = containingFile
     if (containingFile is KtFile) {
         if (containingFile.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) != null) return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
     }
 
-    val fromSuper = findOverrides()?.map { it.canHaveBridgeFunctions(isIr) }?.firstOrNull { it.has }
-    if (fromSuper?.has == true) return fromSuper
+    val fromSuper = findOverrides()?.map { it.canHaveBridgeFunctions(isIr) }?.firstOrNull { it.generate }
+    if (fromSuper?.generate == true) return fromSuper
 
     return HasJvmBlockingBridgeAnnotation.NONE
 }
@@ -164,34 +162,6 @@ internal fun PsiMethod.hasSameSignatureWith(another: PsiMethod): Boolean {
 }
 
 internal val PsiClass.superClasses: Sequence<PsiClass> get() = this.superTypes.asSequence().mapNotNull { it.resolve() }
-
-internal fun PsiMethod.hasOverridingMethod(): Boolean {
-    var any = false
-    forEachOverridingMethod {
-        any = true
-        false
-    }
-    return any
-}
-
-internal fun PsiMethod.firstOverridingMethodOrNull(): PsiMethod? {
-    var any: PsiMethod? = null
-    forEachOverridingMethod {
-        any = it
-        false
-    }
-    return any
-}
-
-internal val PsiMethod.overridingMethods: List<PsiMethod>
-    get() {
-        val mutableList = mutableListOf<PsiMethod>()
-        forEachOverridingMethod {
-            mutableList.add(it)
-            true
-        }
-        return mutableList
-    }
 
 internal fun PsiMethod.isSuspend(): Boolean =
     this.modifierList.text.contains("suspend")

@@ -1,17 +1,21 @@
 package net.mamoe.kjbb.compiler.extensions
 
-import com.google.auto.service.AutoService
 import net.mamoe.kjbb.compiler.UnitCoercion
 import net.mamoe.kjbb.compiler.backend.jvm.BridgeCodegen
 import org.jetbrains.kotlin.codegen.ImplementationBodyCodegen
 import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
 
-interface IJvmBlockingBridgeCodegenJvmExtension {
+data class BridgeConfigurationImpl(
+    override val unitCoercion: UnitCoercion,
+    override val enableForModule: Boolean,
+) : IBridgeConfiguration
+
+interface IBridgeConfiguration {
     val unitCoercion: UnitCoercion
     val enableForModule: Boolean
 
     companion object {
-        val Default = object : IJvmBlockingBridgeCodegenJvmExtension {
+        val Default = object : IBridgeConfiguration {
             override val unitCoercion: UnitCoercion get() = UnitCoercion.DEFAULT
             override val enableForModule: Boolean get() = false
         }
@@ -21,14 +25,11 @@ interface IJvmBlockingBridgeCodegenJvmExtension {
 /**
  * For JVM backend
  */
-@AutoService(ExpressionCodegenExtension::class)
-open class JvmBlockingBridgeCodegenJvmExtension @JvmOverloads constructor(
-    override val unitCoercion: UnitCoercion = UnitCoercion.DEFAULT,
-    override val enableForModule: Boolean = false,
-) : ExpressionCodegenExtension, IJvmBlockingBridgeCodegenJvmExtension {
-
+open class BridgeCodegenCliExtension(
+    private val extension: IBridgeConfiguration,
+) : ExpressionCodegenExtension {
     override fun generateClassSyntheticParts(codegen: ImplementationBodyCodegen) {
-        BridgeCodegen(codegen, ext = this).generate()
+        BridgeCodegen(codegen) { extension }.generate()
     }
 
     override val shouldGenerateClassSyntheticPartsInLightClassesMode: Boolean

@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.ir.visitors.acceptVoid
  */
 // @AutoService(IrGenerationExtension::class)
 open class JvmBlockingBridgeIrGenerationExtension(
-    private val ext: IJvmBlockingBridgeCodegenJvmExtension,
+    private val ext: IBridgeConfiguration,
 ) : IrGenerationExtension {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         for (file in moduleFragment.files) {
