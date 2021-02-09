@@ -35,8 +35,8 @@ interface TestAnnotationsOnClass {
         @JvmBlockingBridge
         class Inner {
 
-            @JvmBlockingBridge
-            private suspend fun test() {
+            @JvmSynthetic
+            suspend fun test() {
 
             }
         }

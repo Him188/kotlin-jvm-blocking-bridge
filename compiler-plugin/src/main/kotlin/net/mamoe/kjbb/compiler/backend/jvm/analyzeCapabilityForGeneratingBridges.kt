@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.descriptorUtil.module
 import org.jetbrains.kotlin.resolve.isInlineClass
 import org.jetbrains.kotlin.resolve.isInlineClassType
+import org.jetbrains.kotlin.resolve.jvm.annotations.hasJvmSyntheticAnnotation
 
 
 fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
@@ -34,6 +35,12 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
     val jvmBlockingBridgeAnnotationPsi =
         if (jvmBlockingBridgeAnnotation == null) null
         else jvmBlockingBridgeAnnotation.findPsi() ?: return MissingAnnotationPsi
+
+    val enableForModule = jvmBlockingBridgeAnnotationPsi == null
+
+    if (enableForModule || annotationFromContainingClass) {
+        if (this.hasJvmSyntheticAnnotation()) return EnableForModule
+    }
 
     // now that the function has @JvmBlockingBridge on self or containing declaration
 

@@ -3,6 +3,7 @@
 package compiler
 
 import assertHasFunction
+import assertNoFunction
 import createInstance
 import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -20,7 +21,7 @@ internal sealed class BridgeForModule(ir: Boolean) : AbstractCompilerTest(ir) {
 
         @Test
         fun test() {
-            simple()
+            `synthetic in static companion`()
         }
     }
 
@@ -28,7 +29,7 @@ internal sealed class BridgeForModule(ir: Boolean) : AbstractCompilerTest(ir) {
 
         @Test
         fun test() {
-            simple()
+            `synthetic in static companion`()
         }
     }
 
@@ -94,4 +95,27 @@ internal sealed class BridgeForModule(ir: Boolean) : AbstractCompilerTest(ir) {
     }
 """
     )
+
+    @Test
+    fun `synthetic in static companion`() = testJvmCompile(
+        """
+    class TestData {
+        companion object {
+            @JvmSynthetic
+            @JvmStatic
+            suspend fun test() {
+            }
+        }
+    }
+""", noMain = true
+    ) {
+        classLoader.loadClass("TestData").run {
+            assertNoFunction<Void>("test")
+            assertNoFunction<Unit>("test")
+        }
+        classLoader.loadClass("TestData\$Companion").run {
+            assertNoFunction<Void>("test")
+            assertNoFunction<Unit>("test")
+        }
+    }
 }
