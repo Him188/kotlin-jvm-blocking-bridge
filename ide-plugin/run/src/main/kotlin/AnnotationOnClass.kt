@@ -1,3 +1,5 @@
+@file:JvmBlockingBridge
+
 import net.mamoe.kjbb.JvmBlockingBridge
 
 interface TestAnnotationsOnClass {
@@ -16,6 +18,7 @@ interface TestAnnotationsOnClass {
 
         }
 
+        @JvmBlockingBridge
         suspend fun test(s: String) {
 
         }

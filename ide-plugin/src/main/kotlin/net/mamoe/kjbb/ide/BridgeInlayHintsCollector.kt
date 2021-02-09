@@ -1,37 +1,48 @@
 package net.mamoe.kjbb.ide
 
+import com.intellij.codeInsight.daemon.impl.PsiElementListNavigator
 import com.intellij.codeInsight.hints.*
 import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.MouseButton
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
+import com.intellij.ide.util.DefaultPsiElementCellRenderer
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiMethod
+import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiExtensibleClass
-import com.intellij.util.castSafelyTo
 import net.mamoe.kjbb.JvmBlockingBridge
 import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
 import net.mamoe.kjbb.ide.line.marker.document
 import net.mamoe.kjbb.ide.line.marker.getLineNumber
+import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
+import org.jetbrains.kotlin.asJava.elements.FakeFileForLightClass
+import org.jetbrains.kotlin.idea.caches.resolve.analyze
 import org.jetbrains.kotlin.idea.codeInsight.hints.HintType
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
 import org.jetbrains.kotlin.idea.debugger.sequence.psi.resolveType
-import org.jetbrains.kotlin.idea.util.findAnnotation
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.psi.KtAnnotated
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtTypeReference
-import org.jetbrains.kotlin.psi.KtUserType
+import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
+import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.types.KotlinType
+import java.awt.event.MouseEvent
 import javax.swing.JComponent
 import javax.swing.JPanel
+
+private val PsiElement.containingKtFile: KtFile?
+    get() {
+        val containingFile = containingFile
+        if (containingFile is FakeFileForLightClass) {
+            return containingFile.ktFile
+        }
+        return null
+    }
+
+private val PsiMember.containingKtClass: KtClassOrObject?
+    get() = (containingClass as? KtLightClass)?.kotlinOrigin
 
 class BridgeInlayHintsCollector :
     InlayHintsProvider<NoSettings>,
@@ -66,9 +77,9 @@ class BridgeInlayHintsCollector :
         var anyChanged = false
         val factory = PresentationFactory(editor)
 
-        if (element.isBridgeCompilerEnabled != true) return false
+        if (!element.isBridgeCompilerEnabled) return false
 
-        val isIr = element.isIr == true
+        val isIr = element.isIr
         for (method in element.methods) {
             if (method is BlockingBridgeStubMethod) continue
             if (method.containingClass !== element) continue
@@ -92,7 +103,17 @@ class BridgeInlayHintsCollector :
     }
 
     private fun KtAnnotated.hasAnnotation(fqName: FqName): Boolean {
-        return this.findAnnotation(fqName) != null
+        return findAnnotation(fqName) != null
+    }
+
+    private fun KtAnnotated.findAnnotation(fqName: FqName): KtAnnotationEntry? {
+        val analyze = this.analyze()
+        for (entry in annotationEntries) {
+            if (entry == null) continue
+            val annotation = analyze.get(BindingContext.ANNOTATION, entry) ?: continue
+            if (annotation.fqName == fqName) return entry
+        }
+        return null
     }
 
     private fun createPresentation(
@@ -103,20 +124,51 @@ class BridgeInlayHintsCollector :
         var hint =
             factory.text("@${JvmBlockingBridge::class.simpleName}")
 
-        hint = factory.onClick(hint, MouseButton.Middle) { mouseEvent, point ->
-            // TODO: 2021/1/29 navigate to annotation on containing declaration
+        fun createNavigation(mouseEvent: MouseEvent, target: NavigatablePsiElement) {
+            PsiElementListNavigator.openTargets(mouseEvent, arrayOf(target),
+                "Navigate To Annotation Source",
+                "Find Navigation Target",
+                DefaultPsiElementCellRenderer())
         }
 
-        if (method.containingClass?.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME.asString()) == true) {
-            hint = factory.withTooltip(
-                "From @JvmBlockingBridge on class ${method.containingClass?.name}",
-                hint
-            )
-        } else if (method.containingFile.castSafelyTo<KtFile>()?.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) == true) {
-            hint = factory.withTooltip(
-                "From @file:JvmBlockingBridge on file ${method.containingFile.name}",
-                hint
-            )
+        var annotation: KtAnnotationEntry?
+        when {
+            method.containingKtClass?.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+                .also { annotation = it } != null -> {
+
+                val containingClass = method.containingClass!!
+                hint = factory.withTooltip(
+                    "From @JvmBlockingBridge on class ${containingClass.name}",
+                    hint
+                )
+                hint = factory.onClick(hint, MouseButton.Middle) { mouseEvent, _ ->
+                    createNavigation(
+                        mouseEvent,
+                        annotation!!
+                    )
+                }
+            }
+            method.containingKtFile?.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+                .also { annotation = it } != null -> {
+
+                val containingKtFile = method.containingKtFile!!
+                hint = factory.withTooltip(
+                    "From @file:JvmBlockingBridge on file ${containingKtFile.name}",
+                    hint
+                )
+                hint = factory.onClick(hint, MouseButton.Middle) { mouseEvent, _ ->
+                    createNavigation(
+                        mouseEvent,
+                        annotation!!
+                    )
+                }
+            }
+            else -> {
+                hint = factory.withTooltip(
+                    "From enableForModule",
+                    hint
+                )
+            }
         }
 
         val alignmentElement = method.modifierList
