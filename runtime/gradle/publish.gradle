@@ -159,8 +159,8 @@ publishing {
             url = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
 
             credentials {
-                username = System.getProperty("SONATYPE_USER")
-                password = System.getProperty("SONATYPE_KEY")
+                username = System.getenv("SONATYPE_USER")
+                password = System.getenv("SONATYPE_KEY")
             }
         }
     }
