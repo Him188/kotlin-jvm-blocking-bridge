@@ -28,9 +28,6 @@ allprojects {
 
     repositories {
         mavenLocal()
-        maven(url = "https://dl.bintray.com/kotlin/kotlin-eap")
-        maven(url = "https://dl.bintray.com/kotlin/kotlin-dev")
-        jcenter()
         mavenCentral()
     }
 }
@@ -70,7 +67,6 @@ afterEvaluate {
 
     tasks.register("publishAll") {
         group = "publishing0"
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["ensureBintrayAvailable"])
         dependsOn(`kotlin-jvm-blocking-bridge`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["clean"])
@@ -78,9 +74,9 @@ afterEvaluate {
         // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
         dependsOn(tasks["build"])
         dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publish"])
-        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["bintrayUpload"])
-        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["bintrayUpload"])
-        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["publish"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["publish"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishPlugins"])
     }
 
@@ -100,13 +96,12 @@ afterEvaluate {
 
     tasks.register("publishAllWithoutClean") {
         group = "publishing0"
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["ensureBintrayAvailable"])
         // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
         dependsOn(tasks["build"])
         dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publish"])
-        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["bintrayUpload"])
-        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["bintrayUpload"])
-        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["publish"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["publish"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishPlugins"])
     }
 

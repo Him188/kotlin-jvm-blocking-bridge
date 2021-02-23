@@ -19,7 +19,6 @@ allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven { url = uri("https://dl.bintray.com/kotlin/kotlin-eap") }
     }
 
 }

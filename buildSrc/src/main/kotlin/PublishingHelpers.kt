@@ -11,13 +11,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import kotlin.reflect.KProperty
 
-/**
- * Configures the [bintray][com.jfrog.bintray.gradle.BintrayExtension] extension.
- */
-@PublishedApi
-internal fun Project.`bintray`(configure: com.jfrog.bintray.gradle.BintrayExtension.() -> Unit): Unit =
-    (this as org.gradle.api.plugins.ExtensionAware).extensions.configure("bintray", configure)
-
 @PublishedApi
 internal operator fun <U : Task> RegisteringDomainObjectDelegateProviderWithTypeAndAction<out TaskContainer, U>.provideDelegate(
     receiver: Any?,
@@ -92,8 +85,6 @@ inline fun Project.setupKotlinSourceSetsSettings() {
 inline fun Project.setupPublishing(
     groupId: String = project.group.toString(),
     artifactId: String = project.name.toString(),
-    bintrayRepo: String = "kotlin-jvm-blocking-bridge",
-    bintrayPkgName: String = "kotlin-jvm-blocking-bridge",
     vcs: String = "https://github.com/mamoe/kotlin-jvm-blocking-bridge",
     git: String = "git://github.com/mamoe/kotlin-jvm-blocking-bridge.git",
     overrideFromArtifacts: Any? = null

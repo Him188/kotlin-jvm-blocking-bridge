@@ -19,7 +19,7 @@ internal fun BlockingBridgePluginExtension.toSubpluginOptionList(): List<Subplug
 }
 
 /**
- * Would download from jcenter
+ * Would download from maven central
  */
 private val pluginArtifact = SubpluginArtifact(
     groupId = "net.mamoe",
