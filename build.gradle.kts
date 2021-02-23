@@ -15,7 +15,6 @@ plugins {
     kotlin("kapt") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("com.gradle.plugin-publish") version "0.12.0" apply false
-    id("com.jfrog.bintray") version Versions.bintray apply false
     id("io.codearte.nexus-staging") version "0.22.0"
     id("java")
     //id("com.github.johnrengelman.shadow") version "6.0.0" apply false

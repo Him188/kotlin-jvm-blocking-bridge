@@ -47,14 +47,14 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
                     }
                 }
                 if (applicableTargets.isNotEmpty()) {
-                    target.repositories.maven { it.setUrl("https://dl.bintray.com/mamoe/kotlin-jvm-blocking-bridge") }
+                    target.repositories.mavenCentral()
                 }
 
             }, onFailure = {
                 if (kotlin.runCatching { target.extensions.getByType(KotlinJvmProjectExtension::class.java) }.isSuccess) {
                     // when JVM
                     target.dependencies.add("implementation", "net.mamoe:kotlin-jvm-blocking-bridge:$KJBB_VERSION")
-                    target.repositories.maven { it.setUrl("https://dl.bintray.com/mamoe/kotlin-jvm-blocking-bridge") }
+                    target.repositories.mavenCentral()
                 } // else: neither JVM nor MPP. Don't apply
             })
 

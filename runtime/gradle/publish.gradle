@@ -1,14 +1,6 @@
 // 部分源码来自 kotlinx.coroutines
 // Source code from kotlinx.coroutines
 
-tasks.register("ensureBintrayAvailable") {
-    doLast {
-        if (!upload.Bintray.isBintrayAvailable(project)) {
-            throw new IllegalStateException("bintray isn't available. ")
-        }
-    }
-}
-
 def vcs = "https://github.com/mamoe/kotlin-jvm-blocking-bridge"
 
 def pomConfig = {
@@ -28,6 +20,8 @@ def pomConfig = {
     }
     scm {
         url vcs
+        connection "scm:${vcs}.git"
+        developerConnection "scm:${vcs.replace("https:", "git:")}.git"
     }
 }
 
@@ -159,9 +153,17 @@ afterEvaluate {
     }
 }
 
+publishing {
+    repositories {
+        maven {
+            url = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
 
-if (upload.Bintray.isBintrayAvailable(project)) {
-    apply from: project.file("gradle/bintray.gradle")
+            credentials {
+                username = System.getProperty("SONATYPE_USER")
+                password = System.getProperty("SONATYPE_KEY")
+            }
+        }
+    }
 }
 
 /*
