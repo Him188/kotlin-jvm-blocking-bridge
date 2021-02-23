@@ -11,12 +11,12 @@ buildscript {
 
 plugins {
     //kotlin("jvm") version Versions.kotlin apply false
+    id("io.github.karlatemp.publication-sign") version "1.0.0"
     kotlin("kapt") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("com.gradle.plugin-publish") version "0.12.0" apply false
     id("com.jfrog.bintray") version Versions.bintray apply false
-    id("com.bmuschko.nexus") version "2.3.1" apply false
-    id("io.codearte.nexus-staging") version "0.11.0" apply false
+    id("io.codearte.nexus-staging") version "0.22.0"
     id("java")
     //id("com.github.johnrengelman.shadow") version "6.0.0" apply false
 }
@@ -34,6 +34,12 @@ allprojects {
         jcenter()
         mavenCentral()
     }
+}
+
+nexusStaging {
+    packageGroup = rootProject.group.toString()
+    username = System.getProperty("sonatype_key")
+    password = System.getProperty("sonatype_password")
 }
 
 subprojects {
@@ -120,3 +126,4 @@ operator fun <E : Project> MutableSet<E>.getValue(e: E?, property: KProperty<*>)
     return this.firstOrNull { it.name == property.name }
         ?: error("Cannot find ${property.name} project in list ${this.joinToString()}")
 }
+

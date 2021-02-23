@@ -1,12 +1,13 @@
 name: Publishing
 
-on:
-  release:
-    types:
-      - created
-  push:
-    tags:
-      - '*-dev*'
+#on:
+#  release:
+#    types:
+#      - created
+#  push:
+#    tags:
+#      - '*-dev*'
+on: [ push ]
 
 jobs:
   publish-runtime-on-macos:
@@ -20,18 +21,27 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Gradle clean
-        run: ./gradlew clean
+        run: ./gradlew clean --scan
       - name: Gradle build
-        run: ./gradlew build # if test's failed, don't publish
-      - name: Check keys
-        run: ./gradlew :kotlin-jvm-blocking-bridge:ensureBintrayAvailable
-          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+        run: ./gradlew build --scan # if test's failed, don't publish
+      - name: Keys setup
+        shell: bash
+        run: |
+          mkdir keys
+          echo "$GPG_PUBLIC_" > keys/keys.pub
+          echo "$GPG_PRIVATE" > keys/keys.pri
+        env:
+          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
+
       - name: :kotlin-jvm-blocking-bridge:publish
         run: ./gradlew
-          :kotlin-jvm-blocking-bridge:publish
-          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+          :kotlin-jvm-blocking-bridge:publish --scan
+        env:
+          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
+          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
 
   publish-runtime-on-windows:
     runs-on: windows-latest
@@ -46,18 +56,28 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Gradle clean
-        run: ./gradlew clean
+        run: ./gradlew clean --scan
       - name: Gradle build
-        run: ./gradlew build # if test's failed, don't publish
-      - name: Check keys
-        run: ./gradlew :kotlin-jvm-blocking-bridge:ensureBintrayAvailable
-          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+        run: ./gradlew build --scan # if test's failed, don't publish
+
+      - name: Keys setup
+        shell: bash
+        run: |
+          mkdir keys
+          echo "$GPG_PUBLIC_" > keys/keys.pub
+          echo "$GPG_PRIVATE" > keys/keys.pri
+        env:
+          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
+
       - name: :kotlin-jvm-blocking-bridge:publish
         run: ./gradlew
-          :kotlin-jvm-blocking-bridge:publish
-          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+          :kotlin-jvm-blocking-bridge:publish --scan
+        env:
+          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
+          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
 
   publish-others-on-ubuntu:
     runs-on: ubuntu-latest
@@ -72,37 +92,34 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Gradle clean
-        run: ./gradlew clean
+        run: ./gradlew clean --scan
       - name: Gradle build
-        run: ./gradlew build # if test's failed, don't publish
-      - name: Check keys
-        run: ./gradlew :kotlin-jvm-blocking-bridge:ensureBintrayAvailable
-          :kotlin-jvm-blocking-bridge-compiler:ensureBintrayAvailable
-          :kotlin-jvm-blocking-bridge-compiler-embeddable:ensureBintrayAvailable
-          :kotlin-jvm-blocking-bridge-gradle:ensureBintrayAvailable
-          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+        run: ./gradlew build --scan # if test's failed, don't publish
+      - name: Keys setup
+        shell: bash
+        run: |
+          mkdir keys
+          echo "$GPG_PUBLIC_" > keys/keys.pub
+          echo "$GPG_PRIVATE" > keys/keys.pri
+        env:
+          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
 
-      - name: :kotlin-jvm-blocking-bridge-compiler:bintrayUpload
-        run: ./gradlew
-          :kotlin-jvm-blocking-bridge-compiler:bintrayUpload
-          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
-
-      - name: :kotlin-jvm-blocking-bridge-compiler-embeddable:bintrayUpload
-        run: ./gradlew
-          :kotlin-jvm-blocking-bridge-compiler-embeddable:bintrayUpload
-          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
-
-      - name: :kotlin-jvm-blocking-bridge-gradle:bintrayUpload
-        run: ./gradlew
-          :kotlin-jvm-blocking-bridge-gradle:bintrayUpload
-          -Dbintray_user=${{ secrets.BINTRAY_USER }} -Pbintray_user=${{ secrets.BINTRAY_USER }}
-          -Dbintray_key=${{ secrets.BINTRAY_KEY }} -Pbintray_key=${{ secrets.BINTRAY_KEY }}
+      - name: publish
+        run: ./gradlew publish --scan
+        env:
+          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
+          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
 
       - name: Publish Gradle plugin
         run: ./gradlew
-          :kotlin-jvm-blocking-bridge-gradle:publishPlugins
+          :kotlin-jvm-blocking-bridge-gradle:publishPlugins --scan
           -Dgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }} -Pgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }}
           -Dgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }} -Pgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }}
+        env:
+          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
+          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
