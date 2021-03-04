@@ -37,12 +37,18 @@ jobs:
 
       - name: :kotlin-jvm-blocking-bridge:publish
         run: ./gradlew
-          :kotlin-jvm-blocking-bridge:publish --scan
+          :kotlin-jvm-blocking-bridge:publish --info  --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
           SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
           SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
+
+  publish-test:
+    runs-on: windows-latest
+    steps:
+      - name: gpg version test
+        run: gpg --version
 
   publish-others-on-macos:
     runs-on: macos-latest
@@ -71,7 +77,7 @@ jobs:
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
 
       - name: :kotlin-jvm-blocking-bridge:publish
-        run: ./gradlew :kotlin-jvm-blocking-bridge:publish --scan
+        run: ./gradlew :kotlin-jvm-blocking-bridge:publish --info --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
