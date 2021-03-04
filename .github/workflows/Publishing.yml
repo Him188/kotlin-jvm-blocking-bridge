@@ -36,8 +36,8 @@ jobs:
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
 
       - name: :kotlin-jvm-blocking-bridge:publish
-        run: ./gradlew --scan
-          :kotlin-jvm-blocking-bridge:publish
+        run: ./gradlew
+          :kotlin-jvm-blocking-bridge:publish --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
@@ -71,7 +71,7 @@ jobs:
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
 
       - name: :kotlin-jvm-blocking-bridge:publish
-        run: ./gradlew :kotlin-jvm-blocking-bridge:publish --scan --info --stacktrace
+        run: ./gradlew :kotlin-jvm-blocking-bridge:publish --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}

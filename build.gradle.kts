@@ -47,6 +47,11 @@ subprojects {
     }
 }
 
+extensions.findByName("buildScan")?.withGroovyBuilder {
+    setProperty("termsOfServiceUrl", "https://gradle.com/terms-of-service")
+    setProperty("termsOfServiceAgree", "yes")
+}
+
 afterEvaluate {
     // gradlew
     //:kotlin-jvm-blocking-bridge:ensureBintrayAvailable
