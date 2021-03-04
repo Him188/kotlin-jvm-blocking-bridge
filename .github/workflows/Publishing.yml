@@ -12,8 +12,6 @@ on: [ push ]
 jobs:
   publish-runtime-on-windows:
     runs-on: windows-latest
-    needs:
-      - publish-runtime-on-macos
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 11
@@ -48,6 +46,8 @@ jobs:
 
   publish-others-on-macos:
     runs-on: macos-latest
+    needs:
+      - publish-runtime-on-windows
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 11
@@ -71,8 +71,7 @@ jobs:
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
 
       - name: :kotlin-jvm-blocking-bridge:publish
-        run: ./gradlew --scan
-          :kotlin-jvm-blocking-bridge:publish
+        run: ./gradlew --scan :kotlin-jvm-blocking-bridge:publish
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
