@@ -1,12 +1,12 @@
 @file:Suppress("UNUSED_VARIABLE")
 
 plugins {
+    id("io.github.karlatemp.publication-sign")
     kotlin("multiplatform")
     kotlin("kapt")
     kotlin("plugin.serialization")
     id("java")
     `maven-publish`
-    signing
     // id("com.bmuschko.nexus")
     //  id("io.codearte.nexus-staging")
 }

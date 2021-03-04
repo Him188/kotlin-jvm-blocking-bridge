@@ -1,4 +1,5 @@
 plugins {
+    id("io.github.karlatemp.publication-sign")
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.serialization")

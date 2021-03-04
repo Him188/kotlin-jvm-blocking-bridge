@@ -1,6 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
+    id("io.github.karlatemp.publication-sign")
     kotlin("jvm")
     kotlin("kapt")
     id("java-gradle-plugin")
