@@ -3,6 +3,7 @@ pluginManagement {
         mavenLocal()
         gradlePluginPortal()
         mavenCentral()
+        jcenter() // shadow plugin
     }
 }
 

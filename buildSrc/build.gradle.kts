@@ -5,6 +5,7 @@ plugins {
 repositories {
     mavenLocal()
     mavenCentral()
+    jcenter() // shadow plugin
 }
 
 kotlin {
