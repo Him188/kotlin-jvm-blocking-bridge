@@ -38,6 +38,12 @@ nexusStaging {
     password = System.getProperty("sonatype_password")
 }
 
+configure<io.github.karlatemp.publicationsign.PublicationSignExtension> {
+    setupWorkflow {
+        fastSetup("keys/key.pub", "keys/key.pri")
+    }
+}
+
 subprojects {
     afterEvaluate {
         setupKotlinSourceSetsSettings()
