@@ -47,6 +47,10 @@ jobs:
   publish-test:
     runs-on: windows-latest
     steps:
+      - name: where git
+        run: where git
+      - name: where gpg
+        run: where gpg
       - name: gpg version test
         run: gpg --version
 
