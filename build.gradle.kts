@@ -40,7 +40,7 @@ nexusStaging {
 
 configure<io.github.karlatemp.publicationsign.PublicationSignExtension> {
     setupWorkflow {
-        fastSetup("keys/key.pub", "keys/key.pri")
+        fastSetup("keys/keys.pub", "keys/keys.pri")
     }
 }
 

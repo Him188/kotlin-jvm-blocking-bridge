@@ -44,50 +44,6 @@ jobs:
           SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
           SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
 
-  local-test:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Gradle clean
-        run: ./gradlew clean --scan
-      - name: Gradle build
-        run: ./gradlew build --scan # if test's failed, don't publish
-
-      - name: Keys setup
-        shell: bash
-        run: |
-          mkdir keys
-          echo "$GPG_PUBLIC_" > keys/keys.pub
-          echo "$GPG_PRIVATE" > keys/keys.pri
-        env:
-          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
-
-      - name: :kotlin-jvm-blocking-bridge:publish
-        run: ./gradlew
-          :kotlin-jvm-blocking-bridge:publishToMavenLocal --info  --scan
-        env:
-          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
-          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
-          SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
-
-  publish-test:
-    runs-on: windows-latest
-    steps:
-      - name: where git
-        run: where git
-      - name: where gpg
-        run: where gpg
-      - name: gpg version test
-        run: gpg --version
-
   publish-others-on-macos:
     runs-on: macos-latest
     needs:
