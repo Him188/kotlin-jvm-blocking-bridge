@@ -10,39 +10,6 @@ name: Publishing
 on: [ push ]
 
 jobs:
-  publish-runtime-on-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Gradle clean
-        run: ./gradlew clean --scan
-      - name: Gradle build
-        run: ./gradlew build --scan # if test's failed, don't publish
-      - name: Keys setup
-        shell: bash
-        run: |
-          mkdir keys
-          echo "$GPG_PUBLIC_" > keys/keys.pub
-          echo "$GPG_PRIVATE" > keys/keys.pri
-        env:
-          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
-
-      - name: :kotlin-jvm-blocking-bridge:publish
-        run: ./gradlew
-          :kotlin-jvm-blocking-bridge:publish --scan
-        env:
-          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
-          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
-          SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
-
   publish-runtime-on-windows:
     runs-on: windows-latest
     needs:
@@ -71,18 +38,16 @@ jobs:
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
 
       - name: :kotlin-jvm-blocking-bridge:publish
-        run: ./gradlew
-          :kotlin-jvm-blocking-bridge:publish --scan
+        run: ./gradlew --scan
+          :kotlin-jvm-blocking-bridge:publish
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
           SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
           SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
 
-  publish-others-on-ubuntu:
-    runs-on: ubuntu-latest
-    needs:
-      - publish-runtime-on-windows
+  publish-others-on-macos:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 11
@@ -105,19 +70,9 @@ jobs:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
 
-      - name: publish
-        run: ./gradlew publish --scan
-        env:
-          GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
-          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
-          SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
-
-      - name: Publish Gradle plugin
-        run: ./gradlew
-          :kotlin-jvm-blocking-bridge-gradle:publishPlugins --scan
-          -Dgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }} -Pgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }}
-          -Dgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }} -Pgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }}
+      - name: :kotlin-jvm-blocking-bridge:publish
+        run: ./gradlew --scan
+          :kotlin-jvm-blocking-bridge:publish
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
