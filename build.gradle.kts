@@ -1,6 +1,7 @@
 @file:Suppress("UnstableApiUsage", "LocalVariableName")
 
 import kotlin.reflect.KProperty
+import java.io.File
 
 buildscript {
     dependencies {
@@ -11,7 +12,7 @@ buildscript {
 
 plugins {
     //kotlin("jvm") version Versions.kotlin apply false
-    id("io.github.karlatemp.publication-sign") version "1.0.0"
+    id("io.github.karlatemp.publication-sign") version "1.1.0"
     kotlin("kapt") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("com.gradle.plugin-publish") version "0.12.0" apply false
@@ -40,6 +41,7 @@ nexusStaging {
 
 configure<io.github.karlatemp.publicationsign.PublicationSignExtension> {
     setupWorkflow {
+        System.getProperty("signer.workdir")?.let { workingDir = File(it) }
         fastSetup("keys/keys.pub", "keys/keys.pri")
     }
 }
