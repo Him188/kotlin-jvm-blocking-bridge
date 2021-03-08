@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 package net.mamoe.kjbb.ide
 
 import com.intellij.codeInsight.daemon.impl.PsiElementListNavigator
@@ -19,6 +21,7 @@ import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
 import org.jetbrains.kotlin.asJava.elements.FakeFileForLightClass
+import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.idea.caches.resolve.analyze
 import org.jetbrains.kotlin.idea.codeInsight.hints.HintType
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
@@ -132,11 +135,14 @@ class BridgeInlayHintsCollector :
         }
 
         var annotation: KtAnnotationEntry?
+        if (method !is KtLightMethod) return null
+        if (method.isJvmStatic() && method.containingKtClass !is KtObjectDeclaration) return null
+
         when {
             method.containingKtClass?.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
                 .also { annotation = it } != null -> {
 
-                val containingClass = method.containingClass!!
+                val containingClass = method.containingClass
                 hint = factory.withTooltip(
                     "From @JvmBlockingBridge on class ${containingClass.name}",
                     hint
