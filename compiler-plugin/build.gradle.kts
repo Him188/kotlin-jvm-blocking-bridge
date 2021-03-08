@@ -1,11 +1,11 @@
 plugins {
+    id("io.github.karlatemp.publication-sign")
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.serialization")
     id("java")
     signing
     `maven-publish`
-    id("com.jfrog.bintray")
     id("com.github.johnrengelman.shadow")
 }
 

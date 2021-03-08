@@ -11,12 +11,11 @@ buildscript {
 
 plugins {
     //kotlin("jvm") version Versions.kotlin apply false
+    id("io.github.karlatemp.publication-sign") version "1.1.0"
     kotlin("kapt") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("com.gradle.plugin-publish") version "0.12.0" apply false
-    id("com.jfrog.bintray") version Versions.bintray apply false
-    id("com.bmuschko.nexus") version "2.3.1" apply false
-    id("io.codearte.nexus-staging") version "0.11.0" apply false
+    id("io.codearte.nexus-staging") version "0.22.0"
     id("java")
     //id("com.github.johnrengelman.shadow") version "6.0.0" apply false
 }
@@ -28,11 +27,21 @@ allprojects {
     version = Versions.project
 
     repositories {
-        mavenLocal()
-        maven(url = "https://dl.bintray.com/kotlin/kotlin-eap")
-        maven(url = "https://dl.bintray.com/kotlin/kotlin-dev")
-        jcenter()
         mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+nexusStaging {
+    packageGroup = rootProject.group.toString()
+    username = System.getProperty("sonatype_key")
+    password = System.getProperty("sonatype_password")
+}
+
+configure<io.github.karlatemp.publicationsign.PublicationSignExtension> {
+    setupWorkflow {
+        System.getProperty("signer.workdir")?.let { workingDir = File(it) }
+        fastSetup("keys/keys.pub", "keys/keys.pri")
     }
 }
 
@@ -43,6 +52,11 @@ subprojects {
             options.encoding = "UTF8"
         }
     }
+}
+
+extensions.findByName("buildScan")?.withGroovyBuilder {
+    setProperty("termsOfServiceUrl", "https://gradle.com/terms-of-service")
+    setProperty("termsOfServiceAgree", "yes")
 }
 
 afterEvaluate {
@@ -65,7 +79,6 @@ afterEvaluate {
 
     tasks.register("publishAll") {
         group = "publishing0"
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["ensureBintrayAvailable"])
         dependsOn(`kotlin-jvm-blocking-bridge`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["clean"])
@@ -73,9 +86,9 @@ afterEvaluate {
         // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
         dependsOn(tasks["build"])
         dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publish"])
-        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["bintrayUpload"])
-        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["bintrayUpload"])
-        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["publish"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["publish"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishPlugins"])
     }
 
@@ -95,13 +108,12 @@ afterEvaluate {
 
     tasks.register("publishAllWithoutClean") {
         group = "publishing0"
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["ensureBintrayAvailable"])
         // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
         dependsOn(tasks["build"])
         dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publish"])
-        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["bintrayUpload"])
-        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["bintrayUpload"])
-        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["bintrayUpload"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["publish"])
+        dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["publish"])
+        dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishPlugins"])
     }
 
@@ -120,3 +132,4 @@ operator fun <E : Project> MutableSet<E>.getValue(e: E?, property: KProperty<*>)
     return this.firstOrNull { it.name == property.name }
         ?: error("Cannot find ${property.name} project in list ${this.joinToString()}")
 }
+

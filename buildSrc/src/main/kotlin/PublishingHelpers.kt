@@ -9,15 +9,7 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import upload.Bintray
 import kotlin.reflect.KProperty
-
-/**
- * Configures the [bintray][com.jfrog.bintray.gradle.BintrayExtension] extension.
- */
-@PublishedApi
-internal fun Project.`bintray`(configure: com.jfrog.bintray.gradle.BintrayExtension.() -> Unit): Unit =
-    (this as org.gradle.api.plugins.ExtensionAware).extensions.configure("bintray", configure)
 
 @PublishedApi
 internal operator fun <U : Task> RegisteringDomainObjectDelegateProviderWithTypeAndAction<out TaskContainer, U>.provideDelegate(
@@ -93,101 +85,70 @@ inline fun Project.setupKotlinSourceSetsSettings() {
 inline fun Project.setupPublishing(
     groupId: String = project.group.toString(),
     artifactId: String = project.name.toString(),
-    bintrayRepo: String = "kotlin-jvm-blocking-bridge",
-    bintrayPkgName: String = "kotlin-jvm-blocking-bridge",
     vcs: String = "https://github.com/mamoe/kotlin-jvm-blocking-bridge",
     git: String = "git://github.com/mamoe/kotlin-jvm-blocking-bridge.git",
     overrideFromArtifacts: Any? = null
 ) {
-    tasks.register("ensureBintrayAvailable") {
-        doLast {
-            if (!Bintray.isBintrayAvailable(project)) {
-                error("bintray isn't available. ")
-            }
-        }
+    @Suppress("DEPRECATION")
+    val sourcesJar by tasks.registering(Jar::class) {
+        classifier = "sources"
+        from(sourceSets["main"].allSource)
     }
 
-    if (Bintray.isBintrayAvailable(project)) {
-        bintray {
-            user = Bintray.getUser(project)
-            key = Bintray.getKey(project)
-            setPublications("mavenJava")
-            setConfigurations("archives")
+    @Suppress("DEPRECATION")
+    val javadocJar by tasks.registering(Jar::class) {
+        classifier = "javadoc"
+    }
 
-            publish = true
-            override = true
-
-            pkg.apply {
-                userOrg = "mamoe"
-                repo = bintrayRepo
-                name = bintrayPkgName
-                setLicenses("Apache-2.0")
-                publicDownloadNumbers = true
-                vcsUrl = vcs
-            }
-        }
-
-        @Suppress("DEPRECATION")
-        val sourcesJar by tasks.registering(Jar::class) {
-            classifier = "sources"
-            from(sourceSets["main"].allSource)
-        }
-
-        @Suppress("DEPRECATION")
-        val javadocJar by tasks.registering(Jar::class) {
-            classifier = "javadoc"
-        }
-
-        afterEvaluate {
-            publishing {
-                /*
-                repositories {
-                    maven {
-                        // change to point to your repo, e.g. http://my.org/repo
-                        url = uri("$buildDir/repo")
+    afterEvaluate {
+        publishing {
+            /*
+            repositories {
+                maven {
+                    // change to point to your repo, e.g. http://my.org/repo
+                    url = uri("$buildDir/repo")
+                }
+            }*/
+            publications {
+                register("mavenJava", MavenPublication::class) {
+                    if (overrideFromArtifacts == null) {
+                        from(components["java"])
+                    } else {
+                        artifact(overrideFromArtifacts)
                     }
-                }*/
-                publications {
-                    register("mavenJava", MavenPublication::class) {
-                        if (overrideFromArtifacts == null) {
-                            from(components["java"])
-                        } else {
-                            artifact(overrideFromArtifacts)
+                    artifact(sourcesJar.get())
+                    artifact(javadocJar.get())
+
+                    this.groupId = groupId
+                    this.artifactId = artifactId
+                    this.version = project.version.toString()
+
+                    pom {
+                        name.set(project.name)
+                        description.set(project.description)
+                        url.set(vcs)
+
+                        licenses {
+                            license {
+                                name.set("Apache License 2.0")
+                                url.set("$vcs/blob/master/LICENSE.txt")
+                            }
                         }
-                        artifact(sourcesJar.get())
-                        artifact(javadocJar.get())
-
-                        this.groupId = groupId
-                        this.artifactId = artifactId
-                        this.version = project.version.toString()
-
-                        pom {
-                            name.set(project.name)
-                            description.set(project.description)
+                        scm {
                             url.set(vcs)
-
-                            licenses {
-                                license {
-                                    name.set("Apache License 2.0")
-                                    url.set("$vcs/blob/master/LICENSE.txt")
-                                }
-                            }
-                            scm {
-                                url.set(vcs)
-                                connection.set("scm:git:$git")
-                            }
-                            developers {
-                                developer {
-                                    name.set("Him188")
-                                    url.set("https://github.com/him188")
-                                }
+                            connection.set("scm:git:$git")
+                        }
+                        developers {
+                            developer {
+                                name.set("Him188")
+                                url.set("https://github.com/him188")
                             }
                         }
                     }
                 }
             }
         }
-    } else println("bintray isn't available. NO PUBLICATIONS WILL BE SET")
+    }
 
 
     /*

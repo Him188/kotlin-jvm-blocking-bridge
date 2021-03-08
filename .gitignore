@@ -110,8 +110,8 @@ gradle-app.setting
 # Cache of project
 .gradletasknamecache
 
+# GPG private key
+/keys
+
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
-
-bintray.user.txt
-bintray.key.txt

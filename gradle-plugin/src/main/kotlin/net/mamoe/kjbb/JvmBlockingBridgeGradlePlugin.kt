@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.*
 
-internal const val KJBB_VERSION = "1.10.0"
+internal const val KJBB_VERSION = "1.10.0-mc-6"
 
 internal fun BlockingBridgePluginExtension.toSubpluginOptionList(): List<SubpluginOption> {
     return listOf(
@@ -19,7 +19,7 @@ internal fun BlockingBridgePluginExtension.toSubpluginOptionList(): List<Subplug
 }
 
 /**
- * Would download from jcenter
+ * Would download from maven central
  */
 private val pluginArtifact = SubpluginArtifact(
     groupId = "net.mamoe",
@@ -47,14 +47,14 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
                     }
                 }
                 if (applicableTargets.isNotEmpty()) {
-                    target.repositories.maven { it.setUrl("https://dl.bintray.com/mamoe/kotlin-jvm-blocking-bridge") }
+                    target.repositories.mavenCentral()
                 }
 
             }, onFailure = {
                 if (kotlin.runCatching { target.extensions.getByType(KotlinJvmProjectExtension::class.java) }.isSuccess) {
                     // when JVM
                     target.dependencies.add("implementation", "net.mamoe:kotlin-jvm-blocking-bridge:$KJBB_VERSION")
-                    target.repositories.maven { it.setUrl("https://dl.bintray.com/mamoe/kotlin-jvm-blocking-bridge") }
+                    target.repositories.mavenCentral()
                 } // else: neither JVM nor MPP. Don't apply
             })
 

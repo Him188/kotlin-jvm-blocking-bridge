@@ -1,13 +1,13 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
+    id("io.github.karlatemp.publication-sign")
     id("org.jetbrains.intellij") version "0.4.16"
     kotlin("jvm")
     kotlin("plugin.serialization")
     id("java")
     signing
     `maven-publish`
-    id("com.jfrog.bintray")
 
     id("com.github.johnrengelman.shadow")
 }
