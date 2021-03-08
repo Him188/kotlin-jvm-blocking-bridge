@@ -1,7 +1,6 @@
 @file:Suppress("UnstableApiUsage", "LocalVariableName")
 
 import kotlin.reflect.KProperty
-import java.io.File
 
 buildscript {
     dependencies {
@@ -28,8 +27,8 @@ allprojects {
     version = Versions.project
 
     repositories {
-        mavenLocal()
         mavenCentral()
+        gradlePluginPortal()
     }
 }
 

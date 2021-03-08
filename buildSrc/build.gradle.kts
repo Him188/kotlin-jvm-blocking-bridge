@@ -3,9 +3,8 @@ plugins {
 }
 
 repositories {
-    mavenLocal()
     mavenCentral()
-    jcenter() // shadow plugin
+    gradlePluginPortal()
 }
 
 kotlin {

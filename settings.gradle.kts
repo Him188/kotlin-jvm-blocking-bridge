@@ -1,9 +1,7 @@
 pluginManagement {
     repositories {
-        mavenLocal()
         gradlePluginPortal()
         mavenCentral()
-        jcenter() // shadow plugin
     }
 }
 
