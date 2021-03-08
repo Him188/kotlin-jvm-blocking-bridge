@@ -85,9 +85,8 @@ jobs:
         run: >
           ./gradlew
           :closeAndReleaseRepository --info --scan
-        env:
-          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
-          SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
+          -Dsonatype_key=${{ secrets.SONATYPE_USER }}
+          -Dsonatype_password=${{ secrets.SONATYPE_KEY }}
 
       - name: Publish Gradle plugin
         run: >
