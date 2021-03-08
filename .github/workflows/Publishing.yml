@@ -1,13 +1,12 @@
 name: Publishing
 
-#on:
-#  release:
-#    types:
-#      - created
-#  push:
-#    tags:
-#      - '*-dev*'
-on: [ push ]
+on:
+  release:
+    types:
+      - created
+  push:
+    tags:
+      - '*-dev*'
 
 jobs:
   publish-runtime-on-windows:
