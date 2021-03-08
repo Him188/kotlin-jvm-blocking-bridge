@@ -50,7 +50,7 @@ fun <R> Any.runFunction(name: String, vararg args: Any): R {
 }
 
 fun <R> Class<*>.runStaticFunction(name: String, vararg args: Any): R {
-    return getMethod(name, *args.map { it::class.java }.toTypedArray()).also {
+    return getMethod(name, *args.map { it::class.javaPrimitiveType ?: it::class.java }.toTypedArray()).also {
         assert(Modifier.isStatic(it.modifiers)) { "method $name is not static" }
     }.invoke(null, *args)!! as R
 }
