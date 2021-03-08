@@ -24,13 +24,16 @@ import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
 import org.jetbrains.kotlin.descriptors.effectiveVisibility
+import org.jetbrains.kotlin.idea.caches.resolve.analyze
 import org.jetbrains.kotlin.idea.search.usagesSearch.descriptor
-import org.jetbrains.kotlin.idea.util.findAnnotation
 import org.jetbrains.kotlin.idea.util.module
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
+import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 import org.jetbrains.kotlin.resolve.lazy.LazyDeclarationResolver
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
@@ -107,38 +110,52 @@ private fun KtClassOrObject.classDescriptor(): ClassDescriptor? {
     return resolver?.getClassDescriptorIfAny(this, NoLookupLocation.FROM_IDE)
 }
 
+internal fun KtAnnotated.hasAnnotation(fqName: FqName): Boolean {
+    return findAnnotation(fqName) != null
+}
+
+internal fun KtAnnotated.findAnnotation(fqName: FqName): KtAnnotationEntry? {
+    val analyze = this.analyze()
+    for (entry in annotationEntries) {
+        if (entry == null) continue
+        val annotation = analyze.get(BindingContext.ANNOTATION, entry) ?: continue
+        if (annotation.fqName == fqName) return entry
+    }
+    return null
+}
+
+internal val KtLightMethod.isTopLevel get() = this.kotlinOrigin?.containingClassOrObject == null
+
 internal fun PsiMethod.canHaveBridgeFunctions(isIr: Boolean): HasJvmBlockingBridgeAnnotation {
+    if (this is BlockingBridgeStubMethod) return HasJvmBlockingBridgeAnnotation.NONE
+    if (this !is KtLightMethod) return HasJvmBlockingBridgeAnnotation.NONE
     if (!isSuspend()) return HasJvmBlockingBridgeAnnotation.NONE
     if (!Name.isValidIdentifier(this.name)) return HasJvmBlockingBridgeAnnotation.NONE
+
     if (this.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME.asString())) return HasJvmBlockingBridgeAnnotation.FROM_FUNCTION
 
-    val containingClass = this.containingClass
+    // no @JvmBlockingBridge on function, check if has on class or file.
 
-    if (this is KtLightMethod) {
-        val descriptor = this.kotlinOrigin?.descriptor as? SimpleFunctionDescriptor
-        if (descriptor != null) {
-            if (!descriptor.effectiveVisibility(checkPublishedApi = true).publicApi) {
-                return HasJvmBlockingBridgeAnnotation.NONE
-            }
-            if (descriptor.containingDeclaration !is ClassDescriptor && !isIr) {
-                return HasJvmBlockingBridgeAnnotation.NONE
-            }
+    val descriptor = this.kotlinOrigin?.descriptor as? SimpleFunctionDescriptor
+    if (descriptor != null) {
+        if (!descriptor.effectiveVisibility(checkPublishedApi = true).publicApi) {
+            return HasJvmBlockingBridgeAnnotation.NONE
+        }
+        if (descriptor.containingDeclaration !is ClassDescriptor && !isIr) {
+            return HasJvmBlockingBridgeAnnotation.NONE
         }
     }
 
-    if (containingClass != null) {
-        if (containingClass.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME.asString())) return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
-    } else {
-        // top-level function
+    if (this.isTopLevel) {
         if (!isIr) return HasJvmBlockingBridgeAnnotation.NONE
+    } else {
+        if (containingClass.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME.asString()))
+            return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
     }
 
     if (bridgeConfiguration.enableForModule) return HasJvmBlockingBridgeAnnotation.ENABLE_FOR_MODULE
 
-    val containingFile = containingFile
-    if (containingFile is KtFile) {
-        if (containingFile.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) != null) return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
-    }
+    if (containingKtFile?.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) != null) return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
 
     val fromSuper = findOverrides()?.map { it.canHaveBridgeFunctions(isIr) }?.firstOrNull { it.generate }
     if (fromSuper?.generate == true) return fromSuper

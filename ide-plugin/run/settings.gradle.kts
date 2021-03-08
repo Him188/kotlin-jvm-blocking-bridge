@@ -3,7 +3,6 @@ pluginManagement {
         mavenLocal()
         gradlePluginPortal()
         mavenCentral()
-        maven { url = uri("https://dl.bintray.com/kotlin/kotlin-eap") }
     }
 
 }

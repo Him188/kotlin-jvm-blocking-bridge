@@ -21,30 +21,23 @@ import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
 import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
 import org.jetbrains.kotlin.asJava.elements.FakeFileForLightClass
+import org.jetbrains.kotlin.asJava.elements.KtLightDeclaration
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
-import org.jetbrains.kotlin.idea.caches.resolve.analyze
 import org.jetbrains.kotlin.idea.codeInsight.hints.HintType
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
 import org.jetbrains.kotlin.idea.debugger.sequence.psi.resolveType
-import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
-import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.types.KotlinType
 import java.awt.event.MouseEvent
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-private val PsiElement.containingKtFile: KtFile?
-    get() {
-        val containingFile = containingFile
-        if (containingFile is FakeFileForLightClass) {
-            return containingFile.ktFile
-        }
-        return null
-    }
+internal val PsiElement.containingKtFile: KtFile?
+    get() = (containingFile as? FakeFileForLightClass)?.ktFile
+        ?: (this as? KtLightDeclaration<*, *>)?.kotlinOrigin?.containingKtFile
 
-private val PsiMember.containingKtClass: KtClassOrObject?
+internal val PsiMember.containingKtClass: KtClassOrObject?
     get() = (containingClass as? KtLightClass)?.kotlinOrigin
 
 class BridgeInlayHintsCollector :
@@ -105,19 +98,6 @@ class BridgeInlayHintsCollector :
         return (this.typeElement as? KtUserType)?.referenceExpression?.resolveType()
     }
 
-    private fun KtAnnotated.hasAnnotation(fqName: FqName): Boolean {
-        return findAnnotation(fqName) != null
-    }
-
-    private fun KtAnnotated.findAnnotation(fqName: FqName): KtAnnotationEntry? {
-        val analyze = this.analyze()
-        for (entry in annotationEntries) {
-            if (entry == null) continue
-            val annotation = analyze.get(BindingContext.ANNOTATION, entry) ?: continue
-            if (annotation.fqName == fqName) return entry
-        }
-        return null
-    }
 
     private fun createPresentation(
         factory: PresentationFactory,
