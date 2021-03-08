@@ -15,5 +15,5 @@ open class BridgeCodegenIdeExtension : ExpressionCodegenExtension {
     }
 
     override val shouldGenerateClassSyntheticPartsInLightClassesMode: Boolean
-        get() = true
+        get() = false
 }

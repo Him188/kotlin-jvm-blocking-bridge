@@ -4,6 +4,7 @@ import net.mamoe.kjbb.JvmBlockingBridge
 
 interface TestAnnotationsOnClass {
 
+
     /**
      * x
      */

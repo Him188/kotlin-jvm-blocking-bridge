@@ -3,11 +3,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.4.21"
-    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.0-mc-6"
+    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.9.0"
 }
 
 blockingBridge {
-    enableForModule = true
+//    enableForModule = true
 
     unitCoercion = COMPATIBILITY
 }
@@ -17,7 +17,6 @@ version = "1.0-SNAPSHOT"
 
 allprojects {
     repositories {
-        mavenLocal()
         mavenCentral()
     }
 

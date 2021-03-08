@@ -257,6 +257,15 @@ class BridgeCodegen(
                         codegen.parentCodegen as ImplementationBodyCodegen
                     )
                 )
+                FunctionCodegen(codegen.context, v, generationState, codegen).run {
+                    generateDefaultIfNeeded1(
+                        codegen.context.intoFunction(newFunctionDescriptor),
+                        newFunctionDescriptor,
+                        codegen.kind,
+                        DefaultParameterValueLoader.DEFAULT,
+                        null
+                    )
+                }
             }
 
             if (containingClass?.isInterface() != true) {
