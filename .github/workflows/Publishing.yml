@@ -36,7 +36,7 @@ jobs:
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
 
       - name: :kotlin-jvm-blocking-bridge:publish
-        run: ./gradlew publishNativePublicationToMavenRepository --info  --scan
+        run: ./gradlew publishMingwX64PublicationToMavenRepository --info  --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
