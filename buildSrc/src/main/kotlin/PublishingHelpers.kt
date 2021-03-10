@@ -102,13 +102,16 @@ inline fun Project.setupPublishing(
 
     afterEvaluate {
         publishing {
-            /*
             repositories {
                 maven {
-                    // change to point to your repo, e.g. http://my.org/repo
-                    url = uri("$buildDir/repo")
+                    setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2")
+
+                    credentials {
+                        username = System.getenv("SONATYPE_USER")
+                        password = System.getenv("SONATYPE_KEY")
+                    }
                 }
-            }*/
+            }
             publications {
                 register("mavenJava", MavenPublication::class) {
                     if (overrideFromArtifacts == null) {
