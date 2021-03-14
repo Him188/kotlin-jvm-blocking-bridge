@@ -5,8 +5,8 @@ on:
     types:
       - created
   push:
-    tags:
-      - '*-dev*'
+    branches:
+      - publish_on_push
 
 jobs:
   publish-runtime-on-windows:
