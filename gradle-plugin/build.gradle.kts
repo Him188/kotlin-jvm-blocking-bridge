@@ -1,5 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 plugins {
     id("io.github.karlatemp.publication-sign")
     kotlin("jvm")
@@ -29,11 +27,11 @@ dependencies {
 
 embeddableCompiler()
 
-setupPublishing(
-    groupId = "net.mamoe",
-    artifactId = "kotlin-jvm-blocking-bridge-gradle",
-    overrideFromArtifacts = tasks.getByName("embeddable") as ShadowJar
-)
+//setupPublishing(
+//    groupId = "net.mamoe",
+//    artifactId = "kotlin-jvm-blocking-bridge-gradle",
+//    overrideFromArtifacts = tasks.getByName("embeddable") as ShadowJar
+//)
 
 pluginBundle {
     website = "https://github.com/mamoe/kotlin-jvm-blocking-bridge"
