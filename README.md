@@ -4,7 +4,7 @@
 
 Kotlin compiler plugin for generating blocking bridges for calling suspend functions from Java with minimal effort
 
-## Screenshots
+### Screenshots
 <details>
 <summary>Click to expand</summary>
 
