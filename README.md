@@ -70,7 +70,7 @@ If you use a library that uses Kotlin Jvm Blocking Bridge, it is not compulsory 
 If you're developing a library or using both Java and Kotlin with KJBB, please install the Gradle plugin **and** the IntelliJ plugin.
 
 #### **Install IntelliJ IDEA (or Android Studio) plugin**
-   The plugin supports 2020.\*  
+   The plugin supports 2020.\* and 2021.\*  
    It's strongly recommended using the latest IJ or AS, you may update using [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/)  
    Please note that Eclipse and Visual Studio aren't supported.
 
