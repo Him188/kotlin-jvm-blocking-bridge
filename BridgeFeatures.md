@@ -61,7 +61,7 @@ class B : A() {
 ```
 
 ### Bridges in interfaces
-**Available only when targeting Java 8 or higher**
+**Available only when targeting JVM 8 or higher**
 
 Features of generated bridges:
 - `open` always
@@ -106,6 +106,60 @@ class B : A() {
     // `test2` absent, because `test2` in `B` doesn't have explicit `@JvmBlockingBridge`
 }
 ```
+
+### Stdlib annotations
+
+When function is annotated with `@JvmSynthetic`, no blocking bridge will be generated for it.
+
+`@JvmOverloads` and `@JvmName` is useful to blocking bridges.
+
+
+### `@JvmBlockingBridge` on classes
+
+When `@JvmBlockingBridge` is applied on classes, all the `suspend` functions will be checked about capability of having blocking bridges, which is:
+- effectively public: `public`, `protected` or `@PublishedApi`
+- not `@JvmSynthetic`
+
+```kotlin
+@JvmBlockingBridge
+class A {
+    suspend fun test()
+}
+```
+
+Compilation result:
+```kotlin
+@JvmBlockingBridge
+class A {
+    @GeneratedBlockingBridge
+    fun test()
+}
+```
+
+### Enable for module
+
+When `@JvmBlockingBridge` is applied on classes, all the `suspend` functions will be checked about capability of having blocking bridges.
+
+```kotlin
+class A {
+    suspend fun test()
+}
+```
+
+Compilation result:
+```kotlin
+class A {
+    @GeneratedBlockingBridge
+    fun test()
+}
+```
+
+## Compiler options
+
+|       Name        | Values                  | Description                                                                                |
+|:-----------------:|:------------------------|:-------------------------------------------------------------------------------------------|
+|  `unit-coercion`  | `VOID`, `COMPATIBILITY` | Strategy on mapping from `Unit` to `void` in JVM backend. `VOID` by default (recommended). |
+| `enableForModule` | `true`, `false`         | Generate blocking bridges for all suspend functions in the module where possible.          |
 
 
 ## [Inspections](compiler-plugin/src/main/kotlin/net/mamoe/kjbb/compiler/diagnostic/BlockingBridgeErrorsRendering.kt#L8)

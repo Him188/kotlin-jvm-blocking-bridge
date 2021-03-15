@@ -52,6 +52,13 @@ suspend fun downloadImage(): Image
 
 The Kotlin JVM Blocking Bridge compiler will generate such blocking bridges automatically.
 
+### Stability
+There are more than 150 unit tests ensuring the functioning of this plugin.
+
+This compiler plugin has been used all over the library [mirai](https://github.com/mamoe/mirai), which consists of 87k lines of code, covers all the circumstances you may use this plugin for, and has been used by thousand of customers.  
+This means that Kotlin Jvm Blocking Bridge produces high stability and is capable for production use.
+
+
 ## Requirements
 - Gradle (`6.0` or higher recommended)
 - **Kotlin `1.4.20` or higher**

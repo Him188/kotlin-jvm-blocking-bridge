@@ -2,7 +2,7 @@
 
 **[ENGLISH 英文](./README.md)**
 
-为 Kotlin `suspend` 函数快速生成阻塞式方法桥的 Kotlin 编译器插件.
+为 Kotlin `suspend` 函数快速生成‘阻塞式方法桥’的 Kotlin 编译器插件。
 
 ### 截图
 <details>
@@ -21,7 +21,7 @@ Kotlin 挂起函数:
 </details>
 
 ### 动机
-Kotlin `suspend` 函数编译后会被加上一个额外参数 `$completion: Continuation`. 在 Java 调用这样的方法很困难，我们可以做一些兼容:
+Kotlin `suspend` 函数编译后会被加上一个额外参数 `$completion: Continuation`。在 Java 调用这样的方法很困难，我们可以做一些兼容:
 ```kotlin
 suspend fun downloadImage(): Image
 ```
@@ -30,7 +30,7 @@ suspend fun downloadImage(): Image
 @JvmName("downloadImage") // 避免引用歧义
 fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
 ```
-这样，Java 使用者可以直接使用 `downloadImage()` 调用，就像在 Kotlin 调用 `suspend` 函数.
+这样，Java 使用者可以直接通过 `downloadImage()` 调用，就像在 Kotlin 调用 `suspend` 函数。
 
 然而，这也带来了一些问题:
 - KDoc 需要从原函数复制到额外添加的函数，并且修改时要同时修改两者
@@ -45,25 +45,31 @@ fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
   @JvmName("downloadImage") // 避免引用歧义
   fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
   ```
-  但这似乎不是最好的----我们要重复 `JavaFriendlyApi` 这样的注解很多次. 还需要到处使用它.
+  但这似乎不是最好的----我们要重复 `JavaFriendlyApi` 这样的注解很多次，还需要到处使用它。
 
 **本编译器插件设计为最小化这样兼容 Java 时所作的额外工作----仅需添加一个注解**:
 ```kotlin
 @JvmBlockingBridge
 suspend fun downloadImage(): Image
 ```
-编译器会帮助生成上述的‘阻塞式方法桥’ `fun downloadImage()`，使用‘相同’的方法签名 (编译级的生成不会引起 resolution ambiguity).
+编译器会帮助生成上述的‘阻塞式方法桥’ `fun downloadImage()`，使用‘相同’的方法签名（编译级的生成不会引起调用歧义）。
+
+## 稳定性
+编译器插件有超过 150 个单元测试来确保每一项功能的正常运行。
+
+拥有 9 万行 Kotlin 代码的库 [mirai](https://github.com/mamoe/mirai) 大量地在各种情况下使用了这个编译器插件。mirai 拥有严格二进制兼容测试，正在被成千上万的用户使用。  
+这意味着 Kotlin Jvm Blocking Bridge 提供稳定的编译结果，而且适用于生产环境。
 
 ## 使用要求
-- Gradle (仅在 6.0+ 环境通过测试)
+- Gradle（仅在 6.0+ 环境通过测试）
 - **Kotlin `1.4.20` 或更高**
-- IntelliJ IDEA 或 Android Studio (推荐保持新版本)
+- IntelliJ IDEA 或 Android Studio（推荐保持新稳定版本）
 
 ## 现在体验
 
 ### 使用者
 
-**如果一个库使用了 Kotlin Jvm Blocking Bridge （下文简称本插件），则依赖方可以不安装 IntelliJ 插件**
+**如果一个库使用了 Kotlin Jvm Blocking Bridge，则依赖方可以不安装 IntelliJ 插件**
 
 
 ### 库作者
@@ -107,14 +113,14 @@ implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.10.3")
 
 ## 支持的编译器后端
 
-Kotlin 拥有两个编译器后端，旧 `JVM` 和新 `IR`(Internal Representation).  
-Kotlin 默认使用目前较稳定的 `JVM` 后端，但即将在 Kotlin 1.5 启用 `IR` 后端.
+Kotlin 拥有两个编译器后端，旧 `JVM` 和新 `IR`(Internal Representation)。  
+Kotlin 默认使用目前较稳定的 `JVM` 后端，但即将在 Kotlin 1.5 启用 `IR` 后端。
 
-本插件同时支持这两个后端. 若在使用时遇到编译错误 (堆栈中能找到 `net.mamoe.kjbb`)，请切换到 `IR` 后端.
-但注意: 由于 `IR` 目前还不稳定，请仅在遇到错误时切换.
+本插件同时支持这两个后端. 若在使用时遇到编译错误 (堆栈中能找到 `net.mamoe.kjbb`)，请切换到 `IR` 后端。
+但注意: 由于 `IR` 目前还不稳定，请仅在遇到错误时切换。
 
 要启用 IR 后端，添加下面内容到 `build.gradle` 或 `build.gradle.kts`
-```kotlin=
+```kotlin
 tasks.withType<KotlinCompile> {
     kotlinOptions.useIR = true
 }
@@ -125,9 +131,9 @@ tasks.withType<KotlinCompile> {
 
 如果你感兴趣于这个项目的原理，本章节可能会有帮助。
 
-- **运行时库**  *provides @JvmBlockingBridge annotation*
-- **编译器插件**  *provides bridge generators，supporting current JVM backend and experimental IR backend*
-- **ide-plugin**  *for IntelliJ platform IDEs only*
+- **运行时库**  *提供 @JvmBlockingBridge 注解*
+- **编译器插件**  *提供编译代码生成，编译目标为 JVM 字节码或 Kotlin IR*
+- **ide-plugin**
 
 **在 [BridgeFeatures.md](BridgeFeatures.md) 阅读规范**
 
