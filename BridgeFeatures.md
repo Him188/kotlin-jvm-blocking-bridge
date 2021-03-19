@@ -136,23 +136,32 @@ class A {
 }
 ```
 
+IntelliJ plugin will add a inlay hint of `@JvmBlcokingBridge` onto the functions that is going to have blocking bridges generated.
+
+
 ### Enable for module
 
-When `@JvmBlockingBridge` is applied on classes, all the `suspend` functions will be checked about capability of having blocking bridges.
-
+When enabled in `build.gradle` by 
 ```kotlin
-class A {
-    suspend fun test()
+blockingBridge {
+    enableForModule = true
 }
 ```
+, **all** `susupend` functions will be compiled with a blocking bridge if possible. 
+This is practically like adding `@JvmBlockingBridge` to every `suspend` functions and suppress errors if not applicable.
 
-Compilation result:
-```kotlin
-class A {
-    @GeneratedBlockingBridge
-    fun test()
-}
-```
+In other words, if function has the following characteristics, they do not have blocking bridges. Otherwise whey do.
+- is not `suspend`
+- is local
+- is `private` or inside `private` or `internal` class
+- is `internal` without `@PublishedApi`
+- has `@JvmSynthetic` (invisible from Java)
+- is top-level but not using IR compiler
+- uses inline classes as parameter or return type but not using IR compiler
+- is inside interface but JVM target is below 8 (default implementation in interface not supported)
+
+
+IntelliJ plugin will show you a inlay hint on the capable functions that may be 'inferred' a `@JvmBlcokingBridge`.
 
 ## Compiler options
 
