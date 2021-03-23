@@ -5,20 +5,22 @@ on: [push, pull_request]
 jobs:
   build-on-windows:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        cross:
+          - linux-x64
+          - linux-arm64
+          - windows-shared-x86
+          - windows-shared-x64
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+      - uses: actions/cache@v2
         with:
-          java-version: 11
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Build with Gradle
-        run: ./gradlew build --scan
-
-  build-on-macos:
-    runs-on: macos-latest
-    steps:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
       - uses: actions/checkout@v2
       - name: Set up JDK 11
         uses: actions/setup-java@v1
