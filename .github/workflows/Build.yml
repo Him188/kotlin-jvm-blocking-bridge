@@ -7,7 +7,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        cross:
+        os:
           - linux-x64
           - linux-arm64
           - windows-shared-x86
