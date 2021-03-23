@@ -4,14 +4,12 @@ on: [push, pull_request]
 
 jobs:
   build-on-windows:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os:
-          - linux-x64
-          - linux-arm64
-          - windows-shared-x86
-          - windows-shared-x64
+          - windows-latest
+          - macos-latest
     steps:
       - uses: actions/cache@v2
         with:
