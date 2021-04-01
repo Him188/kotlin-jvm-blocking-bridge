@@ -4,7 +4,7 @@
 
 为 Kotlin `suspend` 函数快速生成‘阻塞式方法桥’的 Kotlin 编译器插件。
 
-### 截图
+## 截图
 <details>
 
 <summary>点击左侧箭头查看</summary>
@@ -20,7 +20,7 @@ Kotlin 挂起函数:
 
 </details>
 
-### 动机
+## 动机
 Kotlin `suspend` 函数编译后会被加上一个额外参数 `$completion: Continuation`。在 Java 调用这样的方法很困难，我们可以做一些兼容:
 ```kotlin
 suspend fun downloadImage(): Image
