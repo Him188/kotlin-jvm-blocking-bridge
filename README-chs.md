@@ -30,7 +30,7 @@ suspend fun downloadImage(): Image
 @JvmName("downloadImage") // 避免引用歧义
 fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
 ```
-这样，Java 使用者可以直接通过 `downloadImage()` 调用，就像在 Kotlin 调用 `suspend` 函数。
+这样，Java 使用者可以直接通过 `downloadImage()` 调用，就像在 Kotlin 调用 `suspend` 函数。即使这损失了一些性能，但通常我们不在乎它。
 
 然而，这也带来了一些问题:
 - KDoc 需要从原函数复制到额外添加的函数，并且修改时要同时修改两者
