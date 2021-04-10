@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
 import org.jetbrains.kotlin.idea.debugger.sequence.psi.resolveType
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
+import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 import org.jetbrains.kotlin.types.KotlinType
 import java.awt.event.MouseEvent
 import javax.swing.JComponent
@@ -116,6 +117,7 @@ class BridgeInlayHintsCollector :
 
         var annotation: KtAnnotationEntry?
         if (method !is KtLightMethod) return null
+        if (method.lightMemberOrigin?.originKind != JvmDeclarationOriginKind.OTHER) return null
         if (method.isJvmStatic() && method.containingKtClass !is KtObjectDeclaration) return null
 
         when {
