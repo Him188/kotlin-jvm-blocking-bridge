@@ -4,7 +4,7 @@
 
 Kotlin compiler plugin for generating blocking bridges for calling suspend functions from Java with minimal effort
 
-### Screenshots
+## Screenshots
 <details>
 <summary>Click to expand</summary>
 
@@ -18,7 +18,7 @@ Documentation and navigation support:
 ![image_1](https://i.loli.net/2020/08/08/koCl6zj4OAJ5aUN.png)
 </details>
 
-### Motivation
+## Motivation
 Kotlin suspend function is compiled with an additional `$completion: Continuation` parameter, making it hard to call from Java. To help integration with Java, we may make extra effort to simplify calling:
 ```kotlin
 suspend fun downloadImage(): Image
@@ -52,7 +52,7 @@ suspend fun downloadImage(): Image
 
 The Kotlin JVM Blocking Bridge compiler will generate such blocking bridges automatically.
 
-### Stability
+## Stability
 There are more than 150 unit tests ensuring the functioning of this plugin.
 
 This compiler plugin has been used all over the library [mirai](https://github.com/mamoe/mirai), which consists of 87k lines of code, covers all the circumstances you may use this plugin for, and has been used by thousand of customers.  

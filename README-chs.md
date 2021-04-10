@@ -4,7 +4,7 @@
 
 为 Kotlin `suspend` 函数快速生成‘阻塞式方法桥’的 Kotlin 编译器插件。
 
-### 截图
+## 截图
 <details>
 
 <summary>点击左侧箭头查看</summary>
@@ -20,7 +20,7 @@ Kotlin 挂起函数:
 
 </details>
 
-### 动机
+## 动机
 Kotlin `suspend` 函数编译后会被加上一个额外参数 `$completion: Continuation`。在 Java 调用这样的方法很困难，我们可以做一些兼容:
 ```kotlin
 suspend fun downloadImage(): Image
@@ -30,7 +30,7 @@ suspend fun downloadImage(): Image
 @JvmName("downloadImage") // 避免引用歧义
 fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
 ```
-这样，Java 使用者可以直接通过 `downloadImage()` 调用，就像在 Kotlin 调用 `suspend` 函数。
+这样，Java 使用者可以直接通过 `downloadImage()` 调用，就像在 Kotlin 调用 `suspend` 函数。即使这损失了一些性能，但通常我们不在乎它。
 
 然而，这也带来了一些问题:
 - KDoc 需要从原函数复制到额外添加的函数，并且修改时要同时修改两者
@@ -52,7 +52,7 @@ fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
 @JvmBlockingBridge
 suspend fun downloadImage(): Image
 ```
-编译器会帮助生成上述的‘阻塞式方法桥’ `fun downloadImage()`，使用‘相同’的方法签名（编译级的生成不会引起调用歧义）。
+编译器会帮助生成上述的‘阻塞式方法桥’ `fun downloadImage()`，使用‘相同’的方法签名（编译级的生成不会引起调用歧义），且更高效。
 
 ## 稳定性
 编译器插件有超过 150 个单元测试来确保每一项功能的正常运行。
@@ -69,7 +69,7 @@ suspend fun downloadImage(): Image
 
 ### 使用者
 
-**如果一个库使用了 Kotlin Jvm Blocking Bridge，则依赖方可以不安装 IntelliJ 插件**
+**如果一个库使用了 Kotlin Jvm Blocking Bridge，依赖方可以不安装 IntelliJ 插件，可以就像普通库一样使用。**
 
 
 ### 库作者
@@ -77,11 +77,10 @@ suspend fun downloadImage(): Image
 如果你正开发一个库，你需要安装 Gradle 插件来获取编译支持，和安装 IntelliJ IDEA 插件来获取编辑支持。
 
 #### **安装 IntelliJ IDEA (或 Android Studio) 插件**
-   本插件支持 IntelliJ IDEA 2020.\* 和 2021.\*  
-   建议使用最新版本的 IntelliJ 或 AS，可以使用 [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/) 获取更新  
-   Eclipse 和 Visual Studio 或其他 IDE 均不受支持.
+   本插件支持 IntelliJ IDEA 2020.\* 和 2021.\*。  
+   Eclipse 和 Visual Studio 或其他 IDE 均不受支持。
 
-   一键安装：<https://plugins.jetbrains.com/embeddable/install/14816>，或者也可以手动安装:
+   一键安装：<https://plugins.jetbrains.com/embeddable/install/14816>，或者也可以手动安装：
 
    1. 打开 `File->Settings->Plugins->Marketplace`
    2. 搜索 `Kotlin Jvm Blocking Bridge`，下载并安装
@@ -89,19 +88,17 @@ suspend fun downloadImage(): Image
 
 #### **安装 Gradle 插件.**
 
-`build.gradle` 或 `build.gradle.kts`
+`build.gradle.kts`
 ```kotlin
 plugins {
   id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.3"
 }
 ```
 
-如果 Gradle 无法下载这个插件，请在 `settings.gradle` 或 `settings.gradle.kts` 中添加 `gradlePluginPortal()`:
-```kotlin
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-    }
+`build.gradle`
+```groovy
+plugins {
+  id 'net.mamoe.kotlin-jvm-blocking-bridge' version '1.10.3'
 }
 ```
 
@@ -111,25 +108,26 @@ implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.10.3")
 ```
 因此只需要安装插件，而不需要添加依赖即可使用。请确保在运行时有这个依赖（通常不需要做额外工作）。
 
+
+> 如果 Gradle 无法下载这个插件，请在 `settings.gradle` 或 `settings.gradle.kts` 中添加 `gradlePluginPortal()`:
+> ```kotlin
+> pluginManagement {
+>     repositories {
+>         gradlePluginPortal()
+>     }
+> }
+> ```
+
 ## 支持的编译器后端
 
 Kotlin 拥有两个编译器后端，旧 `JVM` 和新 `IR`(Internal Representation)。  
-Kotlin 默认使用目前较稳定的 `JVM` 后端，但即将在 Kotlin 1.5 启用 `IR` 后端。
+Kotlin 默认使用 `JVM` 后端，但即将在 Kotlin 1.5 启用 `IR` 后端。
 
-本插件同时支持这两个后端. 若在使用时遇到编译错误 (堆栈中能找到 `net.mamoe.kjbb`)，请切换到 `IR` 后端。
-但注意: 由于 `IR` 目前还不稳定，请仅在遇到错误时切换。
-
-要启用 IR 后端，添加下面内容到 `build.gradle` 或 `build.gradle.kts`
-```kotlin
-tasks.withType<KotlinCompile> {
-    kotlinOptions.useIR = true
-}
-```
-
+本插件同时支持这两个后端。在两个后端产生的编译结果都是相同的。
 
 ## 模块
 
-如果你感兴趣于这个项目的原理，本章节可能会有帮助。
+如果你感兴趣于这个项目的原理，本章节可能会有帮助。当然你也可以直接使用插件了。
 
 - **运行时库**  *提供 @JvmBlockingBridge 注解*
 - **编译器插件**  *提供编译代码生成，编译目标为 JVM 字节码或 Kotlin IR*
