@@ -15,8 +15,7 @@ jobs:
           java-version: 11
       - run: chmod +x gradlew
       - run: ./gradlew clean --scan
-      - run: ./gradlew assemble --scan
-      - run: ./gradlew check --scan
+      - run: ./gradlew build --scan # do not split into assemble and check. cache bugs.
 
       - name: Keys setup
         shell: bash
@@ -54,8 +53,7 @@ jobs:
           java-version: 11
       - run: chmod +x gradlew
       - run: ./gradlew clean --scan
-      - run: ./gradlew assemble --scan
-      - run: ./gradlew check --scan
+      - run: ./gradlew build --scan # do not split into assemble and check. cache bugs.
       - name: Keys setup
         shell: bash
         run: |
