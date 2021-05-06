@@ -3,28 +3,48 @@ name: Gradle CI
 on: [push, pull_request]
 
 jobs:
-  build-on-windows:
-    runs-on: windows-latest
+  check_duplicate_workflows:
+    name: Check for duplicate workflows
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    # Map a step output to a job output
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@master
         with:
-          java-version: 11
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Build with Gradle
-        run: ./gradlew build --scan
+          skip_after_successful_duplicate: 'true'
+          concurrent_skipping: 'same_content'
+          do_not_skip: '["pull_request", "workflow_dispatch", "schedule"]'
+          paths_ignore: '["**/*.md"]'
 
-  build-on-macos:
-    runs-on: macos-latest
+  build:
+
+    runs-on: ${{ matrix.platform }}
+    needs: [ check_duplicate_workflows ]
+    if: ${{ needs.check_duplicate_workflows.outputs.should_skip != 'true' }}
+    strategy:
+      matrix:
+        java: [ '8', '11', '15' ]
+        platform: [ 'windows-latest', 'ubuntu-latest', 'macos-latest' ]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+
+      - uses: actions/setup-java@v2
         with:
-          java-version: 11
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Build with Gradle
-        run: ./gradlew build --scan
+          distribution: 'adopt'
+          java-version: ${{ matrix.java }}
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v2.1.5
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-${{ matrix.java }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: ${{ runner.os }}-gradle
+
+      - run: chmod +x gradlew
+      - run: ./gradlew clean --scan
+      - run: ./gradlew assemble --scan
+      - run: ./gradlew build --scan
