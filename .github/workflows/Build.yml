@@ -1,6 +1,6 @@
 name: Gradle CI
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   check_duplicate_workflows:
@@ -26,7 +26,7 @@ jobs:
     if: ${{ needs.check_duplicate_workflows.outputs.should_skip != 'true' }}
     strategy:
       matrix:
-        java: [ '8', '11', '15' ]
+        java: [ '8', '9', '10', '11','12', '13', '14', '15', '16' ]
         platform: [ 'windows-latest', 'ubuntu-latest', 'macos-latest' ]
 
     steps:
