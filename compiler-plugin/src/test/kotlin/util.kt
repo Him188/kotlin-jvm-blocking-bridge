@@ -244,6 +244,7 @@ fun compile(
         }
 
         useIR = ir
+        useOldBackend = !ir
 
         inheritClassPath = true
         messageOutputStream = System.out

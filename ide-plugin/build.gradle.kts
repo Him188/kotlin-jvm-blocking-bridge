@@ -12,10 +12,6 @@ plugins {
     id("com.github.johnrengelman.shadow")
 }
 
-repositories {
-    maven("http://maven.aliyun.com/nexus/content/groups/public/")
-}
-
 dependencies {
     compileOnly(kotlin("stdlib-jdk8"))
 
@@ -35,8 +31,10 @@ intellij {
     isDownloadSources = true
     updateSinceUntilBuild = false
 
+    sandboxDirectory = projectDir.resolve("run/idea-sandbox").absolutePath
+
     setPlugins(
-        "org.jetbrains.kotlin:211-1.4.32-release-IJ6693.72", "java"
+        "org.jetbrains.kotlin:211-1.5.0-release-759-IJ6693.72", "java"
     )
 }
 
@@ -55,10 +53,6 @@ tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
     untilBuild("225.*")
     changeNotes("""
         See <a href="">Release notes</a>
-    """.trimIndent())
-    setPluginDescription("""
-        Kotlin compiler plugin for generating blocking bridges for calling suspend functions from Java with minimal effort. <br />
-        Find more information on source repository: <a href="https://github.com/him188/kotlin-jvm-blocking-bridge">kotlin-jvm-blocking-bridge</a>.
     """.trimIndent())
 }
 

@@ -32,7 +32,6 @@ kotlin {
 
         val commonTest by getting {
             dependencies {
-                implementation(kotlin("test-annotations-common"))
             }
         }
 
@@ -46,8 +45,6 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("stdlib"))
-                implementation(kotlin("test"))
-                implementation(kotlin("test-junit5"))
 
                 implementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
                 implementation("org.junit.jupiter:junit-jupiter-engine:5.2.0")
