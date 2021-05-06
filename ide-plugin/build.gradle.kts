@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
     id("io.github.karlatemp.publication-sign")
-    id("org.jetbrains.intellij") version "0.4.16"
+    id("org.jetbrains.intellij") version "0.7.3"
     kotlin("jvm")
     kotlin("plugin.serialization")
     id("java")
