@@ -59,6 +59,7 @@ The Kotlin JVM Blocking Bridge compiler will generate such blocking bridges auto
    interface Image
    
    object ImageManager {
+       @JvmStatic
        @JvmBlockingBridge
        suspend fun getImage(): Image
    }

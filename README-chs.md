@@ -61,6 +61,7 @@ suspend fun downloadImage(): Image
    interface Image
    
    object ImageManager {
+       @JvmStatic
        @JvmBlockingBridge
        suspend fun getImage(): Image
    }
