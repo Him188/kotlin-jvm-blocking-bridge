@@ -54,10 +54,40 @@ suspend fun downloadImage(): Image
 ```
 编译器会帮助生成上述的‘阻塞式方法桥’ `fun downloadImage()`，使用‘相同’的方法签名（编译级的生成不会引起调用歧义），且更高效。
 
+### Examples Of Usages
+
+1. 提供在 Java 调用 `suspend` 函数的最简单方式:
+   ```kotlin
+   interface Image
+   
+   object ImageManager {
+       @JvmBlockingBridge
+       suspend fun getImage(): Image
+   }
+   ```
+   ```java
+   class Test {
+       public static void main(String[] args){
+           Image image = ImageManager.getImage(); // just like in Kotlin, no need to implement Continuation.
+       }
+   }
+   ```
+
+2. 在测试中，使用 `@JvmBlockingBridge` 来运行 `suspend` 的测试函数而不需要 `runBlocking`：
+
+   ```kotlin
+   @file:JvmBlockingBridge
+   
+   class SomeTests {
+       @Test
+       suspend fun test() { /* ... */ }
+   }
+   ```
+
 ## 稳定性
 编译器插件有超过 150 个单元测试来确保每一项功能的正常运行。
 
-拥有 9 万行 Kotlin 代码的库 [mirai](https://github.com/mamoe/mirai) 大量地在各种情况下使用了这个编译器插件。mirai 拥有严格二进制兼容测试，正在被成千上万的用户使用。  
+拥有 10 万行 Kotlin 代码的库 [mirai](https://github.com/mamoe/mirai) 大量地在各种情况下使用了这个编译器插件。mirai 拥有严格二进制兼容测试，正在被成千上万的用户使用。  
 这意味着 Kotlin Jvm Blocking Bridge 提供稳定的编译结果，而且适用于生产环境。
 
 ## 使用要求

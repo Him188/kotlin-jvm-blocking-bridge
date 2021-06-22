@@ -52,10 +52,40 @@ suspend fun downloadImage(): Image
 
 The Kotlin JVM Blocking Bridge compiler will generate such blocking bridges automatically.
 
+### Examples Of Usages
+
+1. Provide the easiest way to call `suspend` functions from Java:
+   ```kotlin
+   interface Image
+   
+   object ImageManager {
+       @JvmBlockingBridge
+       suspend fun getImage(): Image
+   }
+   ```
+   ```java
+   class Test {
+       public static void main(String[] args){
+           Image image = ImageManager.getImage(); // just like in Kotlin, no need to implement Continuation.
+       }
+   }
+   ```
+
+2. In tests, add `@JvmBlockingBridge` to run suspend tests without `runBlocking`:
+
+   ```kotlin
+   @file:JvmBlockingBridge
+   
+   class SomeTests {
+       @Test
+       suspend fun test() { /* ... */ }
+   }
+   ```
+
 ## Stability
 There are more than 150 unit tests ensuring the functioning of this plugin.
 
-This compiler plugin has been used all over the library [mirai](https://github.com/mamoe/mirai), which consists of 87k lines of code, covers all the circumstances you may use this plugin for, and has been used by thousand of customers.  
+This compiler plugin has been used all over the library [mirai](https://github.com/mamoe/mirai), which consists of 100k lines of code, covers all the circumstances you may use this plugin for, and has been used by thousand of customers.  
 This means that Kotlin Jvm Blocking Bridge produces high stability and is capable for production use.
 
 
