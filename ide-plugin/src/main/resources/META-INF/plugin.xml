@@ -1,17 +1,56 @@
 <idea-plugin>
     <id>net.mamoe.kotlin-jvm-blocking-bridge</id>
 
-    <name>Kotlin Jvm Blocking Bridge</name>
+    <name>Kotlin JVM Blocking Bridge</name>
 
     <vendor
-            email="support@mamoe.net"
-            url="https://github.com/mamoe/">
-        Mamoe Technologies
+            email="him188@mamoe.net"
+            url="https://github.com/him188/">
+        Tianyi Guan
     </vendor>
 
-    <description>
-        This plugin provides @JvmBlockingBridge resolving for Java blocking bridge calls and create gutters for them.
-        Find more information on source repository: https://github.com/mamoe/kotlin-jvm-blocking-bridge.
+    <description><![CDATA[
+        <p>Kotlin compiler plugin for generating blocking bridges for calling suspend functions from Java with minimal effort</p>
+        <h2><a href="#usage" id="usage"></a>Usage</h2>
+        <p>To use this plugin, you also need to install a compiler plugin to your Kotlin compiler. See details on <a href="https://github.com/him188/kotlin-jvm-blocking-bridge">GitHub</a></p>
+
+        <h2><a href="#screenshots" id="screenshots"></a>Screenshots</h2>
+
+        <h2><a href="#motivation" id="motivation"></a>Motivation</h2>
+        <p>Kotlin suspend function is compiled with an additional <code>$completion: Continuation</code> parameter, making it hard to call from Java. To help integration with Java, we may make extra effort to simplify calling:</p>
+        <pre><code class="kotlin">suspend fun downloadImage(): Image
+        </code></pre>
+        <p>We can add</p>
+        <pre><code class="kotlin">@JvmName(&quot;downloadImage&quot;) // avoid resolution ambiguity
+            fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
+        </code></pre>
+        <p>so Java users can also call <code>downloadImage()</code> just like calling the <code>suspend</code> function, without implementing a <code>Continuation</code>.</p>
+        <p>However, there several problems:</p>
+        <ul>
+            <li>KDoc is copied to the bridge, when updating, copying is also required.</li>
+            <li>Changing the signature becomes inconvenient.</li>
+            <li><code>downloadImageBlocking</code> is also exposed to Kotlin callers, and we can't hide them. We can make it 'difficult' to call by adding <code>RequiresOptIn</code>
+                <pre><code class="kotlin">@RequiresOptIn(level = ERROR)
+                    annotation class JavaFriendlyApi
+
+                    @JavaFriendlyApi // so IDE reports 'Experimental API usage' error for calling from Kotlin.
+                    @JvmName(&quot;downloadImage&quot;) // avoid resolution ambiguity
+                    fun downloadImageBlocking(): Image = runBlocking { downloadImage() }
+                </code></pre>
+            </li>
+        </ul>
+        <p>This plugin has been designed to minimize work against Java compatibility, to provide the ability to call Kotlin's <code>suspend</code> function in a 'blocking' way:</p>
+        <pre><code class="kotlin">@JvmBlockingBridge
+            suspend fun downloadImage(): Image
+        </code></pre>
+        <p>The Kotlin JVM Blocking Bridge compiler will generate such blocking bridges automatically.</p>
+        <h2><a href="#stability" id="stability"></a>Stability</h2>
+        <p>There are more than 150 unit tests ensuring the functioning of this plugin.</p>
+        <p>This compiler plugin has been used all over the library <a href="https://github.com/mamoe/mirai">mirai</a>, which consists of 87k lines of code, covers all the circumstances you may use this plugin for, and has been used by thousand of customers.<br />
+            This means that Kotlin Jvm Blocking Bridge produces high stability and is capable for production use.</p>
+        <h2><a href="#stability" id="stability"></a>Usage</h2>
+        <p>To use this plugin, you also need to install a compiler plugin to your Kotlin compiler. See details on <a href="https://github.com/him188/kotlin-jvm-blocking-bridge">GitHub</a></p>
+]]>
     </description>
 
     <depends>com.intellij.modules.platform</depends>
