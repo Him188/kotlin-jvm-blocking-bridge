@@ -94,7 +94,7 @@ If you're developing a library or using both Java and Kotlin with KJBB, please i
 `build.gradle` or `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.4"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.5"
 }
 ```
 
@@ -111,7 +111,7 @@ pluginManagement {
 
 The plugin will automatically install the runtime dependency, like:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.10.4")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.10.5")
 ```
 Please make sure you have it in application runtime (usually you don't need to do anything about it).
 
