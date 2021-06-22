@@ -101,11 +101,11 @@ The plugin is ready to use.
 
 ### Library users
 
-If you use a library that uses Kotlin Jvm Blocking Bridge, it is not compulsory to install this plugin. IDE will retrieve bridges from library binaries.
+There is no special requirements for library users. They can use any IDEs and any build tools.
 
-### Library authors
+### Library and application authors
 
-If you're developing a library or using both Java and Kotlin with KJBB, please install the Gradle plugin **and** the IntelliJ plugin.
+If you're developing a library, or an application using both Java and Kotlin with KJBB, or anything that relies on source code analysis, please install the Gradle plugin **and** the IntelliJ plugin.
 
 #### **Install IntelliJ IDEA (or Android Studio) plugin**
    The plugin supports 2020.\* and 2021.\*  
@@ -130,15 +130,6 @@ plugins {
 ```
 
 Then you're done. You can then use the `@JvmBlockingBridge` annotation.
-
-If gradle can't resolve plugin, please add `gradlePluginPortal()` into `settings.gradle` or `settings.gradle.kts`:
-```kotlin
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-    }
-}
-```
 
 The plugin will automatically install the runtime dependency, like:
 ```kotlin

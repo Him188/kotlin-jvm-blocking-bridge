@@ -100,12 +100,12 @@ suspend fun downloadImage(): Image
 
 ### 使用者
 
-**如果一个库使用了 Kotlin Jvm Blocking Bridge，依赖方可以不安装 IntelliJ 插件，可以就像普通库一样使用。**
+**如果一个库使用了 Kotlin JVM Blocking Bridge，依赖方无需特别在意，可以就像普通库一样添加编译依赖使用。** 即依赖使用或不使用 KJBB 编译的库的流程都是一样的。
 
 
-### 库作者
+### 库和应用程序作者
 
-如果你正开发一个库，你需要安装 Gradle 插件来获取编译支持，和安装 IntelliJ IDEA 插件来获取编辑支持。
+如果你正开发一个库或应用程序，你需要安装 Gradle 插件来获取编译支持，和安装 IntelliJ IDEA 插件来获取编辑支持。
 
 #### **安装 IntelliJ IDEA (或 Android Studio) 插件**
    本插件支持 IntelliJ IDEA 2020.\* 和 2021.\*。  
