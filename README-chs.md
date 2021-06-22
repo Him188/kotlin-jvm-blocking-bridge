@@ -122,20 +122,20 @@ suspend fun downloadImage(): Image
 `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.5"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.6"
 }
 ```
 
 `build.gradle`
 ```groovy
 plugins {
-  id 'net.mamoe.kotlin-jvm-blocking-bridge' version '1.10.5'
+  id 'net.mamoe.kotlin-jvm-blocking-bridge' version '1.10.6'
 }
 ```
 
 本插件会自动添加如下的运行时依赖:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.10.5")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.10.6")
 ```
 因此只需要安装插件，而不需要添加依赖即可使用。请确保在运行时有这个依赖（通常不需要做额外工作）。
 

@@ -125,7 +125,7 @@ If you're developing a library, or an application using both Java and Kotlin wit
 `build.gradle` or `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.5"
+  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.6"
 }
 ```
 
@@ -133,7 +133,7 @@ Then you're done. You can then use the `@JvmBlockingBridge` annotation.
 
 The plugin will automatically install the runtime dependency, like:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.10.5")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.10.6")
 ```
 Please make sure you have it in application runtime (usually you don't need to do anything about it).
 

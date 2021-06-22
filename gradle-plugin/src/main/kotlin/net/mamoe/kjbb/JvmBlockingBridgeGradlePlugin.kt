@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.*
 
-internal const val KJBB_VERSION = "1.10.5"
+internal const val KJBB_VERSION = "1.10.6"
 
 internal fun BlockingBridgePluginExtension.toSubpluginOptionList(): List<SubpluginOption> {
     return listOf(
