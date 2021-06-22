@@ -19,8 +19,8 @@ interface TestAnnotationsOnClass {
 
         }
 
-        @JvmBlockingBridge
-        suspend fun test(s: String) {
+        @JvmOverloads
+        suspend fun test(s: String, v: Int = 1) {
 
         }
 

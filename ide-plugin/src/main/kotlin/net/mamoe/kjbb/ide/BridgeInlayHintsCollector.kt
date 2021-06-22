@@ -11,6 +11,7 @@ import com.intellij.ide.util.DefaultPsiElementCellRenderer
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.openapi.util.Key
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiExtensibleClass
 import net.mamoe.kjbb.JvmBlockingBridge
@@ -40,6 +41,8 @@ internal val PsiElement.containingKtFile: KtFile?
 
 internal val PsiMember.containingKtClass: KtClassOrObject?
     get() = (containingClass as? KtLightClass)?.kotlinOrigin
+
+private val KEY_ALREADY_GENERATED = Key<Boolean>("KEY_ALREADY_GENERATED")
 
 class BridgeInlayHintsCollector :
     InlayHintsProvider<NoSettings>,
@@ -76,10 +79,14 @@ class BridgeInlayHintsCollector :
 
         if (!element.isBridgeCompilerEnabled) return false
 
+        val generated = mutableSetOf<PsiElement>()
+
         val isIr = element.isIr
         for (method in element.methods) {
             if (method is BlockingBridgeStubMethod) continue
             if (method.containingClass !== element) continue
+            if (!generated.add(method.navigationElement)) continue
+
             if (method.canHaveBridgeFunctions(isIr).inlayHints) {
                 anyChanged = true
                 sink.addBlockElement(
@@ -109,10 +116,12 @@ class BridgeInlayHintsCollector :
             factory.text("@${JvmBlockingBridge::class.simpleName}")
 
         fun createNavigation(mouseEvent: MouseEvent, target: NavigatablePsiElement) {
-            PsiElementListNavigator.openTargets(mouseEvent, arrayOf(target),
+            PsiElementListNavigator.openTargets(
+                mouseEvent, arrayOf(target),
                 "Navigate To Annotation Source",
                 "Find Navigation Target",
-                DefaultPsiElementCellRenderer())
+                DefaultPsiElementCellRenderer()
+            )
         }
 
         var annotation: KtAnnotationEntry?
@@ -126,7 +135,7 @@ class BridgeInlayHintsCollector :
 
                 val containingClass = method.containingClass
                 hint = factory.withTooltip(
-                    "From @JvmBlockingBridge on class ${containingClass.name}",
+                    "From @JvmBlockingBridge on class ${containingClass?.name}",
                     hint
                 )
                 hint = factory.onClick(hint, MouseButton.Middle) { mouseEvent, _ ->
