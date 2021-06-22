@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
     id("io.github.karlatemp.publication-sign")
-    id("org.jetbrains.intellij") version "0.4.16"
+    id("org.jetbrains.intellij") version "1.0"
     kotlin("jvm")
     kotlin("plugin.serialization")
     id("java")
@@ -27,33 +27,37 @@ version = Versions.idePlugin
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = "2021.1"
-    isDownloadSources = true
-    updateSinceUntilBuild = false
+    version.set("2021.1")
+    downloadSources.set(true)
+    updateSinceUntilBuild.set(false)
 
-    sandboxDirectory = projectDir.resolve("run/idea-sandbox").absolutePath
+    sandboxDir.set(projectDir.resolve("run/idea-sandbox").absolutePath)
 
-    setPlugins(
-        "org.jetbrains.kotlin:211-1.5.0-release-759-IJ6693.72", "java"
+    plugins.set(
+        listOf(
+            "org.jetbrains.kotlin:211-1.5.0-release-759-IJ6693.72", "java"
+        )
     )
 }
 
-tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishTask::class) {
+tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishPluginTask::class) {
     val pluginKey = project.findProperty("jetbrains.hub.key")?.toString()
     if (pluginKey != null) {
         logger.info("Found jetbrains.hub.key")
-        setToken(pluginKey)
+        token.set(pluginKey)
     } else {
         logger.info("jetbrains.hub.key not found")
     }
 }
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
-    sinceBuild("201.*") // Kotlin does not support 193 anymore
-    untilBuild("225.*")
-    changeNotes("""
+    sinceBuild.set("201.*") // Kotlin does not support 193 anymore
+    untilBuild.set("225.*")
+    changeNotes.set(
+        """
         See <a href="">Release notes</a>
-    """.trimIndent())
+    """.trimIndent()
+    )
 }
 
 setupPublishing(
