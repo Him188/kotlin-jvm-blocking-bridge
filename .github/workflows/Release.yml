@@ -35,13 +35,6 @@ jobs:
           SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
           SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
 
-      - name: Gradle closeAndReleaseRepository
-        run: >
-          ./gradlew
-          :closeAndReleaseRepository --info --scan
-          -Dsonatype_key=${{ secrets.SONATYPE_USER }}
-          -Dsonatype_password=${{ secrets.SONATYPE_KEY }}
-
   publish-others-on-macos:
     runs-on: macos-latest
     needs:
