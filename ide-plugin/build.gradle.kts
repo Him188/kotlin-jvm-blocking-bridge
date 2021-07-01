@@ -20,7 +20,9 @@ dependencies {
     api(project(":kotlin-jvm-blocking-bridge-gradle"))
 
     // compileOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
-    compileOnly(files("libs/ide-common.jar"))
+    compileOnly(fileTree("run/idea-sandbox/plugins/Kotlin/lib").filter {
+        !it.name.contains("stdlib") && !it.name.contains("coroutines")
+    })
 }
 
 version = Versions.idePlugin
