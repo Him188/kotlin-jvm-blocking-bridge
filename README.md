@@ -108,8 +108,8 @@ There is no special requirements for library users. They can use any IDEs and an
 If you're developing a library, or an application using both Java and Kotlin with KJBB, or anything that relies on source code analysis, please install the Gradle plugin **and** the IntelliJ plugin.
 
 #### **Install IntelliJ IDEA (or Android Studio) plugin**
-   The plugin supports 2020.\* and 2021.\*  
-   It's strongly recommended using the latest IJ or AS, you may update using [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/)  
+   The plugin supports 2020.\* and 2021.\*.  
+   It's strongly recommended using the latest IJ or AS, you may update using [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/).  
    Please note that Eclipse and Visual Studio aren't supported.
 
    One-key install: [Install to IntelliJ IDEA](https://plugins.jetbrains.com/embeddable/install/14816)
@@ -139,20 +139,7 @@ Please make sure you have it in application runtime (usually you don't need to d
 
 ## Supported compiler backends
 
-Kotlin compiler has two backends, one of which, `JVM`, is the legacy one and is going to be replaced with the new one, named `IR` (Internal Representation).  
-Currently, legacy `JVM` backend is used by default since it's more stable than the `IR`.
-
-This plugin supports both of them.
-
-`IR` is faster and is going to be stable in Kotlin 1.5 release.
-
-To switch to IR backend, add into `build.gradle` or `build.gradle.kts`:
-```kotlin
-tasks.withType<KotlinCompile> {
-    kotlinOptions.useIR = true
-}
-```
-
+Both legacy JVM backend (Kotlin 1.4) and new IR backend (Kotlin 1.5) are supported.
 
 ## Kotlin mulitplatform projects (MPP)
 
