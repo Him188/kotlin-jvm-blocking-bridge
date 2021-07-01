@@ -136,7 +136,7 @@ class A {
 }
 ```
 
-IntelliJ plugin will add a inlay hint of `@JvmBlcokingBridge` onto the functions that is going to have blocking bridges generated.
+IntelliJ plugin will add an inlay hint of `@JvmBlockingBridge` onto the functions that is going to have blocking bridges generated.
 
 
 ### Enable for module
@@ -147,12 +147,12 @@ blockingBridge {
     enableForModule = true
 }
 ```
-, **all** `susupend` functions will be compiled with a blocking bridge if possible. 
+**all** `suspend` functions will be compiled with a blocking bridge if possible.
 This is practically like adding `@JvmBlockingBridge` to every `suspend` functions and suppress errors if not applicable.
 
-In other words, if function has the following characteristics, they do not have blocking bridges. Otherwise whey do.
+In other words, if function has the following characteristics, they do not have blocking bridges. Otherwise, they do.
 - is not `suspend`
-- is local
+- is local (e.g., inside another function)
 - is `private` or inside `private` or `internal` class
 - is `internal` without `@PublishedApi`
 - has `@JvmSynthetic` (invisible from Java)
@@ -161,7 +161,7 @@ In other words, if function has the following characteristics, they do not have 
 - is inside interface but JVM target is below 8 (default implementation in interface not supported)
 
 
-IntelliJ plugin will show you a inlay hint on the capable functions that may be 'inferred' a `@JvmBlcokingBridge`.
+IntelliJ plugin will show you an inlay hint on the capable functions that may be 'inferred' a `@JvmBlockingBridge`.
 
 ## Compiler options
 
@@ -190,15 +190,8 @@ Reported when `@JvmBlockingBridge` is applied to a function in an interface, and
 
 #### `TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED`
 *(Since `1.1.0`)*
-Reported using `@JvmBlockingBridge` on top-level functions (as there isn't a way to hack into the file-class codegen).
 
-**Note**:
 Codegen extensions for top-level functions are not available in the old JVM backend. The compiler plugin generate bridges for top-level functions only if using IR backend, otherwise, an error `TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED` will be reported.
-
-However, the IDE plugin cannot decide which compiler backend is currently in use, so the error `TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED` is always reported by the IDE.
-
-If you use IR backend, you can suppress this error by adding `@Suppress("TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED")`.  
-If you use JVM backend, you may change the way designing your API.
 
 ### Warnings
 
