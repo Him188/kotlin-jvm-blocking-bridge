@@ -29,7 +29,7 @@ version = Versions.idePlugin
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version.set("2021.1")
+    version.set("2021.2")
     downloadSources.set(true)
     updateSinceUntilBuild.set(false)
 
@@ -37,7 +37,9 @@ intellij {
 
     plugins.set(
         listOf(
-            "org.jetbrains.kotlin:211-1.5.0-release-759-IJ6693.72", "java"
+//            "org.jetbrains.kotlin:211-1.5.30-M1-release-141-IJ7442.40@eap",
+            "org.jetbrains.kotlin",
+            "java"
         )
     )
 }
