@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.checkers.DeclarationCheckerContext
 import org.jetbrains.kotlin.resolve.descriptorUtil.parents
 import org.jetbrains.kotlin.resolve.source.KotlinSourceElement
+import org.jetbrains.kotlin.resolve.source.PsiSourceElement
 import org.jetbrains.kotlin.resolve.source.PsiSourceFile
 import org.jetbrains.kotlin.resolve.source.getPsi
 
@@ -148,4 +149,4 @@ internal fun DeclarationDescriptor.jvmBlockingBridgeAnnotationPsi(): PsiElement?
 internal fun DeclarationDescriptor.jvmBlockingBridgeAnnotation(): AnnotationDescriptor? =
     annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
 
-internal fun AnnotationDescriptor.findPsi(): PsiElement? = source.getPsi()
+internal fun AnnotationDescriptor.findPsi(): PsiElement? = (source as? PsiSourceElement)?.psi
