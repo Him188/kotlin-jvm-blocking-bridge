@@ -9,7 +9,6 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.register
 import java.io.File
 
@@ -27,6 +26,7 @@ val packagesToRelocate =
         "org.fusesource",
         "net.jpountz",
         "one.util.streamex",
+        "it.unimi.dsi.fastutil",
         "kotlinx.collections.immutable"
     )
 

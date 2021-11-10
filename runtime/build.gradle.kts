@@ -3,9 +3,8 @@
 plugins {
     id("io.github.karlatemp.publication-sign")
     kotlin("multiplatform")
-    kotlin("kapt")
+//    kotlin("kapt")
     kotlin("plugin.serialization")
-    id("java")
     `maven-publish`
     // id("com.bmuschko.nexus")
     //  id("io.codearte.nexus-staging")
@@ -26,7 +25,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                compileOnly(kotlin("stdlib-common")) // stdlib should be excluded from embeddable ShadowJar
+//                compileOnly(kotlin("stdlib-common")) // stdlib should be excluded from embeddable ShadowJar
             }
         }
 
@@ -37,14 +36,14 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
-                compileOnly(kotlin("stdlib")) // stdlib should be excluded from embeddable ShadowJar
+//                compileOnly(kotlin("stdlib")) // stdlib should be excluded from embeddable ShadowJar
                 //runtimeOnly(kotlin("stdlib"))
             }
         }
 
         val jvmTest by getting {
             dependencies {
-                implementation(kotlin("stdlib"))
+//                implementation(kotlin("stdlib"))
 
                 implementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
                 implementation("org.junit.jupiter:junit-jupiter-engine:5.2.0")
@@ -62,6 +61,7 @@ kotlin {
         }
     }
 }
+
 /*
 setupPublishing(
     groupId = "net.mamoe",

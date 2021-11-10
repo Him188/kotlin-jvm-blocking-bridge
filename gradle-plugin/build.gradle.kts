@@ -25,7 +25,7 @@ dependencies {
     api(project(":kotlin-jvm-blocking-bridge-compiler"))
 }
 
-embeddableCompiler()
+//embeddableCompiler()
 
 //setupPublishing(
 //    groupId = "net.mamoe",

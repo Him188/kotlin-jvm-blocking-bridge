@@ -3,18 +3,21 @@ package net.mamoe.kjbb.compiler.backend.jvm
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import net.mamoe.kjbb.compiler.UnitCoercion
-import net.mamoe.kjbb.compiler.backend.ir.*
+import net.mamoe.kjbb.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_ASM_TYPE
+import net.mamoe.kjbb.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_FQ_NAME
+import net.mamoe.kjbb.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
+import net.mamoe.kjbb.compiler.backend.ir.identifierOrMappedSpecialName
 import net.mamoe.kjbb.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedString
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
+import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.codegen.*
-import org.jetbrains.kotlin.codegen.coroutines.continuationAsmType
+import org.jetbrains.kotlin.codegen.coroutines.CONTINUATION_ASM_TYPE
 import org.jetbrains.kotlin.codegen.inline.NUMBERED_FUNCTION_PREFIX
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
-import org.jetbrains.kotlin.config.continuationInterfaceFqName
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.ClassKind.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotatedImpl
@@ -34,6 +37,7 @@ import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
 import org.jetbrains.kotlin.resolve.constants.ArrayValue
 import org.jetbrains.kotlin.resolve.constants.KClassValue
 import org.jetbrains.kotlin.resolve.descriptorUtil.*
+import org.jetbrains.kotlin.resolve.inline.InlineUtil
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
@@ -228,8 +232,10 @@ class BridgeCodegen(
                 originFunction.valueParameters.run {
                     when {
                         isEmpty() -> emptyList()
-                        KotlinBuiltIns.isConstructedFromGivenClass(last().type,
-                            generationState.languageVersionSettings.continuationInterfaceFqName()) -> dropLast(1)
+                        KotlinBuiltIns.isConstructedFromGivenClass(
+                            last().type,
+                            StandardNames.CONTINUATION_INTERFACE_FQ_NAME
+                        ) -> dropLast(1)
                         else -> this
                     }
                 }, // last is Continuation
@@ -583,7 +589,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
 
         // load last function parameter and cast to Continuation
         visitVarInsn(ALOAD, arity) // 0 is `this`, 1 is 1st param, arity is the last
-        val continuationInternalName = state.languageVersionSettings.continuationAsmType().internalName
+        val continuationInternalName = CONTINUATION_ASM_TYPE.internalName
         visitTypeInsn(
             CHECKCAST,
             continuationInternalName
@@ -602,14 +608,14 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
             Type.getMethodDescriptor(
                 AsmTypes.OBJECT_TYPE,
                 *originFunction.extensionReceiverAndValueParameters().map { it.type.asmType() }.toTypedArray(),
-                state.languageVersionSettings.continuationAsmType()
+                CONTINUATION_ASM_TYPE
             ),
             false)
         visitInsn(ARETURN)
         visitEnd()
     }
 
-    writeSyntheticClassMetadata(lambdaBuilder, state)
+    writeSyntheticClassMetadata(lambdaBuilder, state, InlineUtil.isInPublicInlineScope(originFunction.containingClass))
 
     lambdaBuilder.done()
     return lambdaBuilder.thisName

@@ -48,9 +48,6 @@ configure<io.github.karlatemp.publicationsign.PublicationSignExtension> {
 subprojects {
     afterEvaluate {
         setupKotlinSourceSetsSettings()
-        tasks.withType(JavaCompile::class.java) {
-            options.encoding = "UTF8"
-        }
     }
 }
 
@@ -71,7 +68,7 @@ afterEvaluate {
     //:kotlin-jvm-blocking-bridge-gradle:bintrayUpload
     //:kotlin-jvm-blocking-bridge-gradle:publishPlugins
 
-    val `kotlin-jvm-blocking-bridge` by subprojects
+    val `kotlin-jvm-blocking-bridge-runtime` by subprojects
     val `kotlin-jvm-blocking-bridge-compiler` by subprojects
     val `kotlin-jvm-blocking-bridge-compiler-embeddable` by subprojects
     val `kotlin-jvm-blocking-bridge-gradle` by subprojects
@@ -79,13 +76,13 @@ afterEvaluate {
 
     tasks.register("publishAll") {
         group = "publishing0"
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["clean"])
+        dependsOn(`kotlin-jvm-blocking-bridge-runtime`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["clean"])
         // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
         dependsOn(tasks["build"])
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publish"])
+        dependsOn(`kotlin-jvm-blocking-bridge-runtime`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publish"])
@@ -94,13 +91,13 @@ afterEvaluate {
 
     tasks.register("publishAllToMavenLocal") {
         group = "publishing0"
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["clean"])
+        dependsOn(`kotlin-jvm-blocking-bridge-runtime`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["clean"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["clean"])
         // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
         dependsOn(tasks["build"])
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publishToMavenLocal"])
+        dependsOn(`kotlin-jvm-blocking-bridge-runtime`.tasks["publishToMavenLocal"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["publishToMavenLocal"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["publishToMavenLocal"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishToMavenLocal"])
@@ -110,7 +107,7 @@ afterEvaluate {
         group = "publishing0"
         // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
         dependsOn(tasks["build"])
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publish"])
+        dependsOn(`kotlin-jvm-blocking-bridge-runtime`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["publish"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publish"])
@@ -121,7 +118,7 @@ afterEvaluate {
         group = "publishing0"
         // don't clear IDE plugin, or IntelliJ sandbox caches will be removed.
         dependsOn(tasks["build"])
-        dependsOn(`kotlin-jvm-blocking-bridge`.tasks["publishToMavenLocal"])
+        dependsOn(`kotlin-jvm-blocking-bridge-runtime`.tasks["publishToMavenLocal"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler`.tasks["publishToMavenLocal"])
         dependsOn(`kotlin-jvm-blocking-bridge-compiler-embeddable`.tasks["publishToMavenLocal"])
         dependsOn(`kotlin-jvm-blocking-bridge-gradle`.tasks["publishToMavenLocal"])

@@ -6,12 +6,15 @@ import net.mamoe.kjbb.compiler.backend.jvm.isJvm8OrHigher
 import net.mamoe.kjbb.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.kotlin.backend.common.ir.allParameters
 import org.jetbrains.kotlin.backend.jvm.codegen.psiElement
+import org.jetbrains.kotlin.backend.jvm.ir.isInlineClassType
 import org.jetbrains.kotlin.descriptors.effectiveVisibility
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.ir.util.module
+import org.jetbrains.kotlin.ir.util.parentClassOrNull
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.resolve.jvm.annotations.JVM_SYNTHETIC_ANNOTATION_FQ_NAME
 
@@ -74,10 +77,11 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(ext: IBridgeConfiguration):
                 containingClass.descriptor)
         }
 
-        allParameters.firstOrNull { it.type.isInlined() }?.let { param ->
+        allParameters.firstOrNull { it.type.isInlineClassType() }?.let { param ->
             // inline class param not yet supported
             return InlineClassesNotSupported(
-                param.psiElement ?: jvmBlockingBridgeAnnotation ?: return EnableForModule, param.descriptor)
+                param.psiElement ?: jvmBlockingBridgeAnnotation ?: return EnableForModule, param.descriptor
+            )
         }
 
         if (containingClass?.isInterface == true) { // null means top-level, which is also accepted

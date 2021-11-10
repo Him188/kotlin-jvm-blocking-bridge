@@ -27,7 +27,7 @@ dependencies {
     api(ktor("client-json", "1.3.2"))
 
     compileOnly(gradleApi())
-    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0")
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.0-RC2")
 
     implementation("com.github.jengelman.gradle.plugins:shadow:6.0.0")
 }

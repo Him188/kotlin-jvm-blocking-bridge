@@ -5,7 +5,6 @@ plugins {
     id("org.jetbrains.intellij") version "1.0"
     kotlin("jvm")
     kotlin("plugin.serialization")
-    id("java")
     signing
     `maven-publish`
 
@@ -15,7 +14,7 @@ plugins {
 dependencies {
     compileOnly(kotlin("stdlib-jdk8"))
 
-    api(project(":kotlin-jvm-blocking-bridge"))
+    api(project(":kotlin-jvm-blocking-bridge-runtime"))
     api(project(":kotlin-jvm-blocking-bridge-compiler"))
     api(project(":kotlin-jvm-blocking-bridge-gradle"))
 
@@ -38,8 +37,8 @@ intellij {
     plugins.set(
         listOf(
 //            "org.jetbrains.kotlin:211-1.5.30-M1-release-141-IJ7442.40@eap",
-            "org.jetbrains.kotlin",
-            "java"
+            "java",
+            "org.jetbrains.kotlin"
         )
     )
 }

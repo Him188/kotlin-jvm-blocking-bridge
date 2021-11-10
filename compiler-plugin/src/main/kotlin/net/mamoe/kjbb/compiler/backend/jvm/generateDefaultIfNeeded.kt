@@ -30,22 +30,6 @@ private val GENERATE_DEFAULT_IF_NEEDED =
         kotlin.runCatching { isAccessible = true }
     }
 
-private fun <R> fake(): R = error("")
-
-/**
- * to ensure the reflection [GeneratedBlockingBridgeStubForResolution] works, on compilation stage
- */
-@Suppress("RemoveExplicitTypeArguments", "unused")
-private val binaryCompatibilityChecker by lazy {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    fake<FunctionCodegen>().generateDefaultIfNeeded(fake<MethodContext>(),
-        fake<FunctionDescriptor>(),
-        fake<OwnerKind>(),
-        fake<DefaultParameterValueLoader>(),
-        fake<KtNamedFunction>()
-    )
-}
-
 internal fun FunctionCodegen.generateDefaultIfNeeded1(
     owner: MethodContext,
     functionDescriptor: FunctionDescriptor,
