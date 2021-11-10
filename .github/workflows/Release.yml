@@ -28,7 +28,7 @@ jobs:
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
 
       - name: publishMingwX64PublicationToMavenRepository
-        run: ./gradlew publishMingwX64PublicationToMavenRepository --info  --scan
+        run: ./gradlew publishMingwX64PublicationToMavenRepository --no-parallel --info  --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
@@ -60,6 +60,7 @@ jobs:
       - name: publish
         run: ./gradlew publish
           -Dsigner.workdir=/tmp/gpg
+          --no-parallel
           --info --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
