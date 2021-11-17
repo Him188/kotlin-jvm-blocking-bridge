@@ -35,21 +35,6 @@ internal operator fun <T> ExistingDomainObjectDelegate<out T>.getValue(receiver:
 internal fun Project.`publishing`(configure: org.gradle.api.publish.PublishingExtension.() -> Unit): Unit =
     (this as org.gradle.api.plugins.ExtensionAware).extensions.configure("publishing", configure)
 
-/**
- * Retrieves the [publishing][org.gradle.api.publish.PublishingExtension] extension.
- */
-@PublishedApi
-internal val Project.`publishing`: org.gradle.api.publish.PublishingExtension
-    get() =
-        (this as org.gradle.api.plugins.ExtensionAware).extensions.getByName("publishing") as org.gradle.api.publish.PublishingExtension
-
-/**
- * Configures the [signing][org.gradle.plugins.signing.SigningExtension] extension.
- */
-@PublishedApi
-internal fun Project.`signing`(configure: org.gradle.plugins.signing.SigningExtension.() -> Unit): Unit =
-    (this as org.gradle.api.plugins.ExtensionAware).extensions.configure("signing", configure)
-
 @Suppress("NOTHING_TO_INLINE")
 inline fun Project.setupKotlinSourceSetsSettings() {
     kotlin.runCatching {
@@ -60,12 +45,12 @@ inline fun Project.setupKotlinSourceSetsSettings() {
             languageSettings.apply {
                 progressiveMode = true
 
-                useExperimentalAnnotation("kotlin.Experimental")
-                useExperimentalAnnotation("kotlin.RequiresOptIn")
+                optIn("kotlin.Experimental")
+                optIn("kotlin.RequiresOptIn")
 
-                useExperimentalAnnotation("kotlin.ExperimentalUnsignedTypes")
-                useExperimentalAnnotation("kotlin.experimental.ExperimentalTypeInference")
-                useExperimentalAnnotation("kotlin.contracts.ExperimentalContracts")
+                optIn("kotlin.ExperimentalUnsignedTypes")
+                optIn("kotlin.experimental.ExperimentalTypeInference")
+                optIn("kotlin.contracts.ExperimentalContracts")
             }
         }
     }
@@ -84,7 +69,7 @@ inline fun Project.setupKotlinSourceSetsSettings() {
 @Suppress("NOTHING_TO_INLINE")
 inline fun Project.setupPublishing(
     groupId: String = project.group.toString(),
-    artifactId: String = project.name.toString(),
+    artifactId: String = project.name,
     vcs: String = "https://github.com/mamoe/kotlin-jvm-blocking-bridge",
     git: String = "git://github.com/mamoe/kotlin-jvm-blocking-bridge.git",
     overrideFromArtifacts: Any? = null
