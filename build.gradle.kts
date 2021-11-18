@@ -1,7 +1,5 @@
 @file:Suppress("UnstableApiUsage", "LocalVariableName")
 
-import kotlin.reflect.KProperty
-
 buildscript {
     dependencies {
         classpath("com.github.jengelman.gradle.plugins:shadow:6.0.0")
@@ -34,8 +32,8 @@ allprojects {
 
 nexusStaging {
     packageGroup = rootProject.group.toString()
-    username = System.getProperty("sonatype_key")
-    password = System.getProperty("sonatype_password")
+    username = System.getProperty("sonatype_key") ?: project.findProperty("sonatype.key")?.toString()
+    password = System.getProperty("sonatype_password") ?: project.findProperty("sonatype.password")?.toString()
 }
 
 configure<io.github.karlatemp.publicationsign.PublicationSignExtension> {
