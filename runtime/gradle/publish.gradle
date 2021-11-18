@@ -133,7 +133,7 @@ afterEvaluate {
                     it.artifactId = isKotlin137x ? "$variantName" : "$variantName-jvm"
                     break
 
-                case 'js':
+                default:
                     it.artifactId = "$variantName-$type"
                     break
             }
