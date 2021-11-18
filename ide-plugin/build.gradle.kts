@@ -1,12 +1,9 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
-    id("io.github.karlatemp.publication-sign")
     id("org.jetbrains.intellij") version "1.0"
     kotlin("jvm")
     kotlin("plugin.serialization")
-    signing
-    `maven-publish`
 
     id("com.github.johnrengelman.shadow")
 }
@@ -62,11 +59,6 @@ tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
     """.trimIndent()
     )
 }
-
-setupPublishing(
-    groupId = "net.mamoe",
-    artifactId = "kotlin-jvm-blocking-bridge-intellij"
-)
 
 tasks.withType(KotlinJvmCompile::class) {
     kotlinOptions.freeCompilerArgs += "-Xjvm-default=all"

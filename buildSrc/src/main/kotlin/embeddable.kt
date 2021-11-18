@@ -54,8 +54,9 @@ val packagesToExcludeFromDummy =
         "*.txt"
     )
 
+@Suppress("NOTHING_TO_INLINE") // shadow version differs
 @PublishedApi
-internal fun ShadowJar.configureEmbeddableCompilerRelocation(withJavaxInject: Boolean = true) {
+internal inline fun ShadowJar.configureEmbeddableCompilerRelocation(withJavaxInject: Boolean = true) {
     relocate("com.google.protobuf", "org.jetbrains.kotlin.protobuf")
     packagesToRelocate.forEach {
         relocate(it, "$kotlinEmbeddableRootPackage.$it")
@@ -90,9 +91,9 @@ internal inline fun Project.compilerShadowJar(
 
 fun ConfigurationContainer.getOrCreate(name: String): Configuration = findByName(name) ?: create(name)
 
-fun Project.embeddableCompiler(
+inline fun Project.embeddableCompiler(
     taskName: String = "embeddable",
-    body: ShadowJar.() -> Unit = {}
+    crossinline body: ShadowJar.() -> Unit = {}
 ): TaskProvider<out ShadowJar> {
     return compilerShadowJar(taskName) {
         group = "shadow"
