@@ -36,7 +36,7 @@ jobs:
           SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
 
   publish-others-on-macos:
-    runs-on: macos-latest
+    runs-on: macos-11
     needs:
       - publish-runtime-on-windows
     steps:
