@@ -1,13 +1,12 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    id("io.github.karlatemp.publication-sign")
+    id("net.mamoe.maven-central-publish")
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.serialization")
     id("java")
     signing
-    `maven-publish`
     id("com.github.johnrengelman.shadow")
 }
 
@@ -17,8 +16,13 @@ dependencies {
 
 embeddableCompiler()
 
-setupPublishing(
-    groupId = "net.mamoe",
-    artifactId = "kotlin-jvm-blocking-bridge-compiler-embeddable",
-    overrideFromArtifacts = tasks.getByName("embeddable") as ShadowJar
-)
+mavenCentralPublish {
+    packageGroup = Versions.publicationGroup
+    singleDevGithubProject("Him188", "kotlin-jvm-blocking-bridge")
+    licenseApacheV2()
+
+    addProjectComponents = false
+    publication {
+        artifact(tasks.getByName("embeddable") as ShadowJar)
+    }
+}

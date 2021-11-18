@@ -1,11 +1,9 @@
 plugins {
-    id("io.github.karlatemp.publication-sign")
+    id("net.mamoe.maven-central-publish")
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.serialization")
     id("java")
-    signing
-    `maven-publish`
     id("com.github.johnrengelman.shadow")
 }
 
@@ -51,7 +49,8 @@ val test by tasks.getting(Test::class) {
         }.toTypedArray())
 }
 
-setupPublishing(
-    groupId = "net.mamoe",
-    artifactId = "kotlin-jvm-blocking-bridge-compiler"
-)
+mavenCentralPublish {
+    packageGroup = Versions.publicationGroup
+    singleDevGithubProject("Him188", "kotlin-jvm-blocking-bridge")
+    licenseApacheV2()
+}

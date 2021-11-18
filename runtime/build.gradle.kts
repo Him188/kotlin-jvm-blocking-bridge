@@ -1,13 +1,9 @@
 @file:Suppress("UNUSED_VARIABLE")
 
 plugins {
-    id("io.github.karlatemp.publication-sign")
+    id("net.mamoe.maven-central-publish")
     kotlin("multiplatform")
-//    kotlin("kapt")
     kotlin("plugin.serialization")
-    `maven-publish`
-    // id("com.bmuschko.nexus")
-    //  id("io.codearte.nexus-staging")
 }
 
 kotlin {
@@ -25,7 +21,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-//                compileOnly(kotlin("stdlib-common")) // stdlib should be excluded from embeddable ShadowJar
             }
         }
 
@@ -36,15 +31,11 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
-//                compileOnly(kotlin("stdlib")) // stdlib should be excluded from embeddable ShadowJar
-                //runtimeOnly(kotlin("stdlib"))
             }
         }
 
         val jvmTest by getting {
             dependencies {
-//                implementation(kotlin("stdlib"))
-
                 implementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
                 implementation("org.junit.jupiter:junit-jupiter-engine:5.2.0")
             }
@@ -62,23 +53,10 @@ kotlin {
     }
 }
 
-project.ext.set("publication.name", "kotlin-jvm-blocking-bridge")
-apply(from = "gradle/publish.gradle")
+mavenCentralPublish {
+    packageGroup = Versions.publicationGroup
+    singleDevGithubProject("Him188", "kotlin-jvm-blocking-bridge")
+    licenseApacheV2()
 
-/*
-nexus {
-    sign = true
-    repositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-    snapshotRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+    publishPlatformArtifactsInRootModule = "jvm"
 }
-
-nexusStaging {
-    packageGroup = "net.mamoe" //optional if packageGroup == project.getGroup()
-    // stagingProfileId = "yourStagingProfileId" //when not defined will be got from server using "packageGroup"
-}
-
-extraArchive {
-    sources = false
-    tests = false
-    javadoc = false
-}*/

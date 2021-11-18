@@ -18,16 +18,15 @@ dependencies {
     fun kotlinx(id: String, version: String) = "org.jetbrains.kotlinx:kotlinx-$id:$version"
     fun ktor(id: String, version: String) = "io.ktor:ktor-$id:$version"
 
-    api("org.jsoup:jsoup:1.12.1")
-
-    api("com.google.code.gson:gson:2.8.6")
-    api(kotlinx("coroutines-core", "1.3.3"))
-    api(ktor("client-core", "1.3.2"))
-    api(ktor("client-cio", "1.3.2"))
-    api(ktor("client-json", "1.3.2"))
-
     compileOnly(gradleApi())
-    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.0-RC2")
+    api("org.jetbrains.kotlin:kotlin-gradle-plugin:${version("kotlin")}")
 
-    implementation("com.github.jengelman.gradle.plugins:shadow:6.0.0")
+    compileOnly("com.github.jengelman.gradle.plugins:shadow:6.0.0")
 }
+
+fun version(name: String): String = project.rootDir.resolve("src/main/kotlin/Versions.kt").readText()
+    .substringAfter("$name = \"", "")
+    .substringBefore("\"", "")
+    .also {
+        check(it.isNotBlank()) { "Cannot find version $name" }
+    }
