@@ -106,7 +106,7 @@ def isKotlin137x = false
 afterEvaluate {
 
     publishing {
-        def variantName = "${project.name}"
+        def variantName = project.ext.get("publication.name")
 
         // Rename artifacts for backward compatibility
         publications.all {

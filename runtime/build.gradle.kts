@@ -62,12 +62,7 @@ kotlin {
     }
 }
 
-/*
-setupPublishing(
-    groupId = "net.mamoe",
-    artifactId = "kotlin-jvm-blocking-bridge"
-)
-*/
+project.ext.set("publication.name", "kotlin-jvm-blocking-bridge")
 apply(from = "gradle/publish.gradle")
 
 /*
