@@ -8,8 +8,8 @@ kotlin {
     targets {
         def hostOs = System.getProperty("os.name")
 
-        def linuxEnabled = hostOs == "Mac OS X"
-        def macosEnabled = hostOs == "Linux"
+        def linuxEnabled = hostOs == "Linux"
+        def macosEnabled = hostOs.startsWith("Mac")
         def winEnabled =  hostOs.startsWith("Windows")
 
         project.ext.isLinuxHost = linuxEnabled
