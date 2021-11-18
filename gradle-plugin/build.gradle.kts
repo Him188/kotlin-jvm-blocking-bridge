@@ -50,6 +50,23 @@ gradlePlugin {
     }
 }
 
+tasks.register("updateKJBBVersion") {
+    doLast {
+        project.projectDir.resolve("src/main/kotlin/net/mamoe/kjbb")
+            .resolve("VersionGenerated.kt")
+            .apply { createNewFile() }
+            .writeText(
+                """
+                package net.mamoe.kjbb
+
+                internal const val KJBB_VERSION = "${Versions.project}"
+            """.trimIndent()
+            )
+    }
+}
+
+tasks.getByName("compileKotlin").dependsOn("updateKJBBVersion")
+
 /*
 tasks.getByName("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
     archiveClassifier.set("")
