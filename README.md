@@ -139,11 +139,11 @@ Please make sure you have it in application runtime (usually you don't need to d
 
 ## Supported compiler backends
 
-Both legacy JVM backend (Kotlin 1.4) and new IR backend (Kotlin 1.5) are supported.
+Both legacy JVM backend (Kotlin 1.4) and new IR backend (Kotlin 1.5+) are supported.
 
 ## Kotlin mulitplatform projects (MPP)
 
-KJBB compiler and gradle plugins supports Kotlin MPP 'as is'. Bridges are generated only for JVM and Android JVM targets. On other platforms, the `@JvmBlockingBridge` is also available but does nothing to the compilation.
+KJBB compiler and gradle plugins supports Kotlin MPP 'as is'. Bridges are generated only for JVM and Android JVM targets. On other platforms, the `@JvmBlockingBridge` is also available and is ignored on compilation.
 
 
 ## Modules
