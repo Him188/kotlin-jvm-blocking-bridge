@@ -25,22 +25,22 @@ pluginBundle {
 gradlePlugin {
     plugins {
         create("kotlinJvmBlockingBridge") {
-            id = "net.mamoe.kotlin-jvm-blocking-bridge"
+            id = "me.him188.kotlin-jvm-blocking-bridge"
             displayName = "Kotlin JVM Blocking Bridge"
             description = project.description
-            implementationClass = "net.mamoe.kjbb.JvmBlockingBridgeGradlePlugin"
+            implementationClass = "me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridgeGradlePlugin"
         }
     }
 }
 
 tasks.register("updateKJBBVersion") {
     doLast {
-        project.projectDir.resolve("src/main/kotlin/net/mamoe/kjbb")
+        project.projectDir.resolve("src/main/kotlin/me/him188/kotlin/jvm/blocking/bridge")
             .resolve("VersionGenerated.kt")
             .apply { createNewFile() }
             .writeText(
                 """
-                package net.mamoe.kjbb
+                package me.him188.kotlin.jvm.blocking.bridge
 
                 internal const val KJBB_VERSION = "${Versions.project}"
             """.trimIndent()

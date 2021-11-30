@@ -4,8 +4,6 @@ package compiler
 
 import assertHasFunction
 import assertNoFunction
-import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys
-import net.mamoe.kjbb.compiler.UnitCoercion
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Test
 import runFunction
@@ -68,7 +66,10 @@ internal sealed class AbiAnnotationsTest(
                 suspend fun test(b: Boolean = true, a: String = "") {}
             }
         """, noMain = true, overrideCompilerConfiguration = CompilerConfiguration().apply {
-            put(JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION, UnitCoercion.COMPATIBILITY.toString())
+            put(
+                me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION,
+                me.him188.kotlin.jvm.blocking.bridge.compiler.UnitCoercion.COMPATIBILITY.toString()
+            )
         }
     ) {
         classLoader.loadClass("TestData").run {

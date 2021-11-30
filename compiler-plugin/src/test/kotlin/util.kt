@@ -2,8 +2,8 @@
 
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
-import net.mamoe.kjbb.JvmBlockingBridge
-import net.mamoe.kjbb.compiler.extensions.BridgeComponentRegistrar
+import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
+import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.BridgeComponentRegistrar
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.JvmTarget

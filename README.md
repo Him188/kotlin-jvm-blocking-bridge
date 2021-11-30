@@ -125,7 +125,7 @@ If you're developing a library, or an application using both Java and Kotlin wit
 `build.gradle` or `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.6"
+  id("me.him188.kotlin-jvm-blocking-bridge") version "1.11.0"
 }
 ```
 
@@ -133,7 +133,7 @@ Then you're done. You can then use the `@JvmBlockingBridge` annotation.
 
 The plugin will automatically install the runtime dependency, like:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.10.6")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.11.0")
 ```
 Please make sure you have it in application runtime (usually you don't need to do anything about it).
 
@@ -158,8 +158,9 @@ This chapter lists the modules in the project. If you are interested in the inte
 
 ### Runtime library
 
-- Provides `public annotation class net.mamoe.kjbb.JvmBlockingBridge`
-- Provides `internal annotation class net.mamoe.kjbb.GeneratedBlockingBridge` that is added implicitly to generated bridges.
+- Provides `public annotation class me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge`
+- Provides `internal annotation class me.him188.kotlin.jvm.blocking.bridge.GeneratedBlockingBridge` that is added
+  implicitly to generated bridges.
 - Provides some internal functions used by generated bridges.
 
 **Important Note**: the runtime library contains not only the annotations, but also coroutine runner functions which is required by the compiler plugin.  

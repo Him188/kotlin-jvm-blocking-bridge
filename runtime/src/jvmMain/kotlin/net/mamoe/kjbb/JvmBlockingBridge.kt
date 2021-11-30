@@ -17,4 +17,9 @@ package net.mamoe.kjbb
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS, AnnotationTarget.FILE)
 @Retention(AnnotationRetention.BINARY)
+@Deprecated(
+    "Moved to me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge",
+    level = DeprecationLevel.ERROR,
+    replaceWith = ReplaceWith("JvmBlockingBridge", "me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge")
+)
 public actual annotation class JvmBlockingBridge actual constructor()

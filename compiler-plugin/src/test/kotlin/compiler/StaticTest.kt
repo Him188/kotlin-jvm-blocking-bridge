@@ -197,7 +197,7 @@ internal sealed class StaticTest(ir: Boolean) : AbstractCompilerTest(ir) {
         
         fun main(): String {
             Class.forName("TestData").getMethod("test", String::class.java). 
-                getAnnotation(Class.forName("net.mamoe.kjbb.GeneratedBlockingBridge") as Class<Annotation>)
+                getAnnotation(Class.forName("me.him188.kotlin.jvm.blocking.bridge.GeneratedBlockingBridge") as Class<Annotation>)
             return "OK"
         }
     }
