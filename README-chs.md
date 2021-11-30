@@ -122,20 +122,20 @@ suspend fun downloadImage(): Image
 `build.gradle.kts`
 ```kotlin
 plugins {
-  id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.6"
+  id("me.him188.kotlin-jvm-blocking-bridge") version "1.11.0"
 }
 ```
 
 `build.gradle`
 ```groovy
 plugins {
-  id 'net.mamoe.kotlin-jvm-blocking-bridge' version '1.10.6'
+  id 'me.him188.kotlin-jvm-blocking-bridge' version '1.11.0'
 }
 ```
 
 本插件会自动添加如下的运行时依赖:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.10.6")
+implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.11.0")
 ```
 因此只需要安装插件，而不需要添加依赖即可使用。请确保在运行时有这个依赖（通常不需要做额外工作）。
 
@@ -168,8 +168,8 @@ Kotlin 默认使用 `JVM` 后端，但即将在 Kotlin 1.5 启用 `IR` 后端。
 
 ### 运行时库
 
-- 提供 `public annotation class net.mamoe.kjbb.JvmBlockingBridge`
-- 提供 `internal annotation class net.mamoe.kjbb.GeneratedBlockingBridge`，由编译器插件自动添加到生成的方法桥上.
+- 提供 `public annotation class me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge`
+- 提供 `internal annotation class me.him188.kotlin.jvm.blocking.bridge.GeneratedBlockingBridge`，由编译器插件自动添加到生成的方法桥上.
 - 提供编译后的阻塞式方法桥需要调用的一些库函数.
 
 ### 编译器插件

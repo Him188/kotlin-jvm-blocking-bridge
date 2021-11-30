@@ -1,6 +1,6 @@
 @file:Suppress("RedundantSuspendModifier")
 
-import net.mamoe.kjbb.JvmBlockingBridge
+import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
 import java.io.IOException
 import kotlin.jvm.Throws
 

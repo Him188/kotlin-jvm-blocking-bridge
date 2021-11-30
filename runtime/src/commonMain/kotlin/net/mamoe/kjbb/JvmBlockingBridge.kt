@@ -23,4 +23,9 @@ import kotlin.jvm.JvmStatic
 @OptionalExpectation
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
+@Deprecated(
+    "Moved to me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge",
+    level = DeprecationLevel.ERROR,
+    replaceWith = ReplaceWith("JvmBlockingBridge", "me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge")
+)
 public expect annotation class JvmBlockingBridge()

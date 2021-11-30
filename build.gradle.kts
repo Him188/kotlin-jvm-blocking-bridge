@@ -9,7 +9,7 @@ buildscript {
 
 plugins {
     kotlin("multiplatform") apply false
-    id("net.mamoe.maven-central-publish") version "0.7.0" apply false
+    id("net.mamoe.maven-central-publish") version "0.8.0" apply false
     kotlin("kapt") apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("com.gradle.plugin-publish") version "0.12.0" apply false

@@ -4,8 +4,6 @@ package compiler.unit
 
 import assertHasFunction
 import assertNoFunction
-import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys
-import net.mamoe.kjbb.compiler.UnitCoercion
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Test
 import runFunction
@@ -13,7 +11,10 @@ import kotlin.test.assertTrue
 
 internal sealed class UnitCoercionCompatibilityTest(ir: Boolean) : AbstractUnitCoercionTest(ir) {
     override val overrideCompilerConfiguration: CompilerConfiguration = CompilerConfiguration().apply {
-        put(JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION, UnitCoercion.COMPATIBILITY.toString())
+        put(
+            me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION,
+            me.him188.kotlin.jvm.blocking.bridge.compiler.UnitCoercion.COMPATIBILITY.toString()
+        )
     }
 
     // class Ir : UnitCoercionCompatibilityTest(true) // IR is correct in both old and new, no need to test compatibility.

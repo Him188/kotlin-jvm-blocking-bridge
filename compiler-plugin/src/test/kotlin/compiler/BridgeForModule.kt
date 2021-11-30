@@ -5,7 +5,6 @@ package compiler
 import assertHasFunction
 import assertNoFunction
 import createInstance
-import net.mamoe.kjbb.compiler.JvmBlockingBridgeCompilerConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Test
 import runFunction
@@ -14,7 +13,10 @@ import kotlin.test.assertEquals
 
 internal sealed class BridgeForModule(ir: Boolean) : AbstractCompilerTest(ir) {
     override val overrideCompilerConfiguration: CompilerConfiguration = CompilerConfiguration().apply {
-        put(JvmBlockingBridgeCompilerConfigurationKeys.ENABLE_FOR_MODULE, true.toString())
+        put(
+            me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerConfigurationKeys.ENABLE_FOR_MODULE,
+            true.toString()
+        )
     }
 
     class Ir : BridgeForModule(true) {
