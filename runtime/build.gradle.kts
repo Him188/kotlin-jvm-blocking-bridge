@@ -1,5 +1,9 @@
 @file:Suppress("UNUSED_VARIABLE")
 
+import org.apache.tools.ant.taskdefs.condition.Os
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
+import org.jetbrains.kotlin.gradle.plugin.KotlinTargetPreset
+
 plugins {
     id("net.mamoe.maven-central-publish")
     kotlin("multiplatform")
@@ -9,31 +13,40 @@ plugins {
 kotlin {
     explicitApi()
 
-    targets {
-        jvm()
-        js {
-            useCommonJs()
-        }
-        apply(from = file("gradle/compile-native-multiplatform.gradle"))
 
+    jvm()
+    js {
+        useCommonJs()
+    }
+
+
+    val ideaActive = System.getProperty("idea.active") == "true"
+
+    val nativeMainSets = mutableListOf<KotlinSourceSet>()
+    val nativeTestSets = mutableListOf<KotlinSourceSet>()
+
+    val addTarget = { preset: KotlinTargetPreset<*> ->
+        val target = targetFromPreset(preset, preset.name)
+        nativeMainSets.add(target.compilations["main"].kotlinSourceSets.first())
+        nativeTestSets.add(target.compilations["test"].kotlinSourceSets.first())
+    }
+
+    if (ideaActive) {
+        when {
+            Os.isFamily(Os.FAMILY_MAC) -> if (Os.isArch("aarch64")) macosArm64("native") else macosX64("native")
+            Os.isFamily(Os.FAMILY_WINDOWS) -> mingwX64("native")
+            else -> linuxX64("native")
+        }
+    } else {
+        presets.forEach { preset ->
+            addTarget(preset)
+        }
     }
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-            }
-        }
-
-        val commonTest by getting {
-            dependencies {
-            }
-        }
-
-        val jvmMain by getting {
-            dependencies {
-            }
-        }
-
+        val commonMain by getting
+        val commonTest by getting
+        val jvmMain by getting
         val jvmTest by getting {
             dependencies {
                 implementation("org.junit.jupiter:junit-jupiter-api:5.2.0")
@@ -41,13 +54,15 @@ kotlin {
             }
         }
 
-        val jsMain by getting {
-            dependencies {
-                compileOnly(kotlin("stdlib-js"))
+        val jsMain by getting
+
+        if (!ideaActive) {
+            configure(nativeMainSets) {
+                dependsOn(sourceSets.maybeCreate("nativeMain"))
             }
-        }
-        val nativeMain by getting {
-            dependencies {
+
+            configure(nativeTestSets) {
+                dependsOn(sourceSets.maybeCreate("nativeTest"))
             }
         }
     }
