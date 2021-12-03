@@ -15,17 +15,16 @@ jobs:
           java-version: 11
       - run: chmod +x gradlew
       - run: ./gradlew clean --scan
-      - run: ./gradlew build --scan # do not split into assemble and check. cache bugs.
 
-      - name: Keys setup
-        shell: bash
-        run: |
-          mkdir keys
-          echo "$GPG_PUBLIC_" > keys/keys.pub
-          echo "$GPG_PRIVATE" > keys/keys.pri
+      - name: publicationPreview
+        run: ./gradlew publicationPreview --no-parallel --info  --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
+          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
+
+      - run: ./gradlew build --scan # do not split into assemble and check. cache bugs.
 
       - name: publishMingwX64PublicationToMavenRepository
         run: ./gradlew publishMingwX64PublicationToMavenRepository --no-parallel --info  --scan
@@ -49,16 +48,16 @@ jobs:
           java-version: 11
       - run: chmod +x gradlew
       - run: ./gradlew clean --scan
-      - run: ./gradlew build --scan # do not split into assemble and check. cache bugs.
-      - name: Keys setup
-        shell: bash
-        run: |
-          mkdir keys
-          echo "$GPG_PUBLIC_" > keys/keys.pub
-          echo "$GPG_PRIVATE" > keys/keys.pri
+
+      - name: publicationPreview
+        run: ./gradlew publicationPreview --no-parallel --info  --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
+          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_KEY: ${{ secrets.SONATYPE_KEY }}
+
+      - run: ./gradlew build --scan # do not split into assemble and check. cache bugs.
 
       - name: publish
         run: ./gradlew publish

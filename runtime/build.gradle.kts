@@ -20,7 +20,7 @@ kotlin {
     }
 
 
-    val ideaActive = false && System.getProperty("idea.active") == "true"
+    val ideaActive = System.getProperty("idea.active") == "true"
 
     val nativeMainSets = mutableListOf<KotlinSourceSet>()
     val nativeTestSets = mutableListOf<KotlinSourceSet>()
@@ -77,14 +77,8 @@ kotlin {
 }
 
 mavenCentralPublish {
-    artifactId = "kotlin-jvm-blocking-bridge-runtime"
-    packageGroup = Versions.publicationGroup
     singleDevGithubProject("Him188", "kotlin-jvm-blocking-bridge")
     licenseApacheV2()
 
     publishPlatformArtifactsInRootModule = "jvm"
-
-    publication {
-        artifacts.artifact(tasks.getByName("shadow"))
-    }
 }

@@ -53,7 +53,6 @@ allprojects {
     if (extensions.findByType(MavenCentralPublishExtension::class) != null) {
         mavenCentralPublish {
             useCentralS01()
-            licenseApacheV2()
         }
     }
 }
