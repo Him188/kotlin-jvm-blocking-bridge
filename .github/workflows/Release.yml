@@ -16,8 +16,8 @@ jobs:
       - run: chmod +x gradlew
       - run: ./gradlew clean --scan
 
-      - name: publicationPreview
-        run: ./gradlew publicationPreview --no-parallel --info  --scan
+      - name: previewPublication
+        run: ./gradlew previewPublication --no-parallel --info  --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
@@ -49,8 +49,8 @@ jobs:
       - run: chmod +x gradlew
       - run: ./gradlew clean --scan
 
-      - name: publicationPreview
-        run: ./gradlew publicationPreview --no-parallel --info  --scan
+      - name: previewPublication
+        run: ./gradlew previewPublication --no-parallel --info  --scan
         env:
           GPG_PRIVATE: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PUBLIC_: ${{ secrets.GPG_PUBLIC_KEY }}
