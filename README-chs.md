@@ -135,7 +135,7 @@ plugins {
 
 本插件会自动添加如下的运行时依赖:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.11.0")
+implementation("me.him188:kotlin-jvm-blocking-bridge:1.11.0")
 ```
 因此只需要安装插件，而不需要添加依赖即可使用。请确保在运行时有这个依赖（通常不需要做额外工作）。
 
