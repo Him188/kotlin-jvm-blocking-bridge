@@ -1,5 +1,5 @@
 @file:Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN", "FunctionName", "unused")
-@file:JvmName("RunBlockingKt")
+@file:JvmName("RunSuspendKt")
 
 package me.him188.kotlin.jvm.blocking.bridge.internal
 
