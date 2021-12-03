@@ -17,4 +17,4 @@ package me.him188.kotlin.jvm.blocking.bridge
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS, AnnotationTarget.FILE)
 @Retention(AnnotationRetention.BINARY)
-public actual annotation class JvmBlockingBridge actual constructor()
+public actual annotation class JvmBlockingBridge
