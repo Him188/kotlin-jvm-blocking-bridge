@@ -1,5 +1,7 @@
 @file:Suppress("UnstableApiUsage", "LocalVariableName")
 
+import me.him188.maven.central.publish.gradle.MavenCentralPublishExtension
+
 buildscript {
     dependencies {
 //        classpath("com.github.jengelman.gradle.plugins:shadow:7.0.0")
@@ -48,8 +50,10 @@ extensions.findByName("buildScan")?.withGroovyBuilder {
 }
 
 allprojects {
-    mavenCentralPublish {
-        useCentralS01()
-        licenseApacheV2()
+    if (extensions.findByType(MavenCentralPublishExtension::class) != null) {
+        mavenCentralPublish {
+            useCentralS01()
+            licenseApacheV2()
+        }
     }
 }
