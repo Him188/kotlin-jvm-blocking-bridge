@@ -83,4 +83,8 @@ mavenCentralPublish {
     licenseApacheV2()
 
     publishPlatformArtifactsInRootModule = "jvm"
+
+    publication {
+        artifacts.artifact(tasks.getByName("shadow"))
+    }
 }

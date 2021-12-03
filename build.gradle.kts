@@ -9,7 +9,7 @@ buildscript {
 
 plugins {
     kotlin("multiplatform") apply false
-    id("me.him188.maven-central-publish") version "1.0.0-dev-1" apply false
+    id("me.him188.maven-central-publish") version "1.0.0-dev-1"
     kotlin("kapt") apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("com.gradle.plugin-publish") version "0.12.0" apply false
@@ -45,4 +45,11 @@ subprojects {
 extensions.findByName("buildScan")?.withGroovyBuilder {
     setProperty("termsOfServiceUrl", "https://gradle.com/terms-of-service")
     setProperty("termsOfServiceAgree", "yes")
+}
+
+allprojects {
+    mavenCentralPublish {
+        useCentralS01()
+        licenseApacheV2()
+    }
 }
