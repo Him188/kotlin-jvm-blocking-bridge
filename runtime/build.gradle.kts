@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTargetPreset
 
 plugins {
-    id("net.mamoe.maven-central-publish")
+    id("me.him188.maven-central-publish")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }

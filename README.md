@@ -133,7 +133,7 @@ Then you're done. You can then use the `@JvmBlockingBridge` annotation.
 
 The plugin will automatically install the runtime dependency, like:
 ```kotlin
-implementation("net.mamoe:kotlin-jvm-blocking-bridge:1.11.0")
+implementation("me.him188:kotlin-jvm-blocking-bridge:1.11.0")
 ```
 Please make sure you have it in application runtime (usually you don't need to do anything about it).
 

@@ -1,5 +1,5 @@
 plugins {
-    id("net.mamoe.maven-central-publish")
+    id("me.him188.maven-central-publish")
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.serialization")
