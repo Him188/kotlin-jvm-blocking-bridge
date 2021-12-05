@@ -50,7 +50,6 @@ val test by tasks.getting(Test::class) {
 }
 
 mavenCentralPublish {
-    packageGroup = Versions.publicationGroup
     singleDevGithubProject("Him188", "kotlin-jvm-blocking-bridge")
     licenseApacheV2()
 }

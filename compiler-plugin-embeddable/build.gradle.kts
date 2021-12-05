@@ -17,7 +17,6 @@ dependencies {
 embeddableCompiler()
 
 mavenCentralPublish {
-    packageGroup = Versions.publicationGroup
     singleDevGithubProject("Him188", "kotlin-jvm-blocking-bridge")
     licenseApacheV2()
 
