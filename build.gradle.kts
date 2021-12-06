@@ -1,7 +1,5 @@
 @file:Suppress("UnstableApiUsage", "LocalVariableName")
 
-import me.him188.maven.central.publish.gradle.MavenCentralPublishExtension
-
 buildscript {
     dependencies {
 //        classpath("com.github.jengelman.gradle.plugins:shadow:7.0.0")
@@ -11,7 +9,7 @@ buildscript {
 
 plugins {
     kotlin("multiplatform") apply false
-    id("me.him188.maven-central-publish") version "1.0.0-dev-3"
+    id("me.him188.maven-central-publish") version "1.0.0-dev-3" apply false
     kotlin("kapt") apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("com.gradle.plugin-publish") version "0.12.0" apply false
@@ -47,12 +45,4 @@ subprojects {
 extensions.findByName("buildScan")?.withGroovyBuilder {
     setProperty("termsOfServiceUrl", "https://gradle.com/terms-of-service")
     setProperty("termsOfServiceAgree", "yes")
-}
-
-allprojects {
-    if (extensions.findByType(MavenCentralPublishExtension::class) != null) {
-        mavenCentralPublish {
-            useCentralS01()
-        }
-    }
 }

@@ -77,6 +77,7 @@ kotlin {
 }
 
 mavenCentralPublish {
+    useCentralS01()
     singleDevGithubProject("Him188", "kotlin-jvm-blocking-bridge")
     licenseApacheV2()
 
