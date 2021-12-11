@@ -2,8 +2,8 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     id("java-gradle-plugin")
+    `maven-publish`
     id("com.gradle.plugin-publish")
-    id("java")
 }
 
 dependencies {
@@ -17,8 +17,8 @@ dependencies {
 }
 
 pluginBundle {
-    website = "https://github.com/mamoe/kotlin-jvm-blocking-bridge"
-    vcsUrl = "https://github.com/mamoe/kotlin-jvm-blocking-bridge.git"
+    website = "https://github.com/him188/kotlin-jvm-blocking-bridge"
+    vcsUrl = "https://github.com/him188/kotlin-jvm-blocking-bridge.git"
     tags = listOf("kotlin", "jvm-blocking-bridge")
 }
 
