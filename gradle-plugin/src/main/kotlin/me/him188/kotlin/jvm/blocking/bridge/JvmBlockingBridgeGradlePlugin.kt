@@ -41,7 +41,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
                 for (applicableTarget in applicableTargets) {
                     applicableTarget.compilations.flatMap { it.allKotlinSourceSets }.forEach {
                         it.dependencies {
-                            implementation("me.him188:kotlin-jvm-blocking-bridge:$KJBB_VERSION")
+                            implementation("me.him188:kotlin-jvm-blocking-bridge-runtime:$KJBB_VERSION")
                         }
                     }
                 }
@@ -52,7 +52,10 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
             }, onFailure = {
                 if (kotlin.runCatching { target.extensions.getByType(KotlinJvmProjectExtension::class.java) }.isSuccess) {
                     // when JVM
-                    target.dependencies.add("implementation", "me.him188:kotlin-jvm-blocking-bridge:$KJBB_VERSION")
+                    target.dependencies.add(
+                        "implementation",
+                        "me.him188:kotlin-jvm-blocking-bridge-runtime:$KJBB_VERSION"
+                    )
                     target.repositories.mavenCentral()
                 } // else: neither JVM nor MPP. Don't apply
             })
