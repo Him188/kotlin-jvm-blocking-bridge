@@ -1,7 +1,7 @@
 @file:Suppress("MemberVisibilityCanBePrivate")
 
 object Versions {
-    const val project = "2.0.0-160.2"
+    const val project = "2.0.0-160.3"
     const val idePlugin = project
 
     const val kotlin = "1.6.0"
