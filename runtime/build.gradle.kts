@@ -77,6 +77,7 @@ kotlin {
 }
 
 mavenCentralPublish {
+    this.workingDir = rootProject.buildDir.resolve("temp/pub/").apply { mkdirs() }
     useCentralS01()
     singleDevGithubProject("Him188", "kotlin-jvm-blocking-bridge")
     licenseApacheV2()
