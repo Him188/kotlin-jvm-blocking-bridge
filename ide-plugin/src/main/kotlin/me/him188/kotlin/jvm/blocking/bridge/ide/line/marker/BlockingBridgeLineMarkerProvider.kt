@@ -66,9 +66,10 @@ class BlockingBridgeLineMarkerProvider : LineMarkerProvider {
         },
         null,
         GutterIconRenderer.Alignment.RIGHT,
+        { "Blocking bridge method call" }
     ) {
         override fun createGutterRenderer(): GutterIconRenderer {
-            return object : LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>(this) {
+            return object : LineMarkerGutterIconRenderer<PsiElement>(this) {
                 override fun getClickAction(): AnAction? = null
             }
         }
@@ -90,7 +91,7 @@ val PsiElement.document
 fun PsiElement.getLineNumber(start: Boolean = true): Int {
     val document = document
     val index = if (start) this.startOffset else this.endOffset
-    if (index > document?.textLength ?: 0) return 0
+    if (index > (document?.textLength ?: 0)) return 0
     return document?.getLineNumber(index) ?: 0
 }
 
@@ -100,5 +101,5 @@ internal fun getElementForLineMark(callElement: PsiElement): PsiElement =
         else ->
             // a fallback,
             //but who knows what to reference in KtArrayAccessExpression ?
-            generateSequence(callElement, { it.firstChild }).last()
+            generateSequence(callElement) { it.firstChild }.last()
     }

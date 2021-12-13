@@ -84,5 +84,5 @@
         <quickFixContributor implementation="me.him188.kotlin.jvm.blocking.bridge.ide.fix.QuickFixRegistrar"/>
     </extensions>
 
-    <idea-version since-build="201.*" until-build="203.*"/>
+    <idea-version since-build="203.*" until-build="203.*"/>
 </idea-plugin>

@@ -25,7 +25,7 @@ version = Versions.idePlugin
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version.set("2021.2")
+    version.set(Versions.intellij)
     downloadSources.set(true)
     updateSinceUntilBuild.set(false)
 
@@ -51,8 +51,8 @@ tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishPluginTask:
 }
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
-    sinceBuild.set("201.*") // Kotlin does not support 193 anymore
-    untilBuild.set("225.*")
+    sinceBuild.set("213.*")
+    untilBuild.set("213.*")
     changeNotes.set(
         """
         See <a href="">Release notes</a>

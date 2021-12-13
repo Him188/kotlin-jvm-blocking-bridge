@@ -11,7 +11,6 @@ import com.intellij.ide.util.DefaultPsiElementCellRenderer
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
-import com.intellij.openapi.util.Key
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiExtensibleClass
 import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
@@ -26,11 +25,12 @@ import org.jetbrains.kotlin.asJava.elements.KtLightDeclaration
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.idea.codeInsight.hints.HintType
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
-import org.jetbrains.kotlin.idea.debugger.sequence.psi.resolveType
-import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.KtAnnotationEntry
+import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
-import org.jetbrains.kotlin.types.KotlinType
 import java.awt.event.MouseEvent
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -41,8 +41,6 @@ internal val PsiElement.containingKtFile: KtFile?
 
 internal val PsiMember.containingKtClass: KtClassOrObject?
     get() = (containingClass as? KtLightClass)?.kotlinOrigin
-
-private val KEY_ALREADY_GENERATED = Key<Boolean>("KEY_ALREADY_GENERATED")
 
 class BridgeInlayHintsCollector :
     InlayHintsProvider<NoSettings>,
@@ -102,10 +100,6 @@ class BridgeInlayHintsCollector :
         return anyChanged
     }.getOrElse { false }
 
-    private fun KtTypeReference.resolveType(): KotlinType? {
-        return (this.typeElement as? KtUserType)?.referenceExpression?.resolveType()
-    }
-
 
     private fun createPresentation(
         factory: PresentationFactory,
@@ -135,7 +129,7 @@ class BridgeInlayHintsCollector :
 
                 val containingClass = method.containingClass
                 hint = factory.withTooltip(
-                    "From @JvmBlockingBridge on class ${containingClass?.name}",
+                    "From @JvmBlockingBridge on class ${containingClass.name}",
                     hint
                 )
                 hint = factory.onClick(hint, MouseButton.Middle) { mouseEvent, _ ->
@@ -210,4 +204,6 @@ class BridgeInlayHintsCollector :
     override fun isElementSupported(resolved: HintType?, settings: NoSettings): Boolean {
         return resolved == HintType.FUNCTION_HINT
     }
+
+    override val key: SettingsKey<NoSettings> get() = SettingsKey("blocking.bridge.hints")
 }
