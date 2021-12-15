@@ -129,7 +129,7 @@ class BridgeInlayHintsCollector :
 
                 val containingClass = method.containingClass
                 hint = factory.withTooltip(
-                    "From @JvmBlockingBridge on class ${containingClass.name}",
+                    "From ${annotation!!.text} on class ${containingClass.name}",
                     hint
                 )
                 hint = factory.onClick(hint, MouseButton.Middle) { mouseEvent, _ ->
@@ -144,7 +144,7 @@ class BridgeInlayHintsCollector :
 
                 val containingKtFile = method.containingKtFile!!
                 hint = factory.withTooltip(
-                    "From @file:JvmBlockingBridge on file ${containingKtFile.name}",
+                    "From ${annotation!!.text} on file ${containingKtFile.name}",
                     hint
                 )
                 hint = factory.onClick(hint, MouseButton.Middle) { mouseEvent, _ ->
