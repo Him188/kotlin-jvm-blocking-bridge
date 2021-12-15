@@ -64,20 +64,20 @@ tasks.withType(KotlinJvmCompile::class) {
     kotlinOptions.freeCompilerArgs += "-Xjvm-default=all"
 }
 
-val theProject = project
+//val theProject = project
 
-tasks.getByName("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
-    archiveClassifier.set("")
-    this.dependencyFilter.exclude {
-        it.name.contains("intellij", ignoreCase = true) || it.name.contains("idea", ignoreCase = true)
-    }
-    exclude {
-        // exclude ComponentRegistrar which is for CLI compiler.
-        it.name == "org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar" && !it.path.contains(theProject.path)
-    }
-}
+//tasks.getByName("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+//    archiveClassifier.set("")
+//    this.dependencyFilter.exclude {
+//        it.name.contains("intellij", ignoreCase = true) || it.name.contains("idea", ignoreCase = true)
+//    }
+//    exclude {
+//        // exclude ComponentRegistrar which is for CLI compiler.
+//        it.name == "org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar" && !it.path.contains(theProject.path)
+//    }
+//}
 
-tasks.buildPlugin.get().dependsOn(tasks.shadowJar.get())
+//tasks.buildPlugin.get().dependsOn(tasks.shadowJar.get())
 
 /*
 val compileKotlin: KotlinCompile by tasks
