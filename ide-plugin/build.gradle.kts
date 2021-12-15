@@ -51,7 +51,7 @@ tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishPluginTask:
 }
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
-    sinceBuild.set("213.*")
+    sinceBuild.set("213.0")
     untilBuild.set("213.*")
     changeNotes.set(
         """
