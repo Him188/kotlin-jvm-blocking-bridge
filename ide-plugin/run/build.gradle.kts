@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.4.21"
-    id("me.him188.kotlin-jvm-blocking-bridge") version "1.11.0"
+    id("me.him188.kotlin-jvm-blocking-bridge") version "2.0.0-160.3"
 }
 
 blockingBridge {
