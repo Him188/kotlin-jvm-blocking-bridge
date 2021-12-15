@@ -5,7 +5,7 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
 
-    id("com.github.johnrengelman.shadow")
+//    id("com.github.johnrengelman.shadow")
 }
 
 dependencies {
@@ -13,7 +13,6 @@ dependencies {
 
     api(project(":kotlin-jvm-blocking-bridge-runtime"))
     api(project(":kotlin-jvm-blocking-bridge-compiler"))
-    api(project(":kotlin-jvm-blocking-bridge-gradle"))
 
     // compileOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
     compileOnly(fileTree("run/idea-sandbox/plugins/Kotlin/lib").filter {
@@ -21,6 +20,7 @@ dependencies {
     })
 }
 
+group = "net.mamoe"
 version = Versions.idePlugin
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/

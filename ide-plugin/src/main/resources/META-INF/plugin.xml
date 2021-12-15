@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>me.him188.kotlin-jvm-blocking-bridge</id>
+    <id>net.mamoe.kotlin-jvm-blocking-bridge</id>
 
     <name>Kotlin JVM Blocking Bridge</name>
 
