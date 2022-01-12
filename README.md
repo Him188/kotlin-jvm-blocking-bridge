@@ -123,18 +123,23 @@ If you're developing a library, or an application using both Java and Kotlin wit
 #### **Install Gradle plugin**
 
 `build.gradle` or `build.gradle.kts`
+
 ```kotlin
 plugins {
-  id("me.him188.kotlin-jvm-blocking-bridge") version "2.0.0-160.3"
+    id("me.him188.kotlin-jvm-blocking-bridge") version "VERSION"
 }
 ```
+
+See `VERSION` from [releases](https://github.com/Him188/kotlin-jvm-blocking-bridge/releases), e.g. `2.0.0-160.3`.
 
 Then you're done. You can then use the `@JvmBlockingBridge` annotation.
 
 The plugin will automatically install the runtime dependency, like:
+
 ```kotlin
-implementation("me.him188:kotlin-jvm-blocking-bridge:2.0.0-160.3")
+implementation("me.him188:kotlin-jvm-blocking-bridge:VERSION")
 ```
+
 Please make sure you have it in application runtime (usually you don't need to do anything about it).
 
 ## Supported compiler backends
