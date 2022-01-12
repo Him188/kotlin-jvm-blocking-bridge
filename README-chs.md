@@ -161,7 +161,7 @@ implementation("me.him188:kotlin-jvm-blocking-bridge:VERSION")
 ## 支持的编译器后端
 
 Kotlin 拥有两个编译器后端，旧 `JVM` 和新 `IR`(Internal Representation)。  
-Kotlin 默认使用 `JVM` 后端，但即将在 Kotlin 1.5 启用 `IR` 后端。
+Kotlin 在 1.5 及以前使用 `JVM` 后端，在 1.6 及以后使用 `IR` 后端。
 
 本插件同时支持这两个后端。在两个后端产生的编译结果都是相同的。
 
