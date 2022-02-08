@@ -5,8 +5,8 @@ import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.BlockingBridgeA
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.isJvm8OrHigher
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.kotlin.backend.common.ir.allParameters
-import org.jetbrains.kotlin.backend.jvm.codegen.psiElement
 import org.jetbrains.kotlin.backend.jvm.ir.isInlineClassType
+import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.descriptors.effectiveVisibility
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrClass

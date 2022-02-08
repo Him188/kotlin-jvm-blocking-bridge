@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.ir.*
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.backend.common.lower.parents
-import org.jetbrains.kotlin.backend.jvm.codegen.fileParent
+import org.jetbrains.kotlin.backend.jvm.ir.fileParent
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.*
@@ -37,7 +37,7 @@ internal object IntrinsicRuntimeFunctions {
 
 internal val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}")
 
-internal val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin? get() = IrDeclarationOrigin.DEFINED
+internal val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin get() = IrDeclarationOrigin.DEFINED
 
 private fun IrPluginContext.referenceFunctionRunBlocking(): IrSimpleFunctionSymbol {
     return referenceFunctions(IntrinsicRuntimeFunctions.RUN_SUSPEND).singleOrNull()
@@ -137,7 +137,7 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
         startOffset = originFunction.startOffset
         endOffset = originFunction.endOffset
 
-        origin = ORIGIN_JVM_BLOCKING_BRIDGE ?: originFunction.origin
+        origin = ORIGIN_JVM_BLOCKING_BRIDGE
 
         name = originFunction.bridgeFunctionName
         returnType = originFunction.returnType

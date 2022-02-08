@@ -16,7 +16,7 @@ object BlockingBridgeErrorsRendering : DefaultErrorMessages.Extension {
         put(
             OVERRIDING_GENERATED_BLOCKING_BRIDGE,
             "Overriding generated JvmBlockingBridge: ''{0}''.",
-            Renderers.STRING
+            Renderers.TO_STRING
         )
 
         put(

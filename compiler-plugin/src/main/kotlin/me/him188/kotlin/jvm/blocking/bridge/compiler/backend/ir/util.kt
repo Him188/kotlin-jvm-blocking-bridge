@@ -7,7 +7,7 @@ import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.GeneratedBlockingBridgeStubForResolution
 import org.jetbrains.kotlin.backend.common.ir.allOverridden
 import org.jetbrains.kotlin.backend.common.lower.parents
-import org.jetbrains.kotlin.backend.jvm.codegen.psiElement
+import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.codegen.topLevelClassAsmType
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
@@ -24,13 +24,8 @@ import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 
 val JVM_BLOCKING_BRIDGE_FQ_NAME = FqName(JvmBlockingBridge::class.qualifiedName!!)
 
-@Suppress(
-    "INVISIBLE_REFERENCE",
-    "EXPERIMENTAL_MARKER_CAN_ONLY_BE_USED_AS_ANNOTATION_OR_ARGUMENT_IN_USE_EXPERIMENTAL",
-    "DEPRECATION_ERROR"
-)
 val GENERATED_BLOCKING_BRIDGE_FQ_NAME =
-    FqName(me.him188.kotlin.jvm.blocking.bridge.GeneratedBlockingBridge::class.qualifiedName!!)
+    FqName("me.him188.kotlin.jvm.blocking.bridge.GeneratedBlockingBridge")
 
 val JVM_BLOCKING_BRIDGE_ASM_TYPE = JVM_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
 val GENERATED_BLOCKING_BRIDGE_ASM_TYPE = GENERATED_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
