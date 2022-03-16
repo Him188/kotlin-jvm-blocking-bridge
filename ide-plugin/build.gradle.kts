@@ -8,6 +8,11 @@ plugins {
 //    id("com.github.johnrengelman.shadow")
 }
 
+java {
+    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_11
+}
+
 dependencies {
     compileOnly(kotlin("stdlib-jdk8"))
 

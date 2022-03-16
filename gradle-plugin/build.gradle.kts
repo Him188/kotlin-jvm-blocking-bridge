@@ -6,6 +6,11 @@ plugins {
     id("com.gradle.plugin-publish")
 }
 
+java {
+    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_1_8
+}
+
 dependencies {
     compileOnly(kotlin("stdlib"))
     compileOnly(gradleApi())
