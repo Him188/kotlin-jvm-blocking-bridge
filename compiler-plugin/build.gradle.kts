@@ -14,8 +14,8 @@ dependencies includeInShadow@{
 dependencies compileOnly@{
     compileOnly(kotlin("stdlib")) // don't include stdlib in shadow
     compileOnly("org.jetbrains.kotlin:kotlin-compiler:${Versions.kotlin}")
-    kapt("com.google.auto.service:auto-service:1.0")
-    compileOnly("com.google.auto.service:auto-service-annotations:1.0")
+    kapt("com.google.auto.service:auto-service:1.0.1")
+    compileOnly("com.google.auto.service:auto-service-annotations:1.0.1")
 }
 
 dependencies tests@{
@@ -31,11 +31,11 @@ dependencies tests@{
 
     testImplementation(kotlin("test-junit5"))
 
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.5")
-    testImplementation("org.assertj:assertj-core:3.21.0")
+    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.8-alpha02")
+    testImplementation("org.assertj:assertj-core:3.22.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
 }
 
 embeddableCompiler()
