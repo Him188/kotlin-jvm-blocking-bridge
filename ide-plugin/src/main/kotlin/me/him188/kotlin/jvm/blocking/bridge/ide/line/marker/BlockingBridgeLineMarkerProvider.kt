@@ -57,7 +57,6 @@ class BlockingBridgeLineMarkerProvider : LineMarkerProvider {
     class BridgeCallLineMarkerInfo(
         callElement: PsiElement,
     ) : LineMarkerInfo<PsiElement>(
-        // this is since 191, new constructor is since 203, which is too high for now
         callElement,
         callElement.textRange,
         Icons.BridgedSuspendCall,
