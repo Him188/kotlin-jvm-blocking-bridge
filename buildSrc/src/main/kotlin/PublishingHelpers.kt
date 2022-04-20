@@ -27,12 +27,6 @@ inline fun Project.setupKotlinSourceSetsSettings() {
         }
     }
 
-    kotlin.runCatching {
-        tasks.withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "1.8"
-        }
-    }
-
     kotlin.runCatching { tasks.getByName("test", Test::class) }.getOrNull()?.apply {
         useJUnitPlatform()
     }

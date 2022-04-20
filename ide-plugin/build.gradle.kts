@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.targets
 
 plugins {
     id("org.jetbrains.intellij") version "1.0"
@@ -6,6 +7,18 @@ plugins {
     kotlin("plugin.serialization")
 
 //    id("com.github.johnrengelman.shadow")
+}
+
+kotlin.targets.asSequence()
+    .flatMap { it.compilations }
+    .filter { it.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.jvm }
+    .map { it.kotlinOptions }
+    .filterIsInstance<org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions>()
+    .forEach { it.jvmTarget = "11" }
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 dependencies {
@@ -52,7 +65,7 @@ tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishPluginTask:
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
     sinceBuild.set("213.0")
-    untilBuild.set("213.*")
+    untilBuild.set("221.*")
     changeNotes.set(
         """
         See <a href="">Release notes</a>
@@ -78,19 +91,3 @@ tasks.withType(KotlinJvmCompile::class) {
 //}
 
 //tasks.buildPlugin.get().dependsOn(tasks.shadowJar.get())
-
-/*
-val compileKotlin: KotlinCompile by tasks
-compileKotlin.kotlinOptions {
-    jvmTarget = "1.8"
-}
-val compileTestKotlin: KotlinCompile by tasks
-compileTestKotlin.kotlinOptions {
-    jvmTarget = "1.8"
-}*/
-
-/*
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}*/

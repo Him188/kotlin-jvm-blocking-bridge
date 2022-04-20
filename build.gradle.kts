@@ -1,12 +1,5 @@
 @file:Suppress("UnstableApiUsage", "LocalVariableName")
 
-buildscript {
-    dependencies {
-//        classpath("com.github.jengelman.gradle.plugins:shadow:7.0.0")
-//        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}")
-    }
-}
-
 plugins {
     kotlin("multiplatform") apply false
     id("me.him188.maven-central-publish") version "1.0.0-dev-3" apply false

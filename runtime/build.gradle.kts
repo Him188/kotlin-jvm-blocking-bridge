@@ -84,3 +84,15 @@ mavenCentralPublish {
 
     publishPlatformArtifactsInRootModule = "jvm"
 }
+
+kotlin.targets.asSequence()
+    .flatMap { it.compilations }
+    .filter { it.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.jvm }
+    .map { it.kotlinOptions }
+    .filterIsInstance<org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions>()
+    .forEach { it.jvmTarget = "1.8" }
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
