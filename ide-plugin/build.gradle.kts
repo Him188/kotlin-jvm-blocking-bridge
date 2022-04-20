@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.targets
 
 plugins {
-    id("org.jetbrains.intellij") version "1.0"
+    id("org.jetbrains.intellij") version "1.5.3"
     kotlin("jvm")
     kotlin("plugin.serialization")
 
@@ -65,7 +65,7 @@ tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishPluginTask:
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
     sinceBuild.set("213.0")
-    untilBuild.set("221.*")
+    untilBuild.set("221.9999")
     changeNotes.set(
         """
         See <a href="">Release notes</a>
