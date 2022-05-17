@@ -21,6 +21,6 @@ import kotlin.jvm.JvmStatic
  * ```
  */
 @OptionalExpectation
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS, AnnotationTarget.FILE)
 @Retention(AnnotationRetention.BINARY)
 public expect annotation class JvmBlockingBridge()
