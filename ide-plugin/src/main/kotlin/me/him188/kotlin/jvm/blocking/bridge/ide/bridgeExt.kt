@@ -58,8 +58,11 @@ inline fun <R> Module.useBridgeCacheOrInit(
 
 
 fun ModuleDescriptor.isIr(): Boolean {
-    val compilerArguments = kotlinFacetSettings()?.compilerArguments ?: return false
-    return compilerArguments.castSafelyTo<K2JVMCompilerArguments>()?.useIR ?: return false
+    val compilerArguments = kotlinFacetSettings()?.compilerArguments ?: return true // true by default
+    if (compilerArguments.castSafelyTo<K2JVMCompilerArguments>()?.useOldBackend == true) {
+        return false
+    }
+    return true
 }
 
 //
