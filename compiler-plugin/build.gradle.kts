@@ -46,7 +46,7 @@ dependencies tests@{
 
     testImplementation(kotlin("test-junit5"))
 
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.8-alpha02")
+    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.9-alpha01")
     testImplementation("org.assertj:assertj-core:3.22.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")

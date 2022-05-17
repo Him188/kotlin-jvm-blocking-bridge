@@ -71,7 +71,7 @@ fun IrFunction.analyzeCapabilityForGeneratingBridges(ext: IBridgeConfiguration):
         }
 
         val containingClass = parentClassOrNull
-        if (containingClass?.isInline == true) {
+        if (containingClass?.isValue == true) {
             // inside inline class not supported
             return InlineClassesNotSupported(jvmBlockingBridgeAnnotation ?: return EnableForModule,
                 containingClass.descriptor)
