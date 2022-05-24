@@ -108,7 +108,6 @@ There is no special requirements for library users. They can use any IDEs and an
 If you're developing a library, or an application using both Java and Kotlin with KJBB, or anything that relies on source code analysis, please install the Gradle plugin **and** the IntelliJ plugin.
 
 #### **Install IntelliJ IDEA (or Android Studio) plugin**
-   The plugin supports 2020.\* and 2021.\*.  
    It's strongly recommended using the latest IJ or AS, you may update using [JetBrains ToolBox](https://www.jetbrains.com/toolbox-app/).  
    Please note that Eclipse and Visual Studio aren't supported.
 
