@@ -94,7 +94,7 @@ internal fun IrFunction.hasDuplicateBridgeFunction(): Boolean = parentFileOrClas
 
 internal fun IrType.isClassType(fqName: FqNameUnsafe, hasQuestionMark: Boolean? = null): Boolean {
     if (this !is IrSimpleType) return false
-    if (hasQuestionMark != null && this.hasQuestionMark != hasQuestionMark) return false
+    if (hasQuestionMark != null && this.isMarkedNullable() != hasQuestionMark) return false
     return classifier.isClassWithFqName(fqName)
 }
 
