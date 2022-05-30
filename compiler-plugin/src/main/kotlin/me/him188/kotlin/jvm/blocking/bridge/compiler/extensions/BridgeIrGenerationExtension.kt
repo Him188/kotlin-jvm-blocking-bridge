@@ -13,6 +13,8 @@ import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
+import org.jetbrains.kotlin.platform.jvm.isJvm
+import org.jetbrains.kotlin.platform.konan.isNative
 
 /**
  * For IR backend.
@@ -22,6 +24,9 @@ open class JvmBlockingBridgeIrGenerationExtension(
     private val ext: IBridgeConfiguration,
 ) : IrGenerationExtension {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
+        if (!moduleFragment.descriptor.platform!!.isJvm()) {
+            return
+        }
         for (file in moduleFragment.files) {
             JvmBlockingBridgeClassLoweringPass(pluginContext, ext).runOnFileInOrder(file)
             JvmBlockingBridgeFileLoweringPass(pluginContext, ext).runOnFileInOrder(file)
