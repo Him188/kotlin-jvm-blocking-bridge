@@ -119,7 +119,7 @@ suspend fun downloadImage(): Image
 
 #### **安装 IntelliJ IDEA (或 Android Studio) 插件**
 
-本插件支持 IntelliJ IDEA 2020.\* 和 2021.\*。  
+本插件仅支持 IntelliJ IDEA 和 Android Studio。
 Eclipse 和 Visual Studio 或其他 IDE 均不受支持。
 
 一键安装：<https://plugins.jetbrains.com/embeddable/install/14816>，或者也可以手动安装：
@@ -134,7 +134,7 @@ Eclipse 和 Visual Studio 或其他 IDE 均不受支持。
 
 ```kotlin
 plugins {
-    id("me.him188.kotlin-jvm-blocking-bridge") version "1.11.0"
+    id("me.him188.kotlin-jvm-blocking-bridge") version "VERSION"
 }
 ```
 
