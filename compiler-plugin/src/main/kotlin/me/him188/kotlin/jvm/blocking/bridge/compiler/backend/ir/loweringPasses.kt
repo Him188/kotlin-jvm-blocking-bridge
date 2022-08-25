@@ -21,10 +21,11 @@ import org.jetbrains.kotlin.utils.addToStdlib.cast
 class JvmBlockingBridgeFileLoweringPass(
     private val context: IrPluginContext,
     private val ext: IBridgeConfiguration,
+    private val intrinsics: PlatformIntrinsics,
 ) : FileLoweringPass {
     override fun lower(irFile: IrFile) {
         irFile.transformDeclarationsFlat { declaration ->
-            declaration.transformFlat(context, ext)
+            declaration.transformFlat(context, ext, intrinsics)
         }
     }
 }
@@ -32,6 +33,7 @@ class JvmBlockingBridgeFileLoweringPass(
 internal fun IrDeclaration.transformFlat(
     context: IrPluginContext,
     ext: IBridgeConfiguration,
+    intrinsics: PlatformIntrinsics,
 ): List<IrDeclaration> {
     val declaration = this
     if (declaration is IrSimpleFunction) {
@@ -45,7 +47,7 @@ internal fun IrDeclaration.transformFlat(
         }
 
         if (capability.shouldGenerate) {
-            return declaration.followedBy(context.generateJvmBlockingBridges(declaration))
+            return declaration.followedBy(context.generateJvmBlockingBridges(declaration, intrinsics))
         }
     }
 
@@ -58,10 +60,11 @@ internal fun IrDeclaration.transformFlat(
 class JvmBlockingBridgeClassLoweringPass(
     private val context: IrPluginContext,
     private val ext: IBridgeConfiguration,
+    private val intrinsics: PlatformIntrinsics,
 ) : ClassLoweringPass {
     override fun lower(irClass: IrClass) {
         irClass.transformDeclarationsFlat { declaration ->
-            declaration.transformFlat(context, ext)
+            declaration.transformFlat(context, ext, intrinsics)
         }
         irClass.companionObject()?.cast<IrClass>()?.let(::lower)
     }

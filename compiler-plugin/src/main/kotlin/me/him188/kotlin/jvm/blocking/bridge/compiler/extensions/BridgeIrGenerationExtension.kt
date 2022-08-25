@@ -2,6 +2,7 @@ package me.him188.kotlin.jvm.blocking.bridge.compiler.extensions
 
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.JvmBlockingBridgeClassLoweringPass
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.JvmBlockingBridgeFileLoweringPass
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.PlatformIntrinsics
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -24,12 +25,17 @@ open class JvmBlockingBridgeIrGenerationExtension(
     private val ext: IBridgeConfiguration,
 ) : IrGenerationExtension {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        if (!moduleFragment.descriptor.platform!!.isJvm()) {
-            return
+        val platform = moduleFragment.descriptor.platform!!
+
+        val intrinsics = when {
+            platform.isJvm() -> PlatformIntrinsics.ForJvm
+            platform.isNative() -> PlatformIntrinsics.ForJvm
+            else -> return
         }
+
         for (file in moduleFragment.files) {
-            JvmBlockingBridgeClassLoweringPass(pluginContext, ext).runOnFileInOrder(file)
-            JvmBlockingBridgeFileLoweringPass(pluginContext, ext).runOnFileInOrder(file)
+            JvmBlockingBridgeClassLoweringPass(pluginContext, ext, intrinsics).runOnFileInOrder(file)
+            JvmBlockingBridgeFileLoweringPass(pluginContext, ext, intrinsics).runOnFileInOrder(file)
         }
     }
 }

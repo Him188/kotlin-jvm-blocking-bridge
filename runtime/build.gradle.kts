@@ -34,14 +34,16 @@ kotlin {
     } else {
         // 1.6.0
         val nativeTargets = arrayOf(
-            "androidNativeArm32, androidNativeArm64, androidNativeX86, androidNativeX64",
+//            "androidNativeArm32, androidNativeArm64, androidNativeX86, androidNativeX64",
             "iosArm32, iosArm64, iosX64, iosSimulatorArm64",
             "watchosArm32, watchosArm64, watchosX86, watchosX64, watchosSimulatorArm64",
             "tvosArm64, tvosX64, tvosSimulatorArm64",
             "macosX64, macosArm64",
-            "linuxArm64, linuxArm32Hfp, linuxMips32, linuxMipsel32, linuxX64",
-            "mingwX64, mingwX86",
-            "wasm32"
+            "linuxX64",
+//            "linuxArm32Hfp, linuxMips32, linuxMipsel32",
+            "mingwX64",
+//            "mingwX86",
+//            "wasm32"
         ).flatMap { it.split(", ") }
         presets.filter { it.name in nativeTargets }
             .forEach { preset ->
@@ -71,6 +73,12 @@ kotlin {
 
             configure(nativeTestSets) {
                 dependsOn(sourceSets.maybeCreate("nativeTest"))
+            }
+        }
+
+        val nativeMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
             }
         }
     }

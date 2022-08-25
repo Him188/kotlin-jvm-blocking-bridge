@@ -30,24 +30,40 @@ import java.util.*
 import org.jetbrains.kotlin.ir.util.isInterface as isInterfaceKotlin
 
 
-internal object IntrinsicRuntimeFunctions {
-    private val pkg = FqName("me.him188.kotlin.jvm.blocking.bridge.internal")
-    val RUN_SUSPEND = pkg.child(Name.identifier("\$runSuspend\$"))
+sealed interface PlatformIntrinsics {
+    val runSuspend: FqName
+
+    fun referenceJvmDefault(context: IrPluginContext): IrClassSymbol?
+
+    object ForJvm : PlatformIntrinsics {
+        private val pkg = FqName("me.him188.kotlin.jvm.blocking.bridge.internal")
+        override val runSuspend = pkg.child(Name.identifier("\$runSuspend\$"))
+
+        override fun referenceJvmDefault(context: IrPluginContext): IrClassSymbol {
+            val s = FqName("kotlin.jvm").child(Name.identifier("JvmDefault"))
+            return context.referenceClass(s)
+                ?: error("Internal error: Function $s not found.")
+        }
+
+    }
+
+    object ForNative : PlatformIntrinsics {
+        private val pkg = FqName("me.him188.kotlin.jvm.blocking.bridge.internal")
+        override val runSuspend = pkg.child(Name.identifier("runSuspend"))
+
+        override fun referenceJvmDefault(context: IrPluginContext): IrClassSymbol? {
+            return null
+        }
+    }
 }
 
 internal val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}")
 
 internal val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin get() = IrDeclarationOrigin.DEFINED
 
-private fun IrPluginContext.referenceFunctionRunBlocking(): IrSimpleFunctionSymbol {
-    return referenceFunctions(IntrinsicRuntimeFunctions.RUN_SUSPEND).singleOrNull()
-        ?: error("Internal error: Function ${IntrinsicRuntimeFunctions.RUN_SUSPEND} not found.")
-}
-
-private fun IrPluginContext.referenceJvmDefault(): IrClassSymbol {
-    val s = FqName("kotlin.jvm").child(Name.identifier("JvmDefault"))
-    return referenceClass(s)
-        ?: error("Internal error: Function ${s} not found.")
+private fun IrPluginContext.referenceFunctionRunBlocking(intrinsics: PlatformIntrinsics): IrSimpleFunctionSymbol {
+    return referenceFunctions(intrinsics.runSuspend).singleOrNull()
+        ?: error("Internal error: Function ${intrinsics.runSuspend} not found.")
 }
 
 @Suppress("ClassName")
@@ -130,7 +146,11 @@ internal fun IrFunction.computeVisibilityForBridgeFunction(): DescriptorVisibili
     return this.visibility
 }
 
-fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List<IrDeclaration> {
+fun IrPluginContext.generateJvmBlockingBridges(
+    originFunction: IrFunction,
+    intrinsics: PlatformIntrinsics
+): List<IrDeclaration> {
+    val context = this
     val containingFileOrClass = originFunction.parentFileOrClass
 
     val bridgeFunction = IrFactoryImpl.buildFun {
@@ -157,7 +177,10 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
             .plus(createGeneratedBlockingBridgeConstructorCall(symbol))
 
         if (containingFileOrClass.isInterface) {
-            this.annotations += createIrBuilder(symbol).irAnnotationConstructor(referenceJvmDefault())
+            intrinsics.referenceJvmDefault(context)?.let {
+                this.annotations += createIrBuilder(symbol).irAnnotationConstructor(it)
+            }
+
         }
 
         this.parent = containingFileOrClass
@@ -174,7 +197,7 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
             // given: suspend fun <T, R, ...> T.test(params): R
             // gen:           fun <T, R, ...> T.test(params): R
 
-            val runBlockingFun = referenceFunctionRunBlocking()
+            val runBlockingFun = referenceFunctionRunBlocking(intrinsics)
             // call `kotlinx.coroutines.runBlocking<R>(CoroutineContext = ..., suspend CoroutineScope.() -> R): R`
 
             val suspendLambda = createSuspendLambdaWithCoroutineScope(
