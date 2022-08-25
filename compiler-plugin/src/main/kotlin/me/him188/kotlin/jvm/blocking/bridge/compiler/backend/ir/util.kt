@@ -5,7 +5,6 @@ package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir
 
 import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.GeneratedBlockingBridgeStubForResolution
-import org.jetbrains.kotlin.backend.common.ir.allOverridden
 import org.jetbrains.kotlin.backend.common.lower.parents
 import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.codegen.topLevelClassAsmType
@@ -14,10 +13,7 @@ import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
-import org.jetbrains.kotlin.ir.util.findAnnotation
-import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
-import org.jetbrains.kotlin.ir.util.hasAnnotation
-import org.jetbrains.kotlin.ir.util.originalFunction
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 

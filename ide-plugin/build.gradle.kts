@@ -1,5 +1,4 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
-import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.targets
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     id("org.jetbrains.intellij") version "1.7.0"

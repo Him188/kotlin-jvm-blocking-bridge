@@ -1,5 +1,4 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.targets
 
 plugins {
     id("me.him188.maven-central-publish")

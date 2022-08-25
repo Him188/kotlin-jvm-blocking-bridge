@@ -4,7 +4,6 @@ import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.BlockingBridgeA
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.BlockingBridgeAnalyzeResult.*
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.isJvm8OrHigher
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.IBridgeConfiguration
-import org.jetbrains.kotlin.backend.common.ir.allParameters
 import org.jetbrains.kotlin.backend.jvm.ir.isInlineClassType
 import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.descriptors.effectiveVisibility
@@ -12,6 +11,7 @@ import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.util.allParameters
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.module
 import org.jetbrains.kotlin.ir.util.parentClassOrNull
