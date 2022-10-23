@@ -111,12 +111,10 @@ class BridgeCodegen(
         val methodName = originFunction.jvmName ?: originFunction.name.asString()
 
         val returnTypeAsm = if (allowUnitCoercion) {
-            originFunction.returnType?.coerceUnitToVoid()
-                ?: originFunction.returnType?.asmType()
-                ?: Nothing::class.asmType
+            originFunction.returnType?.coerceUnitToVoid() ?: originFunction.returnType?.asmType()
+            ?: Nothing::class.asmType
         } else {
-            originFunction.returnType?.asmType()
-                ?: Nothing::class.asmType
+            originFunction.returnType?.asmType() ?: Nothing::class.asmType
         }
         val methodOrigin = JvmDeclarationOrigin(
             originKind = JvmDeclarationOriginKind.BRIDGE,
@@ -128,16 +126,13 @@ class BridgeCodegen(
         val shouldGenerateAsStatic = isJvmStaticIn { !it.isCompanionObject() }
 
         val bridgeSignature = extensionReceiverAndValueParameters().computeJvmDescriptorForMethod(
-            typeMapper,
-            returnTypeDescriptor = returnTypeAsm.descriptor
+            typeMapper, returnTypeDescriptor = returnTypeAsm.descriptor
         )
 
         val mv = v.newMethod(
             methodOrigin,
-            originFunction.bridgesModalityAsm()
-                .or(originFunction.visibility.asmFlag)
-                .or(if (shouldGenerateAsStatic) ACC_STATIC else 0)
-                .or(if (synthetic) ACC_SYNTHETIC else 0),
+            originFunction.bridgesModalityAsm().or(originFunction.visibility.asmFlag)
+                .or(if (shouldGenerateAsStatic) ACC_STATIC else 0).or(if (synthetic) ACC_SYNTHETIC else 0),
             methodName,
             bridgeSignature,
             null,
@@ -163,18 +158,9 @@ class BridgeCodegen(
         }
 
         FunctionCodegen.generateParameterAnnotations(
-            originFunction,
-            mv,
-            typeMapper.mapSignatureWithCustomParameters(
-                originFunction,
-                codegen.context.contextKind,
-                originFunction.valueParameters,
-                true
-            ),
-            originFunction.valueParameters,
-            codegen,
-            generationState,
-            false
+            originFunction, mv, typeMapper.mapSignatureWithCustomParameters(
+                originFunction, codegen.context.contextKind, originFunction.valueParameters, true
+            ), originFunction.valueParameters, codegen, generationState, false
         )
 
         for ((index, param) in originFunction.extensionReceiverAndValueParameters().withIndex()) {
@@ -184,35 +170,28 @@ class BridgeCodegen(
         }
 
         mv.genAnnotation(
-            descriptor =
-            if (originFunction.returnTypeOrNothing.isNullable())
-                Nullable::class.asmTypeDescriptor
-            else NotNull::class.asmTypeDescriptor,
-            visible = false
+            descriptor = if (originFunction.returnTypeOrNothing.isNullable()) Nullable::class.asmTypeDescriptor
+            else NotNull::class.asmTypeDescriptor, visible = false
         )
 
-        val newAnnotations = originFunction.annotations
-            .filterNot { it.type.asmType().descriptor == GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor }
-            .filterNot { it.type.asmType().descriptor == JVM_BLOCKING_BRIDGE_ASM_TYPE.descriptor }
-            .also { annotations ->
-                AnnotationCodegen.forMethod(mv, codegen, generationState)
-                    .genAnnotations(
-                        AnnotatedImpl(Annotations.create(annotations)),
-                        returnTypeAsm,
-                        createFunctionType(
-                            builtIns,
-                            suspendFunction = false,
-                            shouldUseVarargType = true
+        val newAnnotations =
+            originFunction.annotations.filterNot { it.type.asmType().descriptor == GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor }
+                .filterNot { it.type.asmType().descriptor == JVM_BLOCKING_BRIDGE_ASM_TYPE.descriptor }
+                .also { annotations ->
+                    AnnotationCodegen.forMethod(mv, codegen, generationState).genAnnotations(
+                            AnnotatedImpl(Annotations.create(annotations)), returnTypeAsm, createFunctionType(
+                                builtIns, suspendFunction = false, shouldUseVarargType = true
+                            )
                         )
-                    )
-            }
+                }
 
         mv.genAnnotation(GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor, true)
 
 
         fun createGeneratedBlockingBridgeAnnotation(): AnnotationDescriptorImpl? {
-            val type = module.resolveTopLevelClass(GENERATED_BLOCKING_BRIDGE_FQ_NAME,
-                NoLookupLocation.FROM_BACKEND)?.defaultType ?: return null
+            val type = module.resolveTopLevelClass(
+                GENERATED_BLOCKING_BRIDGE_FQ_NAME, NoLookupLocation.FROM_BACKEND
+            )?.defaultType ?: return null
             return AnnotationDescriptorImpl(type, mapOf(), SourceElement.NO_SOURCE)
         }
 
@@ -232,8 +211,7 @@ class BridgeCodegen(
                     when {
                         isEmpty() -> emptyList()
                         KotlinBuiltIns.isConstructedFromGivenClass(
-                            last().type,
-                            StandardNames.CONTINUATION_INTERFACE_FQ_NAME
+                            last().type, StandardNames.CONTINUATION_INTERFACE_FQ_NAME
                         ) -> dropLast(1)
                         else -> this
                     }
@@ -302,14 +280,9 @@ class BridgeCodegen(
         val iv = InstructionAdapter(mv)
 
         val lambdaClassDescriptor = generateLambdaForRunBlocking(
-            originFunction, codegen.state,
-            originFunction.findPsi(),
-            clazz.findPsi()?.containingFile ?: error("Could not find source file for class ${
-                clazz.fqNameOrNull()?.asString() ?: clazz.name
-            }"),
-            codegen.v.thisName,
-            ownerType,
-            if (shouldGenerateAsStatic) null else clazz.thisAsReceiverParameter
+            originFunction, codegen.state, originFunction.findPsi(), clazz.findPsi()?.containingFile ?: error(
+                "Could not find source file for class ${clazz.fqNameOrNull()?.asString() ?: clazz.name}"
+            ), codegen.v.thisName, ownerType, if (shouldGenerateAsStatic) null else clazz.thisAsReceiverParameter
         ).let { Type.getObjectType(it) }
 
         //mv.visitParameter("\$\$this", 1)
@@ -373,8 +346,7 @@ internal val DescriptorVisibility.asmFlag: Int
 @Suppress("TYPE_INFERENCE_ONLY_INPUT_TYPES_WARNING")
 internal fun FunctionDescriptor.exceptionsByThrowsAnnotation(typeMapper: KotlinTypeMapper): Array<out String> {
     val annotation = annotations.findAnnotation(FqName(Throws::class.qualifiedName!!)) ?: return emptyArray()
-    val classes =
-        annotation.allValueArguments.values.single().cast<ArrayValue>().value.map { it.cast<KClassValue>() }
+    val classes = annotation.allValueArguments.values.single().cast<ArrayValue>().value.map { it.cast<KClassValue>() }
     return classes.map {
         when (val clazz = it.value) {
             is KClassValue.Value.NormalClass -> clazz.classId.asSingleFqName().asString().replace(".", "/")
@@ -413,8 +385,11 @@ internal fun List<ParameterDescriptor>.toKtParameterList(): List<KtParameter?> {
 }
 
 internal fun FunctionDescriptor.allRequiredParameters(dispatchReceiver: ReceiverParameterDescriptor?): List<ParameterDescriptor> {
-    return if (!isJvmStaticInNonCompanionObject()) dispatchReceiver!!.followedBy(extensionReceiverParameter.followedBy(
-        valueParameters)) else extensionReceiverParameter.followedBy(
+    return if (!isJvmStaticInNonCompanionObject()) dispatchReceiver!!.followedBy(
+        extensionReceiverParameter.followedBy(
+            valueParameters
+        )
+    ) else extensionReceiverParameter.followedBy(
         valueParameters
     )
 }
@@ -422,15 +397,13 @@ internal fun FunctionDescriptor.allRequiredParameters(dispatchReceiver: Receiver
 fun CallableDescriptor.isJvmStaticInNonCompanionObject(): Boolean =
     isJvmStaticIn { !DescriptorUtils.isCompanionObject(it) }
 
-private fun CallableDescriptor.isJvmStaticIn(predicate: (DeclarationDescriptor) -> Boolean): Boolean =
-    when (this) {
-        is PropertyAccessorDescriptor -> {
-            val propertyDescriptor = correspondingProperty
-            predicate(propertyDescriptor.containingDeclaration) &&
-                    (hasJvmStaticAnnotation() || propertyDescriptor.hasJvmStaticAnnotation())
-        }
-        else -> predicate(containingDeclaration) && hasJvmStaticAnnotation()
+private fun CallableDescriptor.isJvmStaticIn(predicate: (DeclarationDescriptor) -> Boolean): Boolean = when (this) {
+    is PropertyAccessorDescriptor -> {
+        val propertyDescriptor = correspondingProperty
+        predicate(propertyDescriptor.containingDeclaration) && (hasJvmStaticAnnotation() || propertyDescriptor.hasJvmStaticAnnotation())
     }
+    else -> predicate(containingDeclaration) && hasJvmStaticAnnotation()
+}
 
 internal fun <T> T?.followedBy(list: Collection<T>): List<T> {
     if (this == null) return list.toList()
@@ -445,8 +418,7 @@ internal fun List<ParameterDescriptor>.computeJvmDescriptorForMethod(
     returnTypeDescriptor: String,
 ): String {
     return Type.getMethodDescriptor(
-        Type.getType(returnTypeDescriptor),
-        *this.map { it.type.asmType(typeMapper) }.toTypedArray()
+        Type.getType(returnTypeDescriptor), *this.map { it.type.asmType(typeMapper) }.toTypedArray()
     )
 }
 
@@ -465,17 +437,17 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
 
     val internalName = originFunction.mangleBridgeLambdaClassname(parentName)
     val lambdaBuilder = state.factory.newVisitor(
-        OtherOrigin(originFunction),
-        Type.getObjectType(internalName),
-        sourceFile
+        OtherOrigin(originFunction), Type.getObjectType(internalName), sourceFile
     )
 
     val arity = 1
 
     lambdaBuilder.defineClass(
-        originElement, state.classFileVersion,
+        originElement,
+        state.classFileVersion,
         ACC_FINAL or ACC_SUPER or ACC_SYNTHETIC,
-        internalName, null,
+        internalName,
+        null,
         AsmTypes.LAMBDA.internalName,
         arrayOf(NUMBERED_FUNCTION_PREFIX + arity) // Function2<in P1, out R>
     )
@@ -486,7 +458,9 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
             JvmDeclarationOrigin.NO_ORIGIN,
             ACC_PRIVATE or ACC_FINAL,
             name ?: parameter.synthesizedNameString(),
-            parameter.type.asmType().descriptor, null, null
+            parameter.type.asmType().descriptor,
+            null,
+            null
         )
     }
     dispatchReceiverParameterDescriptor?.let {
@@ -510,7 +484,9 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
         AsmUtil.NO_FLAG_PACKAGE_PRIVATE or ACC_SYNTHETIC,
         "<init>",
         originFunction.allRequiredParameters(dispatchReceiverParameterDescriptor)
-            .computeJvmDescriptorForMethod(typeMapper, "V"), null, null
+            .computeJvmDescriptorForMethod(typeMapper, "V"),
+        null,
+        null
     ).applyWithInstructionAdapter {
         visitCode()
 
@@ -530,10 +506,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
             load(stack.enterTemp(asmType), asmType)
 
             visitFieldInsn(
-                PUTFIELD,
-                lambdaBuilder.thisName,
-                name ?: parameter.synthesizedNameString(),
-                asmType.descriptor
+                PUTFIELD, lambdaBuilder.thisName, name ?: parameter.synthesizedNameString(), asmType.descriptor
             )
         }
 
@@ -552,10 +525,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
     }
 
     lambdaBuilder.newMethod(
-        JvmDeclarationOrigin.NO_ORIGIN,
-        ACC_PUBLIC or ACC_SYNTHETIC or ACC_FINAL,
-        "invoke",
-        Type.getMethodDescriptor(
+        JvmDeclarationOrigin.NO_ORIGIN, ACC_PUBLIC or ACC_SYNTHETIC or ACC_FINAL, "invoke", Type.getMethodDescriptor(
             AsmTypes.OBJECT_TYPE,
             // AsmTypes.OBJECT_TYPE, // CoroutineScope
             AsmTypes.OBJECT_TYPE // Continuation
@@ -573,10 +543,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
             // load(stack.enterTemp(asmType), asmType)
 
             visitFieldInsn(
-                GETFIELD,
-                lambdaBuilder.thisName,
-                name ?: parameter.synthesizedNameString(),
-                asmType.descriptor
+                GETFIELD, lambdaBuilder.thisName, name ?: parameter.synthesizedNameString(), asmType.descriptor
             )
         }
 
@@ -590,8 +557,7 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
         visitVarInsn(ALOAD, arity) // 0 is `this`, 1 is 1st param, arity is the last
         val continuationInternalName = CONTINUATION_ASM_TYPE.internalName
         visitTypeInsn(
-            CHECKCAST,
-            continuationInternalName
+            CHECKCAST, continuationInternalName
         )
 
 
@@ -601,15 +567,12 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
                 isGeneratedAsStatic -> INVOKESTATIC
                 originFunction.containingClass?.isInterface() == true -> INVOKEINTERFACE
                 else -> INVOKEVIRTUAL
-            },
-            parentName,
-            originFunction.jvmNameOrName.identifier,
-            Type.getMethodDescriptor(
+            }, parentName, originFunction.jvmNameOrName.identifier, Type.getMethodDescriptor(
                 AsmTypes.OBJECT_TYPE,
                 *originFunction.extensionReceiverAndValueParameters().map { it.type.asmType() }.toTypedArray(),
                 CONTINUATION_ASM_TYPE
-            ),
-            false)
+            ), false
+        )
         visitInsn(ARETURN)
         visitEnd()
     }

@@ -29,7 +29,7 @@ open class JvmBlockingBridgeIrGenerationExtension(
 
         val intrinsics = when {
             platform.isJvm() -> PlatformIntrinsics.ForJvm
-            platform.isNative() -> PlatformIntrinsics.ForJvm
+            platform.isNative() -> PlatformIntrinsics.ForNative
             else -> return
         }
 

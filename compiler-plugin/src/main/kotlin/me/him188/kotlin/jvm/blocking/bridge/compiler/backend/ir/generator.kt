@@ -1,5 +1,6 @@
 package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir
 
+import org.jetbrains.kotlin.GeneratedDeclarationKey
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.ir.*
@@ -12,10 +13,7 @@ import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.IrFactoryImpl
-import org.jetbrains.kotlin.ir.expressions.IrBlockBody
-import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
-import org.jetbrains.kotlin.ir.expressions.IrContainerExpression
-import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
@@ -26,6 +24,8 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.FqNameUnsafe
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
+import org.jetbrains.kotlin.platform.TargetPlatform
+import org.jetbrains.kotlin.platform.konan.isNative
 import java.util.*
 import org.jetbrains.kotlin.ir.util.isInterface as isInterfaceKotlin
 
@@ -57,9 +57,21 @@ sealed interface PlatformIntrinsics {
     }
 }
 
-internal val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}")
+internal fun IrFunction.bridgeFunctionNameIn(platform: TargetPlatform?): Name {
+    return if (platform.isNative()) {
+        Name.identifier("${this.name}B")
+    } else {
+        Name.identifier("${this.name}")
+    }
+}
 
-internal val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin get() = IrDeclarationOrigin.DEFINED
+object KjbbGeneratedDeclarationKey : GeneratedDeclarationKey()
+
+
+// e: Compilation failed: class org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin$GeneratedByPlugin cannot be cast to class org.jetbrains.kotlin.ir.declarations.IrDeclarationOriginImpl (org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin$GeneratedByPlugin and org.jetbrains.kotlin.ir.declarations.IrDeclarationOriginImpl are in unnamed module of loader java.net.URLClassLoader @2f631db7)
+internal val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin =
+    IrDeclarationOrigin.DEFINED
+//    IrDeclarationOrigin.GeneratedByPlugin(KjbbGeneratedDeclarationKey)
 
 private fun IrPluginContext.referenceFunctionRunBlocking(intrinsics: PlatformIntrinsics): IrSimpleFunctionSymbol {
     return referenceFunctions(intrinsics.runSuspend).singleOrNull()
@@ -153,13 +165,14 @@ fun IrPluginContext.generateJvmBlockingBridges(
     val context = this
     val containingFileOrClass = originFunction.parentFileOrClass
 
+    val resultantDeclarations = mutableListOf<IrDeclaration>()
     val bridgeFunction = IrFactoryImpl.buildFun {
         startOffset = originFunction.startOffset
         endOffset = originFunction.endOffset
 
         origin = ORIGIN_JVM_BLOCKING_BRIDGE
 
-        name = originFunction.bridgeFunctionName
+        name = originFunction.bridgeFunctionNameIn(platform)
         returnType = originFunction.returnType
 
         modality = containingFileOrClass.computeModalityForBridgeFunction()
@@ -205,7 +218,13 @@ fun IrPluginContext.generateJvmBlockingBridges(
                 lambdaType = symbols.suspendFunctionN(0).typeWith(this@fn.returnType) // suspend () -> R
                 ,
                 originFunction = originFunction
-            ).also { +it }
+            ).also {
+                if (platform.isNative()) {
+                    resultantDeclarations.add(it)
+                } else {
+                    +it // add in local scope
+                }
+            }
 
             +irReturn(
                 irCall(runBlockingFun).apply {
@@ -231,8 +250,8 @@ fun IrPluginContext.generateJvmBlockingBridges(
             */
         }
     }
-
-    return listOf(bridgeFunction)
+    resultantDeclarations.add(bridgeFunction)
+    return resultantDeclarations
 }
 
 internal fun IrFunction.paramsAndReceiversAsParamsList(): List<IrValueParameter> {
@@ -265,24 +284,36 @@ internal fun IrPluginContext.createSuspendLambdaWithCoroutineScope(
     originFunction: IrFunction,
 ): IrClass {
     return IrFactoryImpl.buildClass {
-        name = SpecialNames.NO_NAME_PROVIDED
+        name =
+            if (platform.isNative()) Name.identifier(originFunction.name.identifier + "\$suspendLambda") else SpecialNames.NO_NAME_PROVIDED
         kind = ClassKind.CLASS
+        startOffset = parent.startOffset
+        endOffset = parent.endOffset
         //isInner = true
     }.apply clazz@{
         this.parent = parent
         superTypes = listOf(lambdaType)
 
         val fields = originFunction.paramsAndReceiversAsParamsList().map {
-            addField(it.name.identifierOrMappedSpecialName.synthesizedName, it.type)
+            addField {
+                startOffset = parent.startOffset // required by native compiler
+                endOffset = parent.endOffset
+                name = it.name.identifierOrMappedSpecialName.synthesizedName
+                type = it.type
+            }
         }
 
         createImplicitParameterDeclarationWithWrappedDescriptor()
 
         addConstructor {
             isPrimary = true
+            startOffset = parent.startOffset // required by native compiler
+            endOffset = parent.endOffset
         }.apply constructor@{
             val newParams = fields.associateWith { irField ->
                 this@constructor.addValueParameter {
+                    startOffset = parent.startOffset // required by native compiler
+                    endOffset = parent.endOffset
                     name = irField.name
                     type = irField.type
                 }
@@ -299,7 +330,13 @@ internal fun IrPluginContext.createSuspendLambdaWithCoroutineScope(
 
         val irClass = this
 
-        addFunction("invoke", lambdaType.arguments.last().typeOrNull!!, isSuspend = true).apply functionInvoke@{
+        addFunction(
+            "invoke",
+            lambdaType.arguments.last().typeOrNull!!,
+            isSuspend = true,
+            startOffset = startOffset,
+            endOffset = endOffset
+        ).apply functionInvoke@{
             this.overriddenSymbols =
                 listOf(irClass.superTypes[0].getClass()!!.functionsSequence.single { it.name.identifier == "invoke" && it.isOverridable }.symbol)
 

@@ -19,6 +19,8 @@ import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 
 
 val JVM_BLOCKING_BRIDGE_FQ_NAME = FqName(JvmBlockingBridge::class.qualifiedName!!)
+val CNAME_FQN = FqName("kotlin.native.CName")
+val ExportForCppRuntime_FQN = FqName("kotlin.native.internal.ExportForCppRuntime")
 
 val GENERATED_BLOCKING_BRIDGE_FQ_NAME =
     FqName("me.him188.kotlin.jvm.blocking.bridge.GeneratedBlockingBridge")

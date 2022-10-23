@@ -84,6 +84,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
             KotlinPlatformType.jvm,
             KotlinPlatformType.androidJvm,
             KotlinPlatformType.common,
+            KotlinPlatformType.native,
             -> true
             else -> false
         }//.also { log("Application to ${kotlinCompilation.name} (${kotlinCompilation.platformType}): $it") }
