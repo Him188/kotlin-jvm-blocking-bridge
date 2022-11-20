@@ -14,7 +14,7 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiExtensibleClass
 import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.RuntimeIntrinsics
 import me.him188.kotlin.jvm.blocking.bridge.ide.line.marker.document
 import me.him188.kotlin.jvm.blocking.bridge.ide.line.marker.getLineNumber
 import org.jetbrains.kotlin.asJava.classes.KtLightClass
@@ -124,7 +124,7 @@ class BridgeInlayHintsCollector :
         if (method.isJvmStatic() && method.containingKtClass !is KtObjectDeclaration) return null
 
         when {
-            method.containingKtClass?.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+            method.containingKtClass?.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
                 .also { annotation = it } != null -> {
 
                 val containingClass = method.containingClass
@@ -139,7 +139,7 @@ class BridgeInlayHintsCollector :
                     )
                 }
             }
-            method.containingKtFile?.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+            method.containingKtFile?.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
                 .also { annotation = it } != null -> {
 
                 val containingKtFile = method.containingKtFile!!

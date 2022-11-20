@@ -34,6 +34,7 @@ public class J {
 
         AnnotationOnInterface i = new AnnotationOnInterface() {
 
+
             @Nullable
             @Override
             public Object suspend(@NotNull Continuation<? super Unit> $completion) {

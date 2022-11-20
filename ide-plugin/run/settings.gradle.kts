@@ -10,3 +10,4 @@ rootProject.name = "TestProject"
 
 
 include(":below8")
+include(":mpp")

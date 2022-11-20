@@ -3,44 +3,32 @@
 
 package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir
 
-import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.GeneratedBlockingBridgeStubForResolution
 import org.jetbrains.kotlin.backend.common.lower.parents
 import org.jetbrains.kotlin.backend.jvm.ir.psiElement
-import org.jetbrains.kotlin.codegen.topLevelClassAsmType
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.util.*
-import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
-
-
-val JVM_BLOCKING_BRIDGE_FQ_NAME = FqName(JvmBlockingBridge::class.qualifiedName!!)
-
-val GENERATED_BLOCKING_BRIDGE_FQ_NAME =
-    FqName("me.him188.kotlin.jvm.blocking.bridge.GeneratedBlockingBridge")
-
-val JVM_BLOCKING_BRIDGE_ASM_TYPE = JVM_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
-val GENERATED_BLOCKING_BRIDGE_ASM_TYPE = GENERATED_BLOCKING_BRIDGE_FQ_NAME.topLevelClassAsmType()
 
 /**
  * For annotation class
  */
 fun IrClass.isJvmBlockingBridge(): Boolean =
-    symbol.owner.fqNameWhenAvailable?.asString() == JVM_BLOCKING_BRIDGE_FQ_NAME.asString()
+    symbol.owner.fqNameWhenAvailable?.asString() == RuntimeIntrinsics.JvmBlockingBridgeFqName.asString()
 
 /**
  * Filter by annotation `@JvmBlockingBridge`
  */
-fun FunctionDescriptor.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+fun FunctionDescriptor.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
 
 /**
  * Filter by annotation `@JvmBlockingBridge`
  */
-fun IrFunction.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+fun IrFunction.isJvmBlockingBridge(): Boolean = annotations.hasAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
 
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 fun IrFunction.isGeneratedBlockingBridgeStub(): Boolean =
@@ -62,19 +50,19 @@ fun IrSimpleFunction.findOverriddenDescriptorsHierarchically(filter: (IrSimpleFu
 }
 
 internal fun IrAnnotationContainer.jvmBlockingBridgeAnnotation(): IrConstructorCall? =
-    annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+    annotations.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
 
 fun IrFunction.jvmBlockingBridgeAnnotationOnContainingClass(): IrConstructorCall? {
     val containingClass = parent
 
     if (containingClass is IrAnnotationContainer) {
-        val annotation = containingClass.annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+        val annotation = containingClass.annotations.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
         if (annotation != null) return annotation
     }
 
     if (containingClass is IrClass) {
         val file = containingClass.parents.firstIsInstanceOrNull<IrFile>()
-        val annotation = file?.annotations?.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+        val annotation = file?.annotations?.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
         if (annotation != null) return annotation
     }
 

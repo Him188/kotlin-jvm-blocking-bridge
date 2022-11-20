@@ -45,7 +45,7 @@ dependencies tests@{
 
     testImplementation(kotlin("test-junit5"))
 
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.9-alpha01") {
+    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.9") {
         exclude("org.jetbrains.kotlin", "kotlin-annotation-processing-embeddable")
     }
     testRuntimeOnly("org.jetbrains.kotlin:kotlin-annotation-processing-embeddable:1.7.0-RC")

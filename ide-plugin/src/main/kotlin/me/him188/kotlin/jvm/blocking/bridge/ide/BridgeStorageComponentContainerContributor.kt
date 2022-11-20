@@ -1,5 +1,6 @@
 package me.him188.kotlin.jvm.blocking.bridge.ide
 
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.hasJvmComponent
 import me.him188.kotlin.jvm.blocking.bridge.compiler.diagnostic.BlockingBridgeDeclarationChecker
 import org.jetbrains.kotlin.container.StorageComponentContainer
 import org.jetbrains.kotlin.container.useInstance
@@ -21,7 +22,7 @@ class BridgeStorageComponentContainerContributor : StorageComponentContainerCont
 
         //container.useInstance(BridgeCodegenCliExtension())
 
-        if (!platform.isJvm()) return
+        if (!platform.hasJvmComponent()) return
 
         container.useInstance(object :
             BlockingBridgeDeclarationChecker(moduleDescriptor.isIr(),

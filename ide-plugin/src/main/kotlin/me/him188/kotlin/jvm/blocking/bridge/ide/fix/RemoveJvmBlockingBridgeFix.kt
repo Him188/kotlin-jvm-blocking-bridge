@@ -5,7 +5,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.parentsOfType
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.RuntimeIntrinsics
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.idea.inspections.KotlinUniversalQuickFix
 import org.jetbrains.kotlin.idea.quickfix.KotlinCrossLanguageQuickFixAction
@@ -24,7 +24,7 @@ class RemoveJvmBlockingBridgeFix(
     override fun getText(): String = BlockingBridgeBundle.message("remove.jvm.blocking.bridge")
 
     override fun invokeImpl(project: Project, editor: Editor?, file: PsiFile) {
-        element?.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)?.delete() ?: return
+        element?.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)?.delete() ?: return
     }
 
     companion object : KotlinSingleIntentionActionFactory() {

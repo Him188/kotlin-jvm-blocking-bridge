@@ -1,6 +1,6 @@
 package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm
 
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.RuntimeIntrinsics
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation.*
 import org.jetbrains.kotlin.codegen.state.md5base64
 import org.jetbrains.kotlin.descriptors.*
@@ -69,18 +69,21 @@ fun DeclarationDescriptor.hasJvmBlockingBridgeAnnotation(
         is ClassDescriptor -> {
             when {
                 enableForModule -> ENABLE_FOR_MODULE
-                this.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME) -> FROM_CONTAINING_DECLARATION
-                findFileAnnotation(bindingContext, JVM_BLOCKING_BRIDGE_FQ_NAME) != null -> FROM_CONTAINING_DECLARATION
+                this.annotations.hasAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName) -> FROM_CONTAINING_DECLARATION
+                findFileAnnotation(
+                    bindingContext,
+                    RuntimeIntrinsics.JvmBlockingBridgeFqName
+                ) != null -> FROM_CONTAINING_DECLARATION
                 else -> NONE
             }
         }
         is FunctionDescriptor -> {
-            if (this.annotations.hasAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)) {
+            if (this.annotations.hasAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)) {
                 FROM_FUNCTION
             } else this.containingClass?.hasJvmBlockingBridgeAnnotation(bindingContext, enableForModule) ?: NONE
         }
         is PackageFragmentDescriptor -> {
-            if (findFileAnnotation(bindingContext, JVM_BLOCKING_BRIDGE_FQ_NAME) != null) {
+            if (findFileAnnotation(bindingContext, RuntimeIntrinsics.JvmBlockingBridgeFqName) != null) {
                 FROM_CONTAINING_DECLARATION
             } else NONE
         }

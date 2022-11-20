@@ -2,10 +2,7 @@ package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_ASM_TYPE
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.GENERATED_BLOCKING_BRIDGE_FQ_NAME
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.JVM_BLOCKING_BRIDGE_ASM_TYPE
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.identifierOrMappedSpecialName
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.*
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
@@ -192,8 +189,8 @@ class BridgeCodegen(
         )
 
         val newAnnotations = originFunction.annotations
-            .filterNot { it.type.asmType().descriptor == GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor }
-            .filterNot { it.type.asmType().descriptor == JVM_BLOCKING_BRIDGE_ASM_TYPE.descriptor }
+            .filterNot { it.type.asmType().descriptor == RuntimeIntrinsics.JvmBlockingBridgeAsm.descriptor }
+            .filterNot { it.type.asmType().descriptor == RuntimeIntrinsics.JvmBlockingBridgeAsm.descriptor }
             .also { annotations ->
                 AnnotationCodegen.forMethod(mv, codegen, generationState)
                     .genAnnotations(
@@ -207,12 +204,14 @@ class BridgeCodegen(
                     )
             }
 
-        mv.genAnnotation(GENERATED_BLOCKING_BRIDGE_ASM_TYPE.descriptor, true)
+        mv.genAnnotation(RuntimeIntrinsics.JvmBlockingBridgeAsm.descriptor, true)
 
 
         fun createGeneratedBlockingBridgeAnnotation(): AnnotationDescriptorImpl? {
-            val type = module.resolveTopLevelClass(GENERATED_BLOCKING_BRIDGE_FQ_NAME,
-                NoLookupLocation.FROM_BACKEND)?.defaultType ?: return null
+            val type = module.resolveTopLevelClass(
+                RuntimeIntrinsics.JvmBlockingBridgeFqName,
+                NoLookupLocation.FROM_BACKEND
+            )?.defaultType ?: return null
             return AnnotationDescriptorImpl(type, mapOf(), SourceElement.NO_SOURCE)
         }
 
@@ -224,6 +223,7 @@ class BridgeCodegen(
             originFunction.kind,
             originFunction.source,
         ).apply {
+            @Suppress("DEPRECATION")
             initialize(
                 originFunction.extensionReceiverParameter,
                 if (shouldGenerateAsStatic) null else clazz.thisAsReceiverParameter,
@@ -304,9 +304,11 @@ class BridgeCodegen(
         val lambdaClassDescriptor = generateLambdaForRunBlocking(
             originFunction, codegen.state,
             originFunction.findPsi(),
-            clazz.findPsi()?.containingFile ?: error("Could not find source file for class ${
-                clazz.fqNameOrNull()?.asString() ?: clazz.name
-            }"),
+            clazz.findPsi()?.containingFile ?: error(
+                "Could not find source file for class ${
+                    clazz.fqNameOrNull()?.asString() ?: clazz.name
+                }"
+            ),
             codegen.v.thisName,
             ownerType,
             if (shouldGenerateAsStatic) null else clazz.thisAsReceiverParameter
@@ -370,7 +372,6 @@ internal val DescriptorVisibility.asmFlag: Int
         else -> ACC_PUBLIC
     }
 
-@Suppress("TYPE_INFERENCE_ONLY_INPUT_TYPES_WARNING")
 internal fun FunctionDescriptor.exceptionsByThrowsAnnotation(typeMapper: KotlinTypeMapper): Array<out String> {
     val annotation = annotations.findAnnotation(FqName(Throws::class.qualifiedName!!)) ?: return emptyArray()
     val classes =
@@ -413,8 +414,11 @@ internal fun List<ParameterDescriptor>.toKtParameterList(): List<KtParameter?> {
 }
 
 internal fun FunctionDescriptor.allRequiredParameters(dispatchReceiver: ReceiverParameterDescriptor?): List<ParameterDescriptor> {
-    return if (!isJvmStaticInNonCompanionObject()) dispatchReceiver!!.followedBy(extensionReceiverParameter.followedBy(
-        valueParameters)) else extensionReceiverParameter.followedBy(
+    return if (!isJvmStaticInNonCompanionObject()) dispatchReceiver!!.followedBy(
+        extensionReceiverParameter.followedBy(
+            valueParameters
+        )
+    ) else extensionReceiverParameter.followedBy(
         valueParameters
     )
 }
@@ -609,14 +613,15 @@ private fun BridgeCodegenExtensions.generateLambdaForRunBlocking(
                 *originFunction.extensionReceiverAndValueParameters().map { it.type.asmType() }.toTypedArray(),
                 CONTINUATION_ASM_TYPE
             ),
-            false)
+            false
+        )
         visitInsn(ARETURN)
         visitEnd()
     }
 
     writeSyntheticClassMetadata(lambdaBuilder, state, InlineUtil.isInPublicInlineScope(originFunction.containingClass))
 
-    lambdaBuilder.done()
+    lambdaBuilder.done(false)
     return lambdaBuilder.thisName
 }
 

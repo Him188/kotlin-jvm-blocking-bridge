@@ -1,7 +1,7 @@
 package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm
 
 import com.intellij.psi.PsiElement
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.JVM_BLOCKING_BRIDGE_FQ_NAME
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.RuntimeIntrinsics
 import me.him188.kotlin.jvm.blocking.bridge.compiler.diagnostic.BlockingBridgeErrors.*
 import org.jetbrains.kotlin.config.JvmTarget
 import org.jetbrains.kotlin.descriptors.*
@@ -90,9 +90,14 @@ sealed class BlockingBridgeAnalyzeResult(
     }
 }
 
-internal fun TargetPlatform.isJvm8OrHigher(): Boolean {
+fun TargetPlatform.isJvm8OrHigher(): Boolean {
     return componentPlatforms
         .any { it.targetPlatformVersion as? JvmTarget ?: JvmTarget.DEFAULT >= JvmTarget.JVM_1_8 }
+}
+
+fun TargetPlatform.hasJvmComponent(): Boolean {
+    return componentPlatforms
+        .any { it.targetPlatformVersion is JvmTarget }
 }
 
 internal fun PsiElement.isChildOf(parent: PsiElement): Boolean = this.parents.any { it == parent }
@@ -107,15 +112,15 @@ fun FunctionDescriptor.jvmBlockingBridgeAnnotationOnContainingDeclaration(
         is ClassDescriptor -> {
             // member function
 
-            val ann = containingDeclaration.annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+            val ann = containingDeclaration.annotations.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
             if (ann != null) return ann
 
-            containingDeclaration.findFileAnnotation(bindingContext, JVM_BLOCKING_BRIDGE_FQ_NAME)
+            containingDeclaration.findFileAnnotation(bindingContext, RuntimeIntrinsics.JvmBlockingBridgeFqName)
         }
         is PackageFragmentDescriptor -> {
             // top-level function
             if (isIr) return containingDeclaration.jvmBlockingBridgeAnnotation()
-            containingDeclaration.annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+            containingDeclaration.annotations.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
         }
         else -> return null
     }
@@ -144,9 +149,9 @@ internal val FunctionDescriptor.containingClass: ClassDescriptor?
 
 internal fun DeclarationCheckerContext.report(diagnostic: Diagnostic) = trace.report(diagnostic)
 internal fun DeclarationDescriptor.jvmBlockingBridgeAnnotationPsi(): PsiElement? =
-    annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)?.findPsi()
+    annotations.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)?.findPsi()
 
 internal fun DeclarationDescriptor.jvmBlockingBridgeAnnotation(): AnnotationDescriptor? =
-    annotations.findAnnotation(JVM_BLOCKING_BRIDGE_FQ_NAME)
+    annotations.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
 
 internal fun AnnotationDescriptor.findPsi(): PsiElement? = (source as? PsiSourceElement)?.psi

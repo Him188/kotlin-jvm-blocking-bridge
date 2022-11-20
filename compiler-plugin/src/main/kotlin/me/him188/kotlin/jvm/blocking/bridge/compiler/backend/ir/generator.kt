@@ -1,11 +1,13 @@
 package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir
 
+import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.ir.*
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.backend.common.lower.parents
 import org.jetbrains.kotlin.backend.jvm.ir.fileParent
+import org.jetbrains.kotlin.codegen.topLevelClassAsmType
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.*
@@ -22,17 +24,24 @@ import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
-import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.name.FqNameUnsafe
-import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.name.SpecialNames
+import org.jetbrains.kotlin.name.*
 import java.util.*
 import org.jetbrains.kotlin.ir.util.isInterface as isInterfaceKotlin
 
 
-internal object IntrinsicRuntimeFunctions {
+object RuntimeIntrinsics {
     private val pkg = FqName("me.him188.kotlin.jvm.blocking.bridge.internal")
-    val RUN_SUSPEND = pkg.child(Name.identifier("\$runSuspend\$"))
+    val runSuspendCallableId = CallableId(pkg, Name.identifier("\$runSuspend\$"))
+
+
+    val JvmBlockingBridgeFqName = FqName(JvmBlockingBridge::class.qualifiedName!!)
+    val JvmBlockingBridgeAsm = JvmBlockingBridgeFqName.topLevelClassAsmType()
+
+    val JvmDefaultClassId = ClassId.topLevel(FqName("kotlin.jvm").child(Name.identifier("JvmDefault")))
+
+    val GeneratedBlockingBridgeFqName = FqName("me.him188.kotlin.jvm.blocking.bridge.GeneratedBlockingBridge")
+    val GeneratedBlockingBridgeClassId = ClassId.topLevel(GeneratedBlockingBridgeFqName)
+    val GeneratedBlockingBridgeAsm = GeneratedBlockingBridgeFqName.topLevelClassAsmType()
 }
 
 internal val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}")
@@ -40,14 +49,13 @@ internal val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this
 internal val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin get() = IrDeclarationOrigin.DEFINED
 
 private fun IrPluginContext.referenceFunctionRunBlocking(): IrSimpleFunctionSymbol {
-    return referenceFunctions(IntrinsicRuntimeFunctions.RUN_SUSPEND).singleOrNull()
-        ?: error("Internal error: Function ${IntrinsicRuntimeFunctions.RUN_SUSPEND} not found.")
+    return referenceFunctions(RuntimeIntrinsics.runSuspendCallableId).singleOrNull()
+        ?: error("Internal error: Function ${RuntimeIntrinsics.runSuspendCallableId} not found.")
 }
 
 private fun IrPluginContext.referenceJvmDefault(): IrClassSymbol {
-    val s = FqName("kotlin.jvm").child(Name.identifier("JvmDefault"))
-    return referenceClass(s)
-        ?: error("Internal error: Function ${s} not found.")
+    return referenceClass(RuntimeIntrinsics.JvmDefaultClassId)
+        ?: error("Internal error: Function ${RuntimeIntrinsics.JvmDefaultClassId} not found.")
 }
 
 @Suppress("ClassName")
@@ -60,7 +68,7 @@ internal fun IrFunction.isExplicitOrImplicitStatic(): Boolean {
 internal fun IrPluginContext.createGeneratedBlockingBridgeConstructorCall(
     symbol: IrSymbol,
 ): IrConstructorCall {
-    return createIrBuilder(symbol).irAnnotationConstructor(referenceClass(GENERATED_BLOCKING_BRIDGE_FQ_NAME)!!)
+    return createIrBuilder(symbol).irAnnotationConstructor(referenceClass(RuntimeIntrinsics.GeneratedBlockingBridgeClassId)!!)
 }
 
 internal fun IrBuilderWithScope.irAnnotationConstructor(
@@ -153,7 +161,7 @@ fun IrPluginContext.generateJvmBlockingBridges(originFunction: IrFunction): List
         this.copyParameterDeclarationsFrom(originFunction)
 
         this.annotations = originFunction.annotations
-            .filterNot { it.type.isClassType(JVM_BLOCKING_BRIDGE_FQ_NAME.toUnsafe()) }
+            .filterNot { it.type.isClassType(RuntimeIntrinsics.JvmBlockingBridgeFqName.toUnsafe()) }
             .plus(createGeneratedBlockingBridgeConstructorCall(symbol))
 
         if (containingFileOrClass.isInterface) {

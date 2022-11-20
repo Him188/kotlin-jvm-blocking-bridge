@@ -3,8 +3,9 @@
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
-import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.BridgeComponentRegistrar
+import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.BridgeComponentRegistrarForTest
 import org.intellij.lang.annotations.Language
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.JvmTarget
 import org.jetbrains.kotlin.descriptors.Modality
@@ -37,9 +38,11 @@ fun <R> Class<*>.runFunction(name: String): Nothing {
 
 @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 @kotlin.internal.LowPriorityInOverloadResolution
-@Deprecated("runFunction on class is an error.",
+@Deprecated(
+    "runFunction on class is an error.",
     replaceWith = ReplaceWith("createInstance().run { \n runFunction<R>(name, args)\n }"),
-    level = DeprecationLevel.ERROR)
+    level = DeprecationLevel.ERROR
+)
 inline fun <reified R> Class<*>.runFunction(name: String, vararg args: Any): Nothing {
     error("runFunction on class is an error.")
 }
@@ -65,11 +68,13 @@ inline fun <reified R : Any> Class<*>.assertHasFunction(
     declaredOnly: Boolean = false,
     noinline runIfFound: Method.() -> Unit = {},
 ) {
-    return assertHasFunction(name,
+    return assertHasFunction(
+        name,
         args = args,
         returnType = R::class.javaPrimitiveType ?: R::class.java,
         declaredOnly,
-        runIfFound = runIfFound)
+        runIfFound = runIfFound
+    )
 }
 
 @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
@@ -80,11 +85,13 @@ inline fun <reified R : Any> Class<*>.assertHasFunction(
     declaredOnly: Boolean = false,
     noinline runIfFound: Method.() -> Unit = {},
 ) {
-    return assertHasFunction(name,
+    return assertHasFunction(
+        name,
         args = args.map { it.javaPrimitiveType ?: it.java }.toTypedArray(),
         returnType = R::class.javaPrimitiveType ?: R::class.java,
         declaredOnly,
-        runIfFound = runIfFound)
+        runIfFound = runIfFound
+    )
 }
 
 inline fun <reified R : Any> Class<*>.assertNoFunction(
@@ -92,10 +99,12 @@ inline fun <reified R : Any> Class<*>.assertNoFunction(
     vararg args: Class<*>,
     declaredOnly: Boolean = false,
 ) {
-    return assertNoFunction(name,
+    return assertNoFunction(
+        name,
         args = args,
         returnType = R::class.javaPrimitiveType ?: R::class.java,
-        declaredOnly = declaredOnly)
+        declaredOnly = declaredOnly
+    )
 }
 
 inline fun <reified R : Any> Class<*>.getFunctionWithReturnType(name: String, vararg args: Class<*>): Method {
@@ -108,16 +117,18 @@ inline fun <reified R : Any> Class<*>.getFunctionWithReturnType(name: String, va
     }
 
     return ret
-        ?: throw AssertionError("Class '${this.name}' does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
-                "\n${allMethods.joinToString("\n")}\n")
+        ?: throw AssertionError(
+            "Class '${this.name}' does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
+                    "\n${allMethods.joinToString("\n")}\n"
+        )
 }
 
 val Class<*>.allMethods: Set<Method>
     get() {
         fun Class<*>?.shouldInclude(): Boolean {
             if (this == null) return false
-            return !this.packageName.startsWith("java")
-                    && !this.packageName.startsWith("kotlin")
+            return !this.`package`.name.startsWith("java")
+                    && !this.`package`.name.startsWith("kotlin")
         }
 
         val set = declaredMethods.toMutableSet()
@@ -142,8 +153,10 @@ fun Class<*>.assertHasFunction(
                 it.parameterCount == args.size &&
                 it.parameters.zip(args).all { (param, clazz) -> param.type == clazz }
     }
-        ?: throw AssertionError("Class '${this.name}' does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
-                "\n${allMethods.joinToString("\n")}\n")
+        ?: throw AssertionError(
+            "Class '${this.name}' does not have method $name(${args.joinToString { it.canonicalName }})${returnType.canonicalName}. All methods list: " +
+                    "\n${allMethods.joinToString("\n")}\n"
+        )
 
     runIfFound(any)
 }
@@ -171,16 +184,18 @@ fun compile(
     jvmTarget: JvmTarget = JvmTarget.JVM_1_8,
     overrideCompilerConfiguration: CompilerConfiguration? = null,
     config: KotlinCompilation.() -> Unit = {},
-) = compile(source,
+) = compile(
+    source,
     null,
     ir,
     jvmTarget,
     overrideCompilerConfiguration = overrideCompilerConfiguration,
-    config = config)
+    config = config
+)
 
-@Suppress("ObjectPropertyName")
 const val FILE_SPLITTER = "-------------------------------------"
 
+@OptIn(ExperimentalCompilerApi::class)
 fun compile(
     @Language("kt")
     sources: String,
@@ -233,7 +248,7 @@ fun compile(
             }
         )
 
-        compilerPlugins = listOf(BridgeComponentRegistrar(overrideCompilerConfiguration))
+        compilerPlugins = listOf(BridgeComponentRegistrarForTest(overrideCompilerConfiguration))
         verbose = false
 
         this.jvmTarget = jvmTarget.description
@@ -285,15 +300,16 @@ fun testJvmCompile(
     block: KotlinCompilation.Result.() -> Unit = {},
 ) {
     val result =
-        compile(kt,
+        compile(
+            kt,
             java,
             ir,
             jvmTarget,
             overrideCompilerConfiguration = overrideCompilerConfiguration,
-            config = config)
+            config = config
+        )
 
     if (!noMain) {
-        @Suppress("UNCHECKED_CAST")
         val test = result.classLoader.loadClass("TestData")
         assertEquals(
             "OK",
