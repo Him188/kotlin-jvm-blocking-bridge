@@ -47,7 +47,7 @@ intellij {
         listOf(
 //            "org.jetbrains.kotlin:211-1.5.30-M1-release-141-IJ7442.40@eap",
             "java",
-            "org.jetbrains.kotlin"
+            "org.jetbrains.kotlin:${Versions.kotlinIdea}"
         )
     )
 }

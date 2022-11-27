@@ -1,50 +1,44 @@
 package me.him188.kotlin.jvm.blocking.bridge.ide
 
-import com.intellij.lang.Language
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.RecursionManager
 import com.intellij.psi.*
 import com.intellij.psi.augment.PsiAugmentProvider
-import com.intellij.psi.impl.light.LightMethodBuilder
+import com.intellij.psi.impl.PsiSuperMethodImplUtil
+import com.intellij.psi.impl.light.LightModifierList
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.impl.source.PsiExtensibleClass
 import com.intellij.psi.javadoc.PsiDocComment
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
+import com.intellij.psi.util.MethodSignature
+import com.intellij.psi.util.MethodSignatureBackedByPsiMethod
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.RuntimeIntrinsics
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation
-import org.jetbrains.kotlin.asJava.builder.LightMemberOrigin
 import org.jetbrains.kotlin.asJava.builder.LightMemberOriginForDeclaration
-import org.jetbrains.kotlin.asJava.classes.KtLightClass
-import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
-import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
+import org.jetbrains.kotlin.asJava.classes.*
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.Modality
-import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
-import org.jetbrains.kotlin.descriptors.effectiveVisibility
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.idea.caches.resolve.analyze
 import org.jetbrains.kotlin.idea.search.usagesSearch.descriptor
-import org.jetbrains.kotlin.idea.util.module
-import org.jetbrains.kotlin.incremental.components.NoLookupLocation
-import org.jetbrains.kotlin.load.java.JvmAnnotationNames
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
-import org.jetbrains.kotlin.resolve.lazy.LazyDeclarationResolver
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 /**
  * Allows inserting elements into a PsiElement
  */
 class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
-    @Suppress("UNCHECKED_CAST")
-    override fun <Psi : PsiElement?> getAugments(element: PsiElement, type: Class<Psi>): MutableList<Psi> {
-
+    override fun <Psi : PsiElement?> getAugments(
+        element: PsiElement,
+        type: Class<Psi>,
+        nameHint: String?
+    ): MutableList<Psi> {
         if (element !is KtUltraLightClass && element !is KtUltraLightClassForFacade) return mutableListOf()
         if (type != PsiMethod::class.java) {
             return mutableListOf()
@@ -57,7 +51,14 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
                 element,
                 JvmBlockingBridgeCachedValueProvider(element) { element.generateAugmentElements(element.ownMethods) }
             ).orEmpty().toMutableList()
+        @Suppress("UNCHECKED_CAST")
         return ret as MutableList<Psi>
+    }
+
+    // Note: keep this for compatibility with old IDEs. The new overload comes with IDEA 222
+    @Deprecated("Deprecated in Java", ReplaceWith("getAugments(element, type, null)"))
+    override fun <Psi : PsiElement?> getAugments(element: PsiElement, type: Class<Psi>): MutableList<Psi> {
+        return getAugments(element, type, null)
     }
 
     private class JvmBlockingBridgeCachedValueProvider(
@@ -105,15 +106,6 @@ internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): Li
         .toList()
 }
 
-private fun KtClassOrObject.classDescriptor(): ClassDescriptor? {
-    val resolver = this.module?.getComponent(LazyDeclarationResolver::class.java)
-    return resolver?.getClassDescriptorIfAny(this, NoLookupLocation.FROM_IDE)
-}
-
-internal fun KtAnnotated.hasAnnotation(fqName: FqName): Boolean {
-    return findAnnotation(fqName) != null
-}
-
 internal fun KtAnnotated.findAnnotation(fqName: FqName): KtAnnotationEntry? {
     val analyze = this.analyze()
     for (entry in annotationEntries) {
@@ -134,7 +126,7 @@ internal fun PsiMethod.canHaveBridgeFunctions(isIr: Boolean): HasJvmBlockingBrid
 
     if (this.hasAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName.asString())) return HasJvmBlockingBridgeAnnotation.FROM_FUNCTION
 
-    // no @JvmBlockingBridge on function, check if has on class or file.
+    // no @JvmBlockingBridge on function, check if it has on class or file.
 
     val descriptor = this.kotlinOrigin?.descriptor as? SimpleFunctionDescriptor
     if (descriptor != null) {
@@ -185,116 +177,22 @@ internal fun PsiMethod.isSuspend(): Boolean =
 
 internal fun PsiMethod.isJvmStatic(): Boolean = hasAnnotation(JvmStatic::class.qualifiedName!!)
 
-internal fun PsiMethod.isJvmOverloads(): Boolean = hasAnnotation(JvmOverloads::class.qualifiedName!!)
-
-internal fun KtLightMethod.isJvmStaticInNonCompanionObject(): Boolean {
-    val containingKotlinOrigin = containingClass.kotlinOrigin
-
-    return hasAnnotation(JvmStatic::class.qualifiedName!!)
-            && containingKotlinOrigin is KtObjectDeclaration
-            && !containingKotlinOrigin.isCompanion()
-}
-
-internal fun KtLightMethod.isJvmStaticInCompanion(): Boolean {
-    val containingKotlinOrigin = containingClass.kotlinOrigin
-
-    return hasAnnotation(JvmStatic::class.qualifiedName!!)
-            && containingKotlinOrigin is KtObjectDeclaration
-            && containingKotlinOrigin.isCompanion()
-}
-
 internal fun KtLightMethod.generateLightMethod(
     containingClass: KtLightClass,
-    generateAsStatic: Boolean = this.isJvmStatic(),
 ): List<PsiMethod> {
     ProgressManager.checkCanceled()
     val originMethod = this
 
     fun generateImpl(
         parameters: Map<KtParameter, PsiParameter>,
-        originalElement: KtLightMethod?,
+        originalElement: KtLightMethod,
         kotlinOriginKind: JvmDeclarationOriginKind,
-    ): BlockingBridgeStubMethod? {
-        val javaMethod = BlockingBridgeStubMethodBuilder(
-            originMethod.manager,
-            originMethod.language,
-            originMethod.name,
-            originalElement
-        ).apply {
-            this.containingClass = containingClass
-            docComment = originMethod.docComment
-            navigationElement = originMethod
-
-
-            for ((_, it) in parameters) {
-                addParameter(it)
-            }
-
-            if (generateAsStatic) {
-                addModifier(PsiModifier.STATIC)
-            }
-
-            VISIBILITIES_MODIFIERS
-                .filter { originMethod.hasModifierProperty(it) }
-                .forEach { addModifier(it) }
-
-            addModifier(
-                if (containingClass.isInterface) {
-                    PsiModifier.OPEN
-                } else when (containingClass.modality) {
-                    Modality.OPEN, Modality.ABSTRACT, Modality.SEALED -> PsiModifier.OPEN
-                    else -> PsiModifier.FINAL
-                }
-            )
-
-            for (typeParameter in originMethod.typeParameters) {
-                addTypeParameter(typeParameter)
-            }
-
-            for (referenceElement in originMethod.throwsList.referenceElements) {
-                addException(referenceElement.qualifiedName)
-            }
-
-            ProgressManager.checkCanceled()
-            originMethod.hierarchicalMethodSignature.parameterTypes.lastOrNull().let { it ?: return null }
-                .let { continuationParamType ->
-                    val psiClassReferenceType = continuationParamType as? PsiClassReferenceType ?: return null
-
-                    fun PsiType.coerceUnitToVoid(): PsiType {
-                        return if (this.canonicalText == "kotlin.Unit") PsiType.VOID else this
-                    }
-
-                    when (val type = psiClassReferenceType.parameters.getOrNull(0) ?: return null) {
-                        is PsiWildcardType -> { // ? super String
-                            setMethodReturnType((type.bound ?: type).coerceUnitToVoid())
-                        }
-                        else -> {
-                            setMethodReturnType(type.coerceUnitToVoid())
-                        }
-                    }
-                }
-
-            originMethod.annotations.forEach { annotation ->
-                if (annotation.hasQualifiedName("kotlin.Deprecated")) deprecated = true
-
-                if (returnType?.canonicalText == "void"
-                    && annotation.hasQualifiedName(JvmAnnotationNames.JETBRAINS_NULLABLE_ANNOTATION.asString())
-                ) return@forEach // ignore @NotNull for coerced returnType `void`
-
-                addAnnotation(annotation)
-            }
-
-            setBody(JavaPsiFacade.getElementFactory(project).createCodeBlock())
-        }
-        val kotlinOrigin = originalElement?.kotlinOrigin?.let { kotlinOrigin ->
+    ): BlockingBridgeStubMethod {
+        val kotlinOrigin = originalElement.kotlinOrigin?.let { kotlinOrigin ->
             LightMemberOriginForDeclaration(kotlinOrigin, kotlinOriginKind, parameters.keys.toList())
         }
 
-        return BlockingBridgeStubMethod({ javaMethod }, kotlinOrigin, containingClass).apply {
-        }
-//            KtLightMethodImpl.create(it, kotlinOrigin, containingClass).apply {
-//                this.returnType
-//            }
+        return BlockingBridgeStubMethod(kotlinOrigin, containingClass, originMethod, parameters)
     }
 
     val overloads = originMethod.kotlinOrigin.safeAs<KtNamedFunction>()?.valueParameters // last is Continuation
@@ -305,9 +203,9 @@ internal fun KtLightMethod.generateLightMethod(
     val baseMethodParameters = overloads.first()
 
     val baseMethod =
-        generateImpl(baseMethodParameters, originMethod, JvmDeclarationOriginKind.OTHER) ?: return emptyList()
+        generateImpl(baseMethodParameters, originMethod, JvmDeclarationOriginKind.OTHER)
 
-    return overloads.mapNotNull {
+    return overloads.map {
         if (it === baseMethodParameters) {
             baseMethod
         } else {
@@ -345,64 +243,103 @@ private fun List<KtParameter>.jvmOverloads(parameterList: PsiParameterList): Lis
     return result
 }
 
-class BlockingBridgeStubMethod(
-    computeRealDelegate: () -> PsiMethod, lightMemberOrigin: LightMemberOrigin?, containingClass: KtLightClass,
-) : KtLightMethodImpl(computeRealDelegate, lightMemberOrigin, containingClass) {
-    override fun getReturnType(): PsiType? {
-        return clsDelegate.returnType
+internal class BlockingBridgeStubMethod(
+    lightMemberOrigin: LightMemberOriginForDeclaration?,
+    containingClass: KtLightClass,
+    private val originalSuspendFunction: KtLightMethod,
+    private val parameters: Map<KtParameter, PsiParameter>,
+) : KtLightMethodImpl(lightMemberOrigin, containingClass) {
+
+    override fun buildParametersForList(): List<PsiParameter> {
+        return parameters.values.toList()
+//        return originalSuspendFunction.parameterList.parameters.toList().dropLast(1) // Drop `$completion`
     }
 
-    override fun getReturnTypeElement(): PsiTypeElement? {
-        return clsDelegate.returnTypeElement
+    override fun buildTypeParameterList(): PsiTypeParameterList? = originalSuspendFunction.typeParameterList
+
+    @Suppress("DeprecatedCallableAddReplaceWith")
+    @Deprecated("Deprecated in Java")
+    override fun findDeepestSuperMethod(): PsiMethod? = PsiSuperMethodImplUtil.findDeepestSuperMethod(this)
+
+    override fun findDeepestSuperMethods(): Array<out PsiMethod> = PsiSuperMethodImplUtil.findDeepestSuperMethods(this)
+
+    override fun findSuperMethodSignaturesIncludingStatic(checkAccess: Boolean): List<MethodSignatureBackedByPsiMethod> =
+        PsiSuperMethodImplUtil.findSuperMethodSignaturesIncludingStatic(this, checkAccess)
+
+    override fun findSuperMethods(): Array<out PsiMethod> = PsiSuperMethodImplUtil.findSuperMethods(this)
+    override fun findSuperMethods(parentClass: PsiClass?): Array<out PsiMethod> =
+        PsiSuperMethodImplUtil.findSuperMethods(this, parentClass)
+
+    override fun findSuperMethods(checkAccess: Boolean): Array<out PsiMethod> =
+        PsiSuperMethodImplUtil.findSuperMethods(this, checkAccess)
+
+    override fun getDefaultValue(): PsiAnnotationMemberValue? = null
+    override fun getDocComment(): PsiDocComment? = originalSuspendFunction.docComment
+    override fun getHierarchicalMethodSignature(): HierarchicalMethodSignature =
+        PsiSuperMethodImplUtil.getHierarchicalMethodSignature(this)
+
+    private val _modifierList by lazy {
+        LightModifierList(manager, language).apply {
+            if (originalSuspendFunction.isJvmStatic()) {
+                addModifier(PsiModifier.STATIC)
+            }
+
+            VISIBILITIES_MODIFIERS
+                .filter { originalSuspendFunction.hasModifierProperty(it) }
+                .forEach { addModifier(it) }
+
+            addModifier(
+                if (containingClass.isInterface) {
+                    PsiModifier.OPEN
+                } else when (containingClass.modality) {
+                    Modality.OPEN, Modality.ABSTRACT, Modality.SEALED -> PsiModifier.OPEN
+                    else -> PsiModifier.FINAL
+                }
+            )
+        }
     }
+
+    override fun getModifierList(): PsiModifierList = _modifierList
+
+    override fun getName(): String = originalSuspendFunction.name
+
+
+    // must compute immediately, otherwise there will be StackOverflowError. I don't know why.
+    private val _returnType = computeReturnType()
+
+    private fun computeReturnType(): PsiType? {
+        val continuationParamType = originalSuspendFunction.hierarchicalMethodSignature.parameterTypes.lastOrNull()
+            ?: return null
+
+        val psiClassReferenceType = continuationParamType as? PsiClassReferenceType ?: return null
+
+        return when (val type = psiClassReferenceType.parameters.getOrNull(0) ?: return null) {
+            is PsiWildcardType -> { // ? super String
+                (type.bound ?: type).coerceUnitToVoid()
+            }
+            else -> {
+                type.coerceUnitToVoid()
+            }
+        }
+    }
+
+    override fun getReturnType(): PsiType? = _returnType
+
+    override fun getReturnTypeElement(): PsiTypeElement? = originalSuspendFunction.returnTypeElement
+
+    override fun getSignature(substitutor: PsiSubstitutor): MethodSignature {
+        return MethodSignatureBackedByPsiMethod.create(this, substitutor)
+    }
+
+    override fun getThrowsList(): PsiReferenceList = originalSuspendFunction.throwsList
+    override fun hasModifierProperty(name: String): Boolean = originalSuspendFunction.hasModifierProperty(name)
+    override fun isConstructor(): Boolean = originalSuspendFunction.isConstructor
+    override fun isDeprecated(): Boolean = originalSuspendFunction.isDeprecated
+    override fun isVarArgs(): Boolean = originalSuspendFunction.isVarArgs
 }
 
-private class BlockingBridgeStubMethodBuilder(
-    manager: PsiManager, language: Language, name: String, private val originalElement: PsiElement?,
-) : LightMethodBuilder(manager, language, name) {
-
-    private var _body: PsiCodeBlock? = null
-    private var _annotations: Array<PsiAnnotation> = emptyArray()
-    private var docComment: PsiDocComment? = null
-
-    fun setBody(body: PsiCodeBlock) {
-        _body = body
-    }
-
-    override fun getOriginalElement(): PsiElement {
-        return this.originalElement ?: this
-    }
-
-    override fun getBody(): PsiCodeBlock? {
-        return _body ?: super.getBody()
-    }
-
-    fun addAnnotation(annotation: PsiAnnotation) {
-        _annotations += annotation
-    }
-
-    override fun getDocComment(): PsiDocComment? {
-        return docComment
-    }
-
-    fun setDocComment(docComment: PsiDocComment?) {
-        this.docComment = docComment
-    }
-
-    var deprecated = false
-
-    override fun isDeprecated(): Boolean {
-        return deprecated
-    }
-
-    override fun getAnnotations(): Array<PsiAnnotation> = _annotations
-    override fun hasAnnotation(fqn: String): Boolean {
-        return _annotations.any { it.hasQualifiedName(fqn) }
-    }
-
-    override fun getAnnotation(fqn: String): PsiAnnotation? {
-        return _annotations.find { it.hasQualifiedName(fqn) }
-    }
+private fun PsiType.coerceUnitToVoid(): PsiType {
+    return if (this.canonicalText == "kotlin.Unit") PsiType.VOID else this
 }
 
 internal val VISIBILITIES_MODIFIERS = arrayOf(

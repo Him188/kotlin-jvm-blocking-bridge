@@ -12,11 +12,17 @@ open class AClass {
 
     @JvmBlockingBridge
     @JvmOverloads
-    open suspend fun overloads(x: Int = 1, s: String = "") {
+    open suspend fun overloadsClash(x: Int = 1, s: String = "") {
 
     }
 
-    fun overloads(x: Int) {
+    fun overloadsClash(x: Int) { // should report an error but not implemented yet.
+
+    }
+
+    @JvmBlockingBridge
+    @JvmOverloads
+    open suspend fun overloads(x: Int = 1, s: String = "") {
 
     }
 
@@ -25,7 +31,7 @@ open class AClass {
      * K fun
      */
     @JvmBlockingBridge
-    open suspend fun member() {
+    open suspend fun suspendMember() {
     }
 
     companion object {
@@ -33,11 +39,11 @@ open class AClass {
         @JvmStatic
         @JvmBlockingBridge
         @Deprecated("")
-        suspend fun comp() {
+        suspend fun suspendStaticInCompanion() {
         }
 
         @JvmStatic
-        fun f() {
+        fun ordinaryStaticInCompanion() {
         }
     }
 
@@ -46,11 +52,8 @@ open class AClass {
         @JvmStatic
         @JvmBlockingBridge
         @Throws(IOException::class)
-        suspend fun compThrows() {
+        suspend fun suspendThrowsInObject() {
         }
 
-        @JvmStatic
-        fun f() {
-        }
     }
 }

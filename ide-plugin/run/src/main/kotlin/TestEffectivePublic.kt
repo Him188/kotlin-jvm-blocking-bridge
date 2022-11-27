@@ -1,14 +1,14 @@
 import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
 
 @JvmBlockingBridge
-object Redundant {
+object TestEffectivePublic {
 
     // private so no auto @JvmBlockingBridge
-    private suspend fun test() {}
+    private suspend fun privateFun() {}
 
     // effectively public so auto @JvmBlockingBridge
     @PublishedApi
-    internal suspend fun test2() {
+    internal suspend fun effectivePublic() {
     }
 
     @JvmStatic

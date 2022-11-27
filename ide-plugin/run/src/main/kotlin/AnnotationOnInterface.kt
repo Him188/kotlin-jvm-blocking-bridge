@@ -4,11 +4,11 @@ import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
 interface AnnotationOnInterface {
 
     //
-    fun nonSuspend() {
+    suspend fun suspendMember() {
 
     }
 
     @JvmSynthetic
-    suspend fun suspend() {
+    suspend fun synthetic() {
     }
 }

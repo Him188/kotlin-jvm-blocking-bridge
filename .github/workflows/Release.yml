@@ -21,7 +21,7 @@ jobs:
         env:
           PUBLICATION_CREDENTIALS: ${{ secrets.PUBLICATION_CREDENTIALS }}
 
-      - run: ./gradlew build --scan # do not split into assemble and check. cache bugs.
+      - run: ./gradlew assemble --scan # do not run tests
 
       - name: publishMingwX64PublicationToMavenRepository
         run: ./gradlew publishMingwX64PublicationToMavenRepository --no-parallel --info  --scan
