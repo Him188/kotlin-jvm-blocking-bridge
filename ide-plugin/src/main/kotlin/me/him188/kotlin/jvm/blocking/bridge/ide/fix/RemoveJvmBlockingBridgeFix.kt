@@ -14,7 +14,6 @@ import org.jetbrains.kotlin.idea.util.findAnnotation
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtModifierListOwner
-import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 class RemoveJvmBlockingBridgeFix(
     element: KtFunction,
@@ -29,8 +28,10 @@ class RemoveJvmBlockingBridgeFix(
 
     companion object : KotlinSingleIntentionActionFactory() {
         override fun createAction(diagnostic: Diagnostic): IntentionAction? {
-            val target = diagnostic.psiElement.safeAs<KtAnnotationEntry>()?.parentsOfType<KtFunction>()?.firstOrNull()
-                ?: return null
+            val target =
+                (diagnostic.psiElement as? KtAnnotationEntry)?.parentsOfType<KtFunction>()
+                    ?.firstOrNull()
+                    ?: return null
             return RemoveJvmBlockingBridgeFix(target)
         }
 

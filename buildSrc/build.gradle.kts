@@ -9,8 +9,8 @@ repositories {
 
 kotlin {
     sourceSets.all {
-        languageSettings.useExperimentalAnnotation("kotlin.Experimental")
-        languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
+        languageSettings.optIn("kotlin.Experimental")
+        languageSettings.optIn("kotlin.RequiresOptIn")
     }
 }
 
@@ -20,6 +20,7 @@ dependencies {
 
     compileOnly(gradleApi())
     api("org.jetbrains.kotlin:kotlin-gradle-plugin:${version("kotlin")}")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.0")
 
     compileOnly("com.github.jengelman.gradle.plugins:shadow:6.0.0")
 }

@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
-    id("org.jetbrains.intellij") version "1.7.0"
+    id("org.jetbrains.intellij") version "1.12.0"
     kotlin("jvm")
     kotlin("plugin.serialization")
 
@@ -13,16 +13,14 @@ kotlin.targets.asSequence()
     .filter { it.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.jvm }
     .map { it.kotlinOptions }
     .filterIsInstance<org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions>()
-    .forEach { it.jvmTarget = "11" }
+    .forEach { it.jvmTarget = "17" }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 dependencies {
-    compileOnly(kotlin("stdlib-jdk8"))
-
     api(project(":kotlin-jvm-blocking-bridge-runtime"))
     api(project(":kotlin-jvm-blocking-bridge-compiler"))
 
@@ -47,7 +45,10 @@ intellij {
         listOf(
 //            "org.jetbrains.kotlin:211-1.5.30-M1-release-141-IJ7442.40@eap",
             "java",
-            "org.jetbrains.kotlin:${Versions.kotlinIdea}"
+            if (Versions.kotlinIdea == null)
+                "org.jetbrains.kotlin"
+            else
+                "org.jetbrains.kotlin:${Versions.kotlinIdea}"
         )
     )
 }
@@ -63,11 +64,11 @@ tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishPluginTask:
 }
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
-    sinceBuild.set("213.0")
-    untilBuild.set("222.*")
+    sinceBuild.set("223.0")
+    untilBuild.set("223.*")
     changeNotes.set(
         """
-        See <a href="">Release notes</a>
+        See <a href="https://github.com/Him188/kotlin-jvm-blocking-bridge">Release notes</a>
     """.trimIndent()
     )
 }

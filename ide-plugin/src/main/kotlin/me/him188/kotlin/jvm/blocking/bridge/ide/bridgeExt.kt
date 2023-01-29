@@ -2,7 +2,6 @@ package me.him188.kotlin.jvm.blocking.bridge.ide
 
 import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiElement
-import com.intellij.util.castSafelyTo
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.BridgeCommandLineProcessor
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.IBridgeConfiguration
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.createBridgeConfig
@@ -59,7 +58,7 @@ inline fun <R> Module.useBridgeCacheOrInit(
 
 fun ModuleDescriptor.isIr(): Boolean {
     val compilerArguments = kotlinFacetSettings()?.compilerArguments ?: return true // true by default
-    if (compilerArguments.castSafelyTo<K2JVMCompilerArguments>()?.useOldBackend == true) {
+    if ((compilerArguments as? K2JVMCompilerArguments?)?.useOldBackend == true) {
         return false
     }
     return true

@@ -28,7 +28,6 @@ import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
-import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 /**
  * Allows inserting elements into a PsiElement
@@ -195,7 +194,7 @@ internal fun KtLightMethod.generateLightMethod(
         return BlockingBridgeStubMethod(kotlinOrigin, containingClass, originMethod, parameters)
     }
 
-    val overloads = originMethod.kotlinOrigin.safeAs<KtNamedFunction>()?.valueParameters // last is Continuation
+    val overloads = (originMethod.kotlinOrigin as? KtNamedFunction)?.valueParameters // last is Continuation
         ?.jvmOverloads(originMethod.parameterList) ?: return emptyList()
 
     if (overloads.isEmpty()) return emptyList()
@@ -317,6 +316,7 @@ internal class BlockingBridgeStubMethod(
             is PsiWildcardType -> { // ? super String
                 (type.bound ?: type).coerceUnitToVoid()
             }
+
             else -> {
                 type.coerceUnitToVoid()
             }

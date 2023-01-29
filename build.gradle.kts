@@ -2,7 +2,7 @@
 
 plugins {
     kotlin("multiplatform") apply false
-    id("me.him188.maven-central-publish") version "1.0.0-dev-3" apply false
+    id("me.him188.maven-central-publish") version "1.0.0" apply false
     kotlin("kapt") apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("com.gradle.plugin-publish") version "0.18.0" apply false
