@@ -23,8 +23,6 @@ import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
 import org.jetbrains.kotlin.asJava.elements.FakeFileForLightClass
 import org.jetbrains.kotlin.asJava.elements.KtLightDeclaration
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
-import org.jetbrains.kotlin.idea.codeInsight.hints.HintType
-import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtFile
@@ -44,7 +42,7 @@ internal val PsiMember.containingKtClass: KtClassOrObject?
 
 class BridgeInlayHintsCollector :
     InlayHintsProvider<NoSettings>,
-    KotlinAbstractHintsProvider<NoSettings>(),
+//    KotlinAbstractHintsProvider<NoSettings>(),
     InlayHintsCollector {
 
     override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean = kotlin.runCatching {
@@ -139,6 +137,7 @@ class BridgeInlayHintsCollector :
                     )
                 }
             }
+
             method.containingKtFile?.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
                 .also { annotation = it } != null -> {
 
@@ -154,6 +153,7 @@ class BridgeInlayHintsCollector :
                     )
                 }
             }
+
             else -> {
                 hint = factory.withTooltip(
                     "From enableForModule",
@@ -180,6 +180,7 @@ class BridgeInlayHintsCollector :
     }
 
     override val name: String get() = "JvmBlockingBridge hints"
+    override val previewText: String get() = ""
 
     override fun createConfigurable(settings: NoSettings): ImmediateConfigurable {
         return object : ImmediateConfigurable {
@@ -199,10 +200,6 @@ class BridgeInlayHintsCollector :
 
     override fun createSettings(): NoSettings {
         return NoSettings()
-    }
-
-    override fun isElementSupported(resolved: HintType?, settings: NoSettings): Boolean {
-        return resolved == HintType.FUNCTION_HINT
     }
 
     override val key: SettingsKey<NoSettings> get() = SettingsKey("blocking.bridge.hints")
