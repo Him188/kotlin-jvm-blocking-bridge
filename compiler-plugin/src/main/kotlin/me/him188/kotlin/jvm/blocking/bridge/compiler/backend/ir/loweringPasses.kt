@@ -1,7 +1,6 @@
 package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir
 
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.BlockingBridgeAnalyzeResult
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.followedBy
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve.BlockingBridgeAnalyzeResult
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
@@ -13,7 +12,6 @@ import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.util.companionObject
 import org.jetbrains.kotlin.ir.util.transformDeclarationsFlat
-import org.jetbrains.kotlin.utils.addToStdlib.cast
 
 /**
  * For top-level functions
@@ -65,4 +63,12 @@ class JvmBlockingBridgeClassLoweringPass(
         }
         irClass.companionObject()?.let(::lower)
     }
+}
+
+internal fun <T> T?.followedBy(list: Collection<T>): List<T> {
+    if (this == null) return list.toList()
+    val new = ArrayList<T>(list.size + 1)
+    new.add(this)
+    new.addAll(list)
+    return new
 }

@@ -14,7 +14,7 @@ import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.MethodSignature
 import com.intellij.psi.util.MethodSignatureBackedByPsiMethod
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.RuntimeIntrinsics
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve.HasJvmBlockingBridgeAnnotation
 import org.jetbrains.kotlin.asJava.builder.LightMemberOriginForDeclaration
 import org.jetbrains.kotlin.asJava.classes.*
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod

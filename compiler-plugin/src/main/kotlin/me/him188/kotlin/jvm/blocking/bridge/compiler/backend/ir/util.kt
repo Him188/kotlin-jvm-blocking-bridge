@@ -3,7 +3,7 @@
 
 package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir
 
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.GeneratedBlockingBridgeStubForResolution
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve.GeneratedBlockingBridgeStubForResolution
 import org.jetbrains.kotlin.backend.common.lower.parents
 import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor

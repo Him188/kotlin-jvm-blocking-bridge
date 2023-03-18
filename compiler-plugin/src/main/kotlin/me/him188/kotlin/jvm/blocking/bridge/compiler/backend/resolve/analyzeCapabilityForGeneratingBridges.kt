@@ -1,6 +1,6 @@
-package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm
+package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve
 
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.BlockingBridgeAnalyzeResult.*
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve.BlockingBridgeAnalyzeResult.*
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.kotlin.backend.common.descriptors.allParameters
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor

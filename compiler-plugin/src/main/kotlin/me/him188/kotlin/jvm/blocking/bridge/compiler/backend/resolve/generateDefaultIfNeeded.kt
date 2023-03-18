@@ -1,4 +1,4 @@
-package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm
+package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve
 
 import org.jetbrains.kotlin.codegen.DefaultParameterValueLoader
 import org.jetbrains.kotlin.codegen.FunctionCodegen

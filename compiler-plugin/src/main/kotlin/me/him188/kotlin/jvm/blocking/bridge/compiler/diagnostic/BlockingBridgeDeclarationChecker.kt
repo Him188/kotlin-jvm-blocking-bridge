@@ -1,7 +1,7 @@
 package me.him188.kotlin.jvm.blocking.bridge.compiler.diagnostic
 
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.*
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation.*
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve.*
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve.HasJvmBlockingBridgeAnnotation.*
 import me.him188.kotlin.jvm.blocking.bridge.compiler.diagnostic.BlockingBridgeDeclarationChecker.CheckResult.BREAK
 import me.him188.kotlin.jvm.blocking.bridge.compiler.diagnostic.BlockingBridgeDeclarationChecker.CheckResult.CONTINUE
 import me.him188.kotlin.jvm.blocking.bridge.compiler.diagnostic.BlockingBridgeErrors.*

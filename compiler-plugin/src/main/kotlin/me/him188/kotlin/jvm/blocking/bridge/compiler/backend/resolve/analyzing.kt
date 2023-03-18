@@ -1,4 +1,4 @@
-package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm
+package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve
 
 import com.intellij.psi.PsiElement
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.RuntimeIntrinsics
@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.load.kotlin.toSourceElement
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.psiUtil.parents
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.checkers.DeclarationCheckerContext
 import org.jetbrains.kotlin.resolve.descriptorUtil.parents
@@ -99,8 +98,6 @@ fun TargetPlatform.hasJvmComponent(): Boolean {
     return componentPlatforms
         .any { it.targetPlatformVersion is JvmTarget }
 }
-
-internal fun PsiElement.isChildOf(parent: PsiElement): Boolean = this.parents.any { it == parent }
 
 internal fun ClassDescriptor.isInterface(): Boolean = this.kind == ClassKind.INTERFACE
 

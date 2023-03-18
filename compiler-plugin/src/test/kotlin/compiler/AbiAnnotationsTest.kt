@@ -4,7 +4,6 @@ package compiler
 
 import assertHasFunction
 import assertNoFunction
-import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Test
 import runFunction
 import kotlin.test.assertEquals
@@ -47,29 +46,7 @@ internal class AbiAnnotationsTest : AbstractCompilerTest() {
             this.getConstructor().newInstance().runFunction<Any?>("test")
         }
     }
-
-    @Test
-    fun `jvm overloads with unit coercion compatibility`() = testJvmCompile(
-        """
-            object TestData {
-                @JvmOverloads
-                @JvmBlockingBridge
-                suspend fun test(b: Boolean = true, a: String = "") {}
-            }
-        """, noMain = true, overrideCompilerConfiguration = CompilerConfiguration().apply {
-            put(
-                me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION,
-                me.him188.kotlin.jvm.blocking.bridge.compiler.UnitCoercion.COMPATIBILITY.toString()
-            )
-        }
-    ) {
-        classLoader.loadClass("TestData").run {
-            assertHasFunction<Void>("test", Boolean::class.javaPrimitiveType!!, String::class.java)
-            assertHasFunction<Void>("test", Boolean::class.javaPrimitiveType!!)
-            assertHasFunction<Void>("test")
-        }
-    }
-
+    
     @Test
     fun `no jvm overloads`() = testJvmCompile(
         """

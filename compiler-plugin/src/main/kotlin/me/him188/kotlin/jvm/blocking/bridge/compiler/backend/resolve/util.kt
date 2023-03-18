@@ -1,7 +1,7 @@
-package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm
+package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve
 
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.RuntimeIntrinsics
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.HasJvmBlockingBridgeAnnotation.*
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve.HasJvmBlockingBridgeAnnotation.*
 import org.jetbrains.kotlin.codegen.state.md5base64
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.load.kotlin.computeJvmDescriptor

@@ -4,7 +4,6 @@ import com.google.auto.service.AutoService
 import me.him188.kotlin.jvm.blocking.bridge.compiler.diagnostic.BlockingBridgeDeclarationChecker
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.cli.common.toBooleanLenient
-import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -48,22 +47,16 @@ open class BridgeComponentRegistrar @JvmOverloads constructor(
             }
         })
         IrGenerationExtension.registerExtension(JvmBlockingBridgeIrGenerationExtension(ext))
-        ExpressionCodegenExtension.registerExtension(BridgeCodegenCliExtension(ext))
     }
 }
 
 fun CompilerConfiguration.createBridgeConfig(): BridgeConfigurationImpl {
     val actualConfiguration = this
 
-    val unitCoercion =
-        actualConfiguration[me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION]
-            ?.runCatching { me.him188.kotlin.jvm.blocking.bridge.compiler.UnitCoercion.valueOf(this) }?.getOrNull()
-            ?: me.him188.kotlin.jvm.blocking.bridge.compiler.UnitCoercion.DEFAULT
-
     val enableForModule =
         actualConfiguration[me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerConfigurationKeys.ENABLE_FOR_MODULE]
             ?.toBooleanLenient()
             ?: false
 
-    return BridgeConfigurationImpl(unitCoercion, enableForModule)
+    return BridgeConfigurationImpl(enableForModule)
 }

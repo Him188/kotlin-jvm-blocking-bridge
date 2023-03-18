@@ -1,8 +1,8 @@
 package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir
 
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.BlockingBridgeAnalyzeResult
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.BlockingBridgeAnalyzeResult.*
-import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.jvm.isJvm8OrHigher
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve.BlockingBridgeAnalyzeResult
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve.BlockingBridgeAnalyzeResult.*
+import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.resolve.isJvm8OrHigher
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.IBridgeConfiguration
 import org.jetbrains.kotlin.backend.jvm.ir.isInlineClassType
 import org.jetbrains.kotlin.backend.jvm.ir.psiElement

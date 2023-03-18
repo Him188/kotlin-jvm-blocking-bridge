@@ -1,7 +1,6 @@
 package me.him188.kotlin.jvm.blocking.bridge
 
 import me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerConfigurationKeys.ENABLE_FOR_MODULE
-import me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.BridgeCommandLineProcessor
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -12,7 +11,6 @@ import org.jetbrains.kotlin.gradle.plugin.*
 
 internal fun BlockingBridgePluginExtension.toSubpluginOptionList(): List<SubpluginOption> {
     return listOf(
-        SubpluginOption(UNIT_COERCION.toString(), unitCoercion.name),
         SubpluginOption(ENABLE_FOR_MODULE.toString(), enableForModule.toString()),
     )
 }
@@ -85,6 +83,7 @@ open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
             KotlinPlatformType.androidJvm,
             KotlinPlatformType.common,
             -> true
+
             else -> false
         }//.also { log("Application to ${kotlinCompilation.name} (${kotlinCompilation.platformType}): $it") }
     }

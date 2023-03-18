@@ -72,8 +72,6 @@
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
-        <expressionCodegenExtension
-                implementation="me.him188.kotlin.jvm.blocking.bridge.ide.BridgeCodegenIdeExtension"/>
         <!--        <irGenerationExtension-->
         <!--                implementation="me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.JvmBlockingBridgeIrGenerationExtension"/>-->
         <!--        <syntheticResolveExtension-->
