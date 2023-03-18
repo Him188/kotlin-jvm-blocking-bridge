@@ -100,7 +100,7 @@ internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): Li
 
     return ownMethods.asSequence()
         .filterIsInstance<KtLightMethod>()
-        .filter { it.canHaveBridgeFunctions(this.isIr).generate }
+        .filter { it.canHaveBridgeFunctions().generate }
         .flatMap { it.generateLightMethod(it.containingClass).asSequence() }
         .toList()
 }
@@ -117,7 +117,7 @@ internal fun KtAnnotated.findAnnotation(fqName: FqName): KtAnnotationEntry? {
 
 internal val KtLightMethod.isTopLevel get() = this.kotlinOrigin?.containingClassOrObject == null
 
-internal fun PsiMethod.canHaveBridgeFunctions(isIr: Boolean): HasJvmBlockingBridgeAnnotation {
+internal fun PsiMethod.canHaveBridgeFunctions(): HasJvmBlockingBridgeAnnotation {
     if (this is BlockingBridgeStubMethod) return HasJvmBlockingBridgeAnnotation.NONE
     if (this !is KtLightMethod) return HasJvmBlockingBridgeAnnotation.NONE
     if (!isSuspend()) return HasJvmBlockingBridgeAnnotation.NONE
@@ -132,14 +132,9 @@ internal fun PsiMethod.canHaveBridgeFunctions(isIr: Boolean): HasJvmBlockingBrid
         if (!descriptor.effectiveVisibility(checkPublishedApi = true).publicApi) {
             return HasJvmBlockingBridgeAnnotation.NONE
         }
-        if (descriptor.containingDeclaration !is ClassDescriptor && !isIr) {
-            return HasJvmBlockingBridgeAnnotation.NONE
-        }
     }
 
-    if (this.isTopLevel) {
-        if (!isIr) return HasJvmBlockingBridgeAnnotation.NONE
-    } else {
+    if (!this.isTopLevel) {
         if (containingClass.hasAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName.asString()))
             return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
     }
@@ -148,7 +143,7 @@ internal fun PsiMethod.canHaveBridgeFunctions(isIr: Boolean): HasJvmBlockingBrid
 
     if (containingKtFile?.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName) != null) return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
 
-    val fromSuper = findOverrides()?.map { it.canHaveBridgeFunctions(isIr) }?.firstOrNull { it.generate }
+    val fromSuper = findOverrides()?.map { it.canHaveBridgeFunctions() }?.firstOrNull { it.generate }
     if (fromSuper?.generate == true) return fromSuper
 
     return HasJvmBlockingBridgeAnnotation.NONE

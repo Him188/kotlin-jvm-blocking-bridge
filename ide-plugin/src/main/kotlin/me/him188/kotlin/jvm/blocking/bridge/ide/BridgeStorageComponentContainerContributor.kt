@@ -24,8 +24,7 @@ class BridgeStorageComponentContainerContributor : StorageComponentContainerCont
         if (!platform.hasJvmComponent()) return
 
         container.useInstance(object :
-            BlockingBridgeDeclarationChecker(moduleDescriptor.isIr(),
-                { it.bridgeConfiguration }) {
+            BlockingBridgeDeclarationChecker({ it.bridgeConfiguration }) {
             override fun isPluginEnabled(
                 descriptor: DeclarationDescriptor,
             ): Boolean {

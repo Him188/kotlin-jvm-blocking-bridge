@@ -7,16 +7,15 @@ import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.IBridgeConfigura
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.createBridgeConfig
 import org.jetbrains.kotlin.analyzer.ModuleInfo
 import org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArguments
-import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
 import org.jetbrains.kotlin.compiler.plugin.CliOption
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.KotlinFacetSettings
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
+import org.jetbrains.kotlin.idea.base.projectStructure.unwrapModuleSourceInfo
+import org.jetbrains.kotlin.idea.base.util.module
 import org.jetbrains.kotlin.idea.caches.project.toDescriptor
-import org.jetbrains.kotlin.idea.core.unwrapModuleSourceInfo
 import org.jetbrains.kotlin.idea.facet.KotlinFacet
-import org.jetbrains.kotlin.idea.util.module
 
 val Module.bridgeConfiguration
     get() = useBridgeCacheOrInit { it.config } ?: IBridgeConfiguration.Default
@@ -24,17 +23,11 @@ val Module.bridgeConfiguration
 val PsiElement.bridgeConfiguration
     get() = module?.bridgeConfiguration ?: IBridgeConfiguration.Default
 
-val Module.isIr
-    get() = useBridgeCacheOrInit { it.isIr } ?: false
-
-val PsiElement.isIr
-    get() = module?.isIr ?: false
-
 val Module.isBridgeCompilerEnabled
     get() = useBridgeCacheOrInit { it.compilerEnabled } ?: false
 
 val PsiElement.isBridgeCompilerEnabled
-    get() = module?.isBridgeCompilerEnabled ?: false
+    get() = this.module?.isBridgeCompilerEnabled ?: false
 
 
 inline fun <R> Module.useBridgeCacheOrInit(
@@ -47,21 +40,11 @@ inline fun <R> Module.useBridgeCacheOrInit(
         return useCache(cache)
     }
 
-    cache.isIr = moduleDescriptor.isIr()
     cache.config = moduleDescriptor.createBridgeConfig() ?: IBridgeConfiguration.Default
     cache.compilerEnabled = moduleDescriptor.isBlockingBridgePluginEnabled()
     cache.initialized = true
 
     return useCache(cache)
-}
-
-
-fun ModuleDescriptor.isIr(): Boolean {
-    val compilerArguments = kotlinFacetSettings()?.compilerArguments ?: return true // true by default
-    if ((compilerArguments as? K2JVMCompilerArguments?)?.useOldBackend == true) {
-        return false
-    }
-    return true
 }
 
 //

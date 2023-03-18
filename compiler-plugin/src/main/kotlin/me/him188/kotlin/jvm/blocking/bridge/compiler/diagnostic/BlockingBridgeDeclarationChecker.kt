@@ -18,7 +18,6 @@ import org.jetbrains.kotlin.resolve.descriptorUtil.module
 import org.jetbrains.kotlin.resolve.jvm.annotations.hasJvmSyntheticAnnotation
 
 open class BlockingBridgeDeclarationChecker(
-    private val isIr: Boolean,
     private val ext: (KtDeclaration) -> IBridgeConfiguration,
 ) : DeclarationChecker {
 
@@ -93,7 +92,7 @@ open class BlockingBridgeDeclarationChecker(
             return BREAK
         }
 
-        val result = descriptor.analyzeCapabilityForGeneratingBridges(isIr, context.trace.bindingContext, this)
+        val result = descriptor.analyzeCapabilityForGeneratingBridges(context.trace.bindingContext, this)
         result.createDiagnostic()?.let(context::report)
 
         if (result is BlockingBridgeAnalyzeResult.BridgeAnnotationFromContainingDeclaration) return BREAK

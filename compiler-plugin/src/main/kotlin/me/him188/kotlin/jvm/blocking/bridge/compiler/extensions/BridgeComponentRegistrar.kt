@@ -7,7 +7,6 @@ import org.jetbrains.kotlin.cli.common.toBooleanLenient
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.container.StorageComponentContainer
 import org.jetbrains.kotlin.container.useInstance
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
@@ -42,7 +41,7 @@ open class BridgeComponentRegistrar @JvmOverloads constructor(
                 moduleDescriptor: ModuleDescriptor,
             ) {
                 container.useInstance(
-                    BlockingBridgeDeclarationChecker(actualConfiguration[JVMConfigurationKeys.IR, false]) { ext }
+                    BlockingBridgeDeclarationChecker { ext }
                 )
             }
         })

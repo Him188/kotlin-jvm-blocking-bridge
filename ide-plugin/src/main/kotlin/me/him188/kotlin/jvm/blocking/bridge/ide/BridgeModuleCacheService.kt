@@ -4,7 +4,6 @@ import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.IBridgeConfigura
 
 class BridgeModuleCacheService {
     var compilerEnabled: Boolean = true
-    var isIr: Boolean = false
     var config: IBridgeConfiguration = IBridgeConfiguration.Default
 
     var initialized = false

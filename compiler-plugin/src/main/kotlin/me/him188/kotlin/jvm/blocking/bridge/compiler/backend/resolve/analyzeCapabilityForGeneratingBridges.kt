@@ -14,7 +14,6 @@ import org.jetbrains.kotlin.resolve.jvm.annotations.hasJvmSyntheticAnnotation
 
 
 fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
-    isIr: Boolean,
     bindingContext: BindingContext,
     ext: IBridgeConfiguration,
 ): BlockingBridgeAnalyzeResult {
@@ -23,7 +22,7 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
     // null iff enableForModule
     val jvmBlockingBridgeAnnotation =
         jvmBlockingBridgeAnnotation()
-            ?: jvmBlockingBridgeAnnotationOnContainingDeclaration(isIr, bindingContext)
+            ?: jvmBlockingBridgeAnnotationOnContainingDeclaration(bindingContext)
                 .also { annotationFromContainingClass = true }
             ?: kotlin.run {
                 if (ext.enableForModule) {
@@ -56,12 +55,6 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
         }
 
         val containingClass = containingClass
-        if (containingClass == null) {
-            // top-level only supported by IR
-            if (!isIr) {
-                return TopLevelFunctionsNotSupported(jvmBlockingBridgeAnnotationPsi ?: return EnableForModule)
-            }
-        }
         if (!visibility.effectiveVisibility(this, true).publicApi) {
             // effectively internal api
             return RedundantForNonPublicDeclarations(jvmBlockingBridgeAnnotationPsi ?: return EnableForModule)
@@ -88,7 +81,7 @@ fun FunctionDescriptor.analyzeCapabilityForGeneratingBridges(
 
         val overridden =
             original.findOverriddenDescriptorsHierarchically {
-                it.analyzeCapabilityForGeneratingBridges(isIr, bindingContext, ext).shouldGenerate
+                it.analyzeCapabilityForGeneratingBridges(bindingContext, ext).shouldGenerate
             }
 
         if (overridden != null) {

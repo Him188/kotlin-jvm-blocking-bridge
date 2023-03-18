@@ -79,19 +79,11 @@ sealed class BlockingBridgeAnalyzeResult(
             REDUNDANT_JVM_BLOCKING_BRIDGE_ON_NON_PUBLIC_DECLARATIONS.on(inspectionTarget)
     }
 
-    /**
-     * With JVM backend
-     */
-    class TopLevelFunctionsNotSupported(
-        private val inspectionTarget: PsiElement,
-    ) : BlockingBridgeAnalyzeResult(false, false) {
-        override fun createDiagnostic(): Diagnostic = TOP_LEVEL_FUNCTIONS_NOT_SUPPORTED.on(inspectionTarget)
-    }
 }
 
 fun TargetPlatform.isJvm8OrHigher(): Boolean {
     return componentPlatforms
-        .any { it.targetPlatformVersion as? JvmTarget ?: JvmTarget.DEFAULT >= JvmTarget.JVM_1_8 }
+        .any { (it.targetPlatformVersion as? JvmTarget ?: JvmTarget.DEFAULT) >= JvmTarget.JVM_1_8 }
 }
 
 fun TargetPlatform.hasJvmComponent(): Boolean {
@@ -102,7 +94,6 @@ fun TargetPlatform.hasJvmComponent(): Boolean {
 internal fun ClassDescriptor.isInterface(): Boolean = this.kind == ClassKind.INTERFACE
 
 fun FunctionDescriptor.jvmBlockingBridgeAnnotationOnContainingDeclaration(
-    isIr: Boolean,
     bindingContext: BindingContext,
 ): AnnotationDescriptor? {
     return when (val containingDeclaration = containingDeclaration) {
@@ -114,11 +105,12 @@ fun FunctionDescriptor.jvmBlockingBridgeAnnotationOnContainingDeclaration(
 
             containingDeclaration.findFileAnnotation(bindingContext, RuntimeIntrinsics.JvmBlockingBridgeFqName)
         }
+
         is PackageFragmentDescriptor -> {
             // top-level function
-            if (isIr) return containingDeclaration.jvmBlockingBridgeAnnotation()
-            containingDeclaration.annotations.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
+            return containingDeclaration.jvmBlockingBridgeAnnotation()
         }
+
         else -> return null
     }
 }

@@ -77,13 +77,12 @@ class BridgeInlayHintsCollector :
 
         val generated = mutableSetOf<PsiElement>()
 
-        val isIr = element.isIr
         for (method in element.methods) {
             if (method is BlockingBridgeStubMethod) continue
             if (method.containingClass !== element) continue
             if (!generated.add(method.navigationElement)) continue
 
-            if (method.canHaveBridgeFunctions(isIr).inlayHints) {
+            if (method.canHaveBridgeFunctions().inlayHints) {
                 anyChanged = true
                 sink.addBlockElement(
                     offset = method.identifyingElement?.startOffset ?: method.startOffset,
