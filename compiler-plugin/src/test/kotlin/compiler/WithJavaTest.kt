@@ -2,11 +2,7 @@ package compiler
 
 import org.junit.jupiter.api.Test
 
-internal sealed class WithJavaTest(ir: Boolean) : AbstractCompilerTest(ir) {
-    class Ir : WithJavaTest(true)
-    class Jvm : WithJavaTest(false)
-
-
+internal class WithJavaTest : AbstractCompilerTest() {
     @Test
     fun `member function in class with Java`() = testJvmCompile(
         """

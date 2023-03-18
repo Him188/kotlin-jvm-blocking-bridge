@@ -11,19 +11,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 
-internal sealed class AbiAnnotationsTest(
-    ir: Boolean,
-) : AbstractCompilerTest(ir) {
-    internal class Ir : AbiAnnotationsTest(ir = true)
-    internal class Jvm : AbiAnnotationsTest(ir = false) {
-        @Test
-        fun test() {
-            `jvm overloads`()
-        }
-    }
+internal class AbiAnnotationsTest : AbstractCompilerTest() {
 
     @Test
-    open fun `exceptions`() = testJvmCompile(
+    fun `exceptions`() = testJvmCompile(
         """
             object TestData {
                 @Throws(java.io.IOException::class)
@@ -38,7 +29,7 @@ internal sealed class AbiAnnotationsTest(
     }
 
     @Test
-    open fun `jvm overloads`() = testJvmCompile(
+    fun `jvm overloads`() = testJvmCompile(
         """
             class TestData {
                 @JvmOverloads
@@ -58,7 +49,7 @@ internal sealed class AbiAnnotationsTest(
     }
 
     @Test
-    open fun `jvm overloads with unit coercion compatibility`() = testJvmCompile(
+    fun `jvm overloads with unit coercion compatibility`() = testJvmCompile(
         """
             object TestData {
                 @JvmOverloads
@@ -80,7 +71,7 @@ internal sealed class AbiAnnotationsTest(
     }
 
     @Test
-    open fun `no jvm overloads`() = testJvmCompile(
+    fun `no jvm overloads`() = testJvmCompile(
         """
             object TestData {
                 @JvmBlockingBridge

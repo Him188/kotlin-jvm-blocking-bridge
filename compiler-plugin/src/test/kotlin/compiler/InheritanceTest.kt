@@ -9,24 +9,7 @@ import org.junit.jupiter.api.Test
 import runFunction
 import kotlin.coroutines.Continuation
 
-internal sealed class InheritanceTest(
-    ir: Boolean,
-) : AbstractCompilerTest(ir) {
-
-    internal class Ir : InheritanceTest(true) {
-        @Test
-        fun test() {
-            `bridge for open fun`()
-        }
-    }
-
-    internal class Jvm : InheritanceTest(false) {
-        @Test
-        fun test() {
-            `bridge for open fun`()
-        }
-    }
-
+internal class InheritanceTest : AbstractCompilerTest() {
     @Test
     fun `bridge for abstract`() = testJvmCompile(
         """
@@ -115,7 +98,7 @@ internal sealed class InheritanceTest(
     }
 
     @Test
-    open fun `bridge for interface inheritance`() = testJvmCompile(
+    fun `bridge for interface inheritance`() = testJvmCompile(
         """
     interface Interface2 {
         @JvmBlockingBridge
@@ -140,7 +123,7 @@ internal sealed class InheritanceTest(
     }
 
     @Test
-    open fun `interface override`() = testJvmCompile(
+    fun `interface override`() = testJvmCompile(
         """
     interface Interface2 {
         @JvmBlockingBridge
@@ -163,7 +146,7 @@ internal sealed class InheritanceTest(
     }
 
     @Test
-    open fun `gen bridge for overridden`() = testJvmCompile(
+    fun `gen bridge for overridden`() = testJvmCompile(
         """
     interface Interface2 {
         @JvmBlockingBridge

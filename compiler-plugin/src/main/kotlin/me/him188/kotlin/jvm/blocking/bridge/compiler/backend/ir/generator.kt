@@ -1,6 +1,7 @@
 package me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir
 
 import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
+import org.jetbrains.kotlin.GeneratedDeclarationKey
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.ir.*
@@ -46,7 +47,9 @@ object RuntimeIntrinsics {
 
 internal val IrFunction.bridgeFunctionName: Name get() = Name.identifier("${this.name}")
 
-internal val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin get() = IrDeclarationOrigin.DEFINED
+internal object KjbbPluginKey : GeneratedDeclarationKey()
+
+internal val ORIGIN_JVM_BLOCKING_BRIDGE: IrDeclarationOrigin = IrDeclarationOrigin.GeneratedByPlugin(KjbbPluginKey)
 
 private fun IrPluginContext.referenceFunctionRunBlocking(): IrSimpleFunctionSymbol {
     return referenceFunctions(RuntimeIntrinsics.runSuspendCallableId).singleOrNull()

@@ -9,7 +9,8 @@ import org.junit.jupiter.api.Test
 import runFunction
 import kotlin.test.assertTrue
 
-internal sealed class UnitCoercionCompatibilityTest(ir: Boolean) : AbstractUnitCoercionTest(ir) {
+
+internal class UnitCoercionCompatibilityTest : AbstractUnitCoercionTest() {
     override val overrideCompilerConfiguration: CompilerConfiguration = CompilerConfiguration().apply {
         put(
             me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerConfigurationKeys.UNIT_COERCION,
@@ -19,16 +20,9 @@ internal sealed class UnitCoercionCompatibilityTest(ir: Boolean) : AbstractUnitC
 
     // class Ir : UnitCoercionCompatibilityTest(true) // IR is correct in both old and new, no need to test compatibility.
 
-    class Jvm : UnitCoercionCompatibilityTest(false) {
-
-        @Test
-        fun test() {
-            `fake override comp`()
-        }
-    }
-
     @Test
-    fun `fake override comp`() = testJvmCompile("""
+    fun `fake override comp`() = testJvmCompile(
+        """
         interface ATestData : Inter {
             @JvmBlockingBridge override suspend fun test2(arg: String)
         }

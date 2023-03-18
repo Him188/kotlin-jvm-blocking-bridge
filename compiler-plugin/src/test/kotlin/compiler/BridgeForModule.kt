@@ -11,7 +11,7 @@ import runFunction
 import kotlin.test.assertEquals
 
 
-internal sealed class BridgeForModule(ir: Boolean) : AbstractCompilerTest(ir) {
+internal class BridgeForModule : AbstractCompilerTest() {
     override val overrideCompilerConfiguration: CompilerConfiguration = CompilerConfiguration().apply {
         put(
             me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerConfigurationKeys.ENABLE_FOR_MODULE,
@@ -19,24 +19,9 @@ internal sealed class BridgeForModule(ir: Boolean) : AbstractCompilerTest(ir) {
         )
     }
 
-    class Ir : BridgeForModule(true) {
-
-        @Test
-        fun test() {
-            `synthetic in static companion`()
-        }
-    }
-
-    class Jvm : BridgeForModule(false) {
-
-        @Test
-        fun test() {
-            `synthetic in static companion`()
-        }
-    }
-
     @Test
-    fun simple() = testJvmCompile("""
+    fun simple() = testJvmCompile(
+        """
         object TestData {
             suspend fun test() = "OK"
         }

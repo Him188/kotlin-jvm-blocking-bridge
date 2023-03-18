@@ -3,25 +3,18 @@
 package compiler
 
 import org.junit.jupiter.api.Test
-import testJvmCompile
 import kotlin.test.assertEquals
 
-internal sealed class BasicsTest(
-    ir: Boolean,
-) : AbstractCompilerTest(ir) {
-    internal class Ir : BasicsTest(true) {
-        @Test
-        fun `topLevel`() = testJvmCompile(
-            """
+internal class BasicsTest : AbstractCompilerTest() {
+    @Test
+    fun `topLevel`() = testJvmCompile(
+        """
     @JvmBlockingBridge
     suspend fun test() = "OK"
-""", noMain = true, ir = true
-        ) {
-            assertEquals("OK", classLoader.loadClass("TestData0Kt").getDeclaredMethod("test").invoke(null))
-        }
+""", noMain = true
+    ) {
+        assertEquals("OK", classLoader.loadClass("TestData0Kt").getDeclaredMethod("test").invoke(null))
     }
-
-    internal class Jvm : BasicsTest(false)
 
     @Test
     fun `simple function in object`() = testJvmCompile(

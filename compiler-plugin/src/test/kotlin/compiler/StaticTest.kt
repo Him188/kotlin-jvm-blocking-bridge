@@ -9,22 +9,7 @@ import runStaticFunction
 import kotlin.reflect.full.companionObject
 import kotlin.reflect.full.companionObjectInstance
 
-internal sealed class StaticTest(ir: Boolean) : AbstractCompilerTest(ir) {
-    class Ir : StaticTest(true) {
-        @Test
-        fun test() {
-            `static default with @JvmOverloads in companion`()
-        }
-    }
-
-    class Jvm : StaticTest(false) {
-        @Test
-        fun test() {
-            `static default in companion`()
-            `static default with @JvmOverloads in companion`()
-        }
-    }
-
+internal class StaticTest : AbstractCompilerTest() {
 
     @Test
     fun static() = testJvmCompile(

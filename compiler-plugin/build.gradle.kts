@@ -45,10 +45,10 @@ dependencies tests@{
 
     testImplementation(kotlin("test-junit5"))
 
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.9") {
+    testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.5.0") {
         exclude("org.jetbrains.kotlin", "kotlin-annotation-processing-embeddable")
     }
-    testRuntimeOnly("org.jetbrains.kotlin:kotlin-annotation-processing-embeddable:1.7.0-RC")
+    testRuntimeOnly("org.jetbrains.kotlin:kotlin-annotation-processing-embeddable:1.8.0")
 
 
     testImplementation("org.assertj:assertj-core:3.22.0")

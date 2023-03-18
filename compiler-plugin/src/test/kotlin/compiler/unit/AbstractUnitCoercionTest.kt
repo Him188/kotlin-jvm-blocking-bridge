@@ -3,7 +3,7 @@ package compiler.unit
 import compiler.AbstractCompilerTest
 import org.junit.jupiter.api.Test
 
-internal abstract class AbstractUnitCoercionTest(ir: Boolean) : AbstractCompilerTest(ir) {
+internal abstract class AbstractUnitCoercionTest : AbstractCompilerTest() {
     @Test
     fun member() = testJvmCompile(
         """

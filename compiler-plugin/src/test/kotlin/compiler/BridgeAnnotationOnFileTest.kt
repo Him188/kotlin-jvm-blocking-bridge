@@ -1,6 +1,5 @@
 package compiler
 
-import FILE_SPLITTER
 import assertHasFunction
 import createInstance
 import org.junit.jupiter.api.Test
@@ -8,25 +7,10 @@ import runFunction
 import kotlin.coroutines.Continuation
 import kotlin.test.assertFailsWith
 
-internal sealed class BridgeAnnotationOnFileTest(
-    ir: Boolean,
-) : AbstractCompilerTest(ir) {
-    internal class Ir : BridgeAnnotationOnFileTest(ir = true) {
-        @Test
-        fun test() {
-            `suspend gen`()
-        }
-    }
-
-    internal class Jvm : BridgeAnnotationOnFileTest(ir = false) {
-        @Test
-        fun test() {
-            `bridge for overridden`()
-        }
-    }
+internal class BridgeAnnotationOnFileTest : AbstractCompilerTest() {
 
     @Test
-    open fun `suspend gen`() = testJvmCompile(
+    fun `suspend gen`() = testJvmCompile(
         """
             @file:JvmBlockingBridge
             object TestData {
@@ -38,7 +22,7 @@ internal sealed class BridgeAnnotationOnFileTest(
     }
 
     @Test
-    open fun `non suspend should be ok`() = testJvmCompile(
+    fun `non suspend should be ok`() = testJvmCompile(
         """
             @file:JvmBlockingBridge
             object TestData {
@@ -48,7 +32,7 @@ internal sealed class BridgeAnnotationOnFileTest(
     )
 
     @Test
-    open fun `no inspection even inapplicable`() = testJvmCompile(
+    fun `no inspection even inapplicable`() = testJvmCompile(
         """
             @file:JvmBlockingBridge
             object TestData {
@@ -138,7 +122,7 @@ internal sealed class BridgeAnnotationOnFileTest(
     }
 
     @Test
-    open fun `bridge for interface inheritance`() = testJvmCompile(
+    fun `bridge for interface inheritance`() = testJvmCompile(
         """
         @file:JvmBlockingBridge
     interface Interface2 {

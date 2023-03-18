@@ -63,6 +63,6 @@ class JvmBlockingBridgeClassLoweringPass(
         irClass.transformDeclarationsFlat { declaration ->
             declaration.transformFlat(context, ext)
         }
-        irClass.companionObject()?.cast<IrClass>()?.let(::lower)
+        irClass.companionObject()?.let(::lower)
     }
 }

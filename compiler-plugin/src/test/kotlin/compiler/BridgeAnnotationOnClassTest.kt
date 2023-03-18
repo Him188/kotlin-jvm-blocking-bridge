@@ -8,25 +8,9 @@ import runFunction
 import kotlin.coroutines.Continuation
 import kotlin.test.assertFailsWith
 
-internal sealed class BridgeAnnotationOnClassTest(
-    ir: Boolean,
-) : AbstractCompilerTest(ir) {
-    internal class Ir : BridgeAnnotationOnClassTest(ir = true) {
-        @Test
-        fun test() {
-            `bridge for interface implicit override`()
-        }
-    }
-
-    internal class Jvm : BridgeAnnotationOnClassTest(ir = false) {
-        @Test
-        fun test() {
-            `bridge for interface implicit override`()
-        }
-    }
-
+internal class BridgeAnnotationOnClassTest : AbstractCompilerTest() {
     @Test
-    open fun `suspend gen`() = testJvmCompile(
+    fun `suspend gen`() = testJvmCompile(
         """
             @JvmBlockingBridge
             object TestData {
@@ -38,7 +22,7 @@ internal sealed class BridgeAnnotationOnClassTest(
     }
 
     @Test
-    open fun `non suspend should be ok`() = testJvmCompile(
+    fun `non suspend should be ok`() = testJvmCompile(
         """
             @JvmBlockingBridge
             object TestData {
@@ -48,7 +32,7 @@ internal sealed class BridgeAnnotationOnClassTest(
     )
 
     @Test
-    open fun `effectively public`() = testJvmCompile(
+    fun `effectively public`() = testJvmCompile(
         """
             @JvmBlockingBridge
             object TestData {
@@ -65,7 +49,7 @@ internal sealed class BridgeAnnotationOnClassTest(
     }
 
     @Test
-    open fun `no inspection even inapplicable`() = testJvmCompile(
+    fun `no inspection even inapplicable`() = testJvmCompile(
         """
             @JvmBlockingBridge
             object TestData {

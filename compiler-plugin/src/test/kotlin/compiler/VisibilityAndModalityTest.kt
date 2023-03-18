@@ -1,20 +1,13 @@
 package compiler
 
-import modality
 import org.jetbrains.kotlin.descriptors.Modality.FINAL
 import org.jetbrains.kotlin.descriptors.Modality.OPEN
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.junit.jupiter.api.Test
-import visibility
 import java.lang.reflect.Modifier
 import kotlin.test.assertEquals
 
-internal sealed class VisibilityAndModalityTest(
-    ir: Boolean,
-) : AbstractCompilerTest(ir) {
-    internal class Ir : VisibilityAndModalityTest(ir = true)
-    internal class Jvm : VisibilityAndModalityTest(ir = false)
-
+internal class VisibilityAndModalityTest : AbstractCompilerTest() {
     @Test
     fun `final bridge for final function in final object`() = testJvmCompile(
         """
