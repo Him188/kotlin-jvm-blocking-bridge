@@ -4,8 +4,6 @@ import me.him188.kotlin.jvm.blocking.bridge.compiler.JvmBlockingBridgeCompilerCo
 import me.him188.kotlin.jvm.blocking.bridge.compiler.extensions.BridgeCommandLineProcessor
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.*
 
 
@@ -27,37 +25,6 @@ private val pluginArtifact = SubpluginArtifact(
 
 open class JvmBlockingBridgeGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun apply(target: Project) {
-        // log("JvmBlockingBridgeGradlePlugin installed.")
-
-        kotlin.runCatching { target.extensions.getByType(KotlinMultiplatformExtension::class.java) }
-            .fold(onSuccess = { kotlin ->
-                // when MPP
-
-                val applicableTargets =
-                    kotlin.targets.filter { it.platformType == KotlinPlatformType.common }
-
-                for (applicableTarget in applicableTargets) {
-                    applicableTarget.compilations.flatMap { it.allKotlinSourceSets }.forEach {
-                        it.dependencies {
-                            implementation("me.him188:kotlin-jvm-blocking-bridge-runtime:$KJBB_VERSION")
-                        }
-                    }
-                }
-                if (applicableTargets.isNotEmpty()) {
-                    target.repositories.mavenCentral()
-                }
-
-            }, onFailure = {
-                if (kotlin.runCatching { target.extensions.getByType(KotlinJvmProjectExtension::class.java) }.isSuccess) {
-                    // when JVM
-                    target.dependencies.add(
-                        "implementation",
-                        "me.him188:kotlin-jvm-blocking-bridge-runtime:$KJBB_VERSION"
-                    )
-                    target.repositories.mavenCentral()
-                } // else: neither JVM nor MPP. Don't apply
-            })
-
         target.extensions.create("blockingBridge", BlockingBridgePluginExtension::class.java)
     }
 
