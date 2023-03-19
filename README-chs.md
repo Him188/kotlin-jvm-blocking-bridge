@@ -130,7 +130,7 @@ Eclipse 和 Visual Studio 或其他 IDE 均不受支持。
 
 #### **安装 Gradle 插件.**
 
-`build.gradle.kts`
+在 `build.gradle` 或 `build.gradle.kts` 中添加:
 
 ```kotlin
 plugins {
@@ -138,16 +138,37 @@ plugins {
 }
 ```
 
-可在 [releases](https://github.com/Him188/kotlin-jvm-blocking-bridge/releases) 获取 `VERSION`, 如 `2.0.0-160.3`.
+可在 [releases](https://github.com/Him188/kotlin-jvm-blocking-bridge/releases) 获取 `VERSION`, 如 `3.1.0-180.1`.
 
-本插件会自动添加如下的运行时依赖:
+You also need to add runtime dependency as follows.
+Please make sure you have it in runtime (use `implementation` or `api`, don't use `compileOnly`), because the compiled
+bridges needs the runtime library.
+
+也许添加如下的依赖库。
+请保证运行环境包含该库 (使用 `implementation` 或 `api`, 不要使用 `compileOnly`)，因为编译的方法桥需要此依赖库。
 
 ```kotlin
-implementation("me.him188:kotlin-jvm-blocking-bridge:VERSION")
+implementation("me.him188:kotlin-jvm-blocking-bridge-runtime:VERSION")
 ```
 
-因此只需要安装插件，而不需要添加依赖即可使用。请确保在运行时有这个依赖（通常不需要做额外工作）。
+对于 JVM 项目:
+```kotlin
+dependencies {
+    implementation("me.him188:kotlin-jvm-blocking-bridge-runtime:VERSION")
+}
+```
 
+对于多平台项目, 为 `commonMain` 添加即可将依赖添加到所有编译目标:
+
+```kotlin
+kotlin.sourceSets {
+    commonMain {
+        dependencies {
+            implementation("me.him188:kotlin-jvm-blocking-bridge-runtime:VERSION")
+        }
+    }
+}
+```
 
 > 如果 Gradle 无法下载这个插件，请在 `settings.gradle` 或 `settings.gradle.kts` 中添加 `gradlePluginPortal()`:
 > ```kotlin
@@ -164,6 +185,8 @@ Kotlin 拥有两个编译器后端，旧 `JVM` 和新 `IR`(Internal Representati
 Kotlin 在 1.5 及以前使用 `JVM` 后端，在 1.6 及以后使用 `IR` 后端。
 
 本插件同时支持这两个后端。在两个后端产生的编译结果都是相同的。
+
+K2 暂未支持。
 
 ## 模块
 
