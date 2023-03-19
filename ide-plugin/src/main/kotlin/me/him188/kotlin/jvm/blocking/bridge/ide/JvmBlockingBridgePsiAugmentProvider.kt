@@ -19,13 +19,14 @@ import org.jetbrains.kotlin.asJava.builder.LightMemberOriginForDeclaration
 import org.jetbrains.kotlin.asJava.classes.*
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
+import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.idea.caches.resolve.analyze
 import org.jetbrains.kotlin.idea.search.usagesSearch.descriptor
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
+import org.jetbrains.kotlin.psi.psiUtil.hasSuspendModifier
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 
@@ -36,7 +37,7 @@ class JvmBlockingBridgePsiAugmentProvider : PsiAugmentProvider() {
     override fun <Psi : PsiElement?> getAugments(
         element: PsiElement,
         type: Class<Psi>,
-        nameHint: String?
+        nameHint: String?,
     ): MutableList<Psi> {
         if (element !is KtUltraLightClass && element !is KtUltraLightClassForFacade) return mutableListOf()
         if (type != PsiMethod::class.java) {
@@ -100,7 +101,7 @@ internal fun PsiElement.generateAugmentElements(ownMethods: List<PsiMethod>): Li
 
     return ownMethods.asSequence()
         .filterIsInstance<KtLightMethod>()
-        .filter { it.canHaveBridgeFunctions().generate }
+        .filter { (it.kotlinOrigin as? KtNamedFunction)?.canHaveBridgeFunctions()?.generate == true }
         .flatMap { it.generateLightMethod(it.containingClass).asSequence() }
         .toList()
 }
@@ -115,19 +116,20 @@ internal fun KtAnnotated.findAnnotation(fqName: FqName): KtAnnotationEntry? {
     return null
 }
 
-internal val KtLightMethod.isTopLevel get() = this.kotlinOrigin?.containingClassOrObject == null
+@Suppress("PrivatePropertyName")
+private val JVM_SYNTHETIC = FqName("kotlin.jvm.JvmSynthetic")
 
-internal fun PsiMethod.canHaveBridgeFunctions(): HasJvmBlockingBridgeAnnotation {
-    if (this is BlockingBridgeStubMethod) return HasJvmBlockingBridgeAnnotation.NONE
-    if (this !is KtLightMethod) return HasJvmBlockingBridgeAnnotation.NONE
-    if (!isSuspend()) return HasJvmBlockingBridgeAnnotation.NONE
-    if (!Name.isValidIdentifier(this.name)) return HasJvmBlockingBridgeAnnotation.NONE
+internal fun KtFunction.canHaveBridgeFunctions(): HasJvmBlockingBridgeAnnotation {
+    if (this !is KtNamedFunction) return HasJvmBlockingBridgeAnnotation.NONE
+    if (this.modifierList?.hasSuspendModifier() != true) return HasJvmBlockingBridgeAnnotation.NONE
+    if (this.name == null) return HasJvmBlockingBridgeAnnotation.NONE
 
-    if (this.hasAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName.asString())) return HasJvmBlockingBridgeAnnotation.FROM_FUNCTION
+    if (this.hasAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)) return HasJvmBlockingBridgeAnnotation.FROM_FUNCTION
+    if (this.hasAnnotation(JVM_SYNTHETIC)) return HasJvmBlockingBridgeAnnotation.NONE
 
     // no @JvmBlockingBridge on function, check if it has on class or file.
 
-    val descriptor = this.kotlinOrigin?.descriptor as? SimpleFunctionDescriptor
+    val descriptor = this.descriptor as? SimpleFunctionDescriptor
     if (descriptor != null) {
         if (!descriptor.effectiveVisibility(checkPublishedApi = true).publicApi) {
             return HasJvmBlockingBridgeAnnotation.NONE
@@ -135,41 +137,35 @@ internal fun PsiMethod.canHaveBridgeFunctions(): HasJvmBlockingBridgeAnnotation 
     }
 
     if (!this.isTopLevel) {
-        if (containingClass.hasAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName.asString()))
+        val containingClass = this.containingClassOrObject
+        if (containingClass?.hasAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName) == true)
             return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
     }
 
     if (bridgeConfiguration.enableForModule) return HasJvmBlockingBridgeAnnotation.ENABLE_FOR_MODULE
 
-    if (containingKtFile?.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName) != null) return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
+    if (containingKtFile.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName) != null) return HasJvmBlockingBridgeAnnotation.FROM_CONTAINING_DECLARATION
 
-    val fromSuper = findOverrides()?.map { it.canHaveBridgeFunctions() }?.firstOrNull { it.generate }
+    val fromSuper = findOverrides()
+        .mapNotNull { (it.psiElement as? KtNamedFunction)?.canHaveBridgeFunctions() }
+        .firstOrNull { it.generate }
     if (fromSuper?.generate == true) return fromSuper
 
     return HasJvmBlockingBridgeAnnotation.NONE
 }
 
+private fun KtAnnotated.hasAnnotation(fqName: FqName): Boolean = this.findAnnotation(fqName) != null
+
 /**
  * @return `null` if top-level method
  */
-internal fun PsiMethod.findOverrides(): Sequence<PsiMethod>? {
-    return containingClass?.superClasses
-        ?.flatMap { it.methods.asSequence() }
-        ?.filter {
-            it.hasSameSignatureWith(this)
-        }
+internal fun KtNamedFunction.findOverrides(): Collection<FunctionDescriptor> {
+    val overriden = (this.descriptor as? SimpleFunctionDescriptor)?.overriddenDescriptors
+    return overriden.orEmpty()
 }
 
-internal fun PsiMethod.hasSameSignatureWith(another: PsiMethod): Boolean {
-    return this.hierarchicalMethodSignature == another.hierarchicalMethodSignature
-}
-
-internal val PsiClass.superClasses: Sequence<PsiClass> get() = this.superTypes.asSequence().mapNotNull { it.resolve() }
-
-internal fun PsiMethod.isSuspend(): Boolean =
-    this.modifierList.text.contains("suspend")
-
-internal fun PsiMethod.isJvmStatic(): Boolean = hasAnnotation(JvmStatic::class.qualifiedName!!)
+internal fun PsiMethod.isJvmStatic(): Boolean = hasAnnotation("kotlin.jvm.JvmStatic")
+internal fun KtAnnotated.isJvmStatic(): Boolean = hasAnnotation(FqName("kotlin.jvm.JvmStatic"))
 
 internal fun KtLightMethod.generateLightMethod(
     containingClass: KtLightClass,

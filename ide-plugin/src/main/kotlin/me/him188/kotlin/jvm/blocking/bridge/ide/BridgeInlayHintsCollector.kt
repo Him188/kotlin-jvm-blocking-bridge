@@ -8,37 +8,22 @@ import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.MouseButton
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.ide.util.DefaultPsiElementCellRenderer
+import com.intellij.openapi.editor.BlockInlayPriority
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.psi.*
-import com.intellij.psi.impl.source.PsiExtensibleClass
 import me.him188.kotlin.jvm.blocking.bridge.JvmBlockingBridge
 import me.him188.kotlin.jvm.blocking.bridge.compiler.backend.ir.RuntimeIntrinsics
 import me.him188.kotlin.jvm.blocking.bridge.ide.line.marker.document
 import me.him188.kotlin.jvm.blocking.bridge.ide.line.marker.getLineNumber
-import org.jetbrains.kotlin.asJava.classes.KtLightClass
-import org.jetbrains.kotlin.asJava.classes.KtUltraLightClass
-import org.jetbrains.kotlin.asJava.classes.KtUltraLightClassForFacade
-import org.jetbrains.kotlin.asJava.elements.FakeFileForLightClass
-import org.jetbrains.kotlin.asJava.elements.KtLightDeclaration
-import org.jetbrains.kotlin.asJava.elements.KtLightMethod
-import org.jetbrains.kotlin.psi.KtAnnotationEntry
-import org.jetbrains.kotlin.psi.KtClassOrObject
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtObjectDeclaration
+import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.containingClass
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
-import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind
 import java.awt.event.MouseEvent
 import javax.swing.JComponent
 import javax.swing.JPanel
-
-internal val PsiElement.containingKtFile: KtFile?
-    get() = (containingFile as? FakeFileForLightClass)?.ktFile
-        ?: (this as? KtLightDeclaration<*, *>)?.kotlinOrigin?.containingKtFile
-
-internal val PsiMember.containingKtClass: KtClassOrObject?
-    get() = (containingClass as? KtLightClass)?.kotlinOrigin
 
 class BridgeInlayHintsCollector :
     InlayHintsProvider<NoSettings>,
@@ -48,122 +33,89 @@ class BridgeInlayHintsCollector :
     override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean = kotlin.runCatching {
         // wrapped with runCatching in case binary changes. it's better not to provide feature than throwing exceptions
 
-        if (element is KtFile) {
-            var anyChanged = false
-
-            fun collectClass(clazz: PsiClass): Boolean {
-                anyChanged = collect(clazz, editor, sink) || anyChanged
-                for (inner in clazz.innerClasses) {
-                    anyChanged = collectClass(inner) || anyChanged
-                }
-                return anyChanged
-            }
-
-            for (clazz in element.classes) {
-                collectClass(clazz)
-            }
-            return anyChanged
-        }
-
-        if (element !is KtUltraLightClass && element !is KtUltraLightClassForFacade) return false
-        if (element !is PsiExtensibleClass) return false
-
+        if (element !is KtFile) return false
         if (editor !is EditorImpl) return false
-
-        var anyChanged = false
-        val factory = PresentationFactory(editor)
-
         if (!element.isBridgeCompilerEnabled) return false
 
-        val generated = mutableSetOf<PsiElement>()
+        var anyChanged = false
+        for (clazz in element.ktClassOrObjects()) {
+            anyChanged = collectInlayHintsForClass(clazz, editor, sink) || anyChanged
+        }
 
-        for (method in element.methods) {
-            if (method is BlockingBridgeStubMethod) continue
-            if (method.containingClass !== element) continue
-            if (!generated.add(method.navigationElement)) continue
-
-            if (method.canHaveBridgeFunctions().inlayHints) {
-                anyChanged = true
-                sink.addBlockElement(
-                    offset = method.identifyingElement?.startOffset ?: method.startOffset,
-                    relatesToPrecedingText = false,
-                    showAbove = true,
-                    priority = 1,
-                    presentation = createPresentation(factory, method, editor) ?: continue,
-                )
+        for (declaration in element.declarations) {
+            if (declaration is KtNamedFunction) {
+                anyChanged = collectInlayHintsForFunction(declaration, editor, sink) || anyChanged
             }
+        }
+        return anyChanged
+    }.getOrElse { false }
+
+    private fun collectInlayHintsForClass(element: KtClassOrObject, editor: EditorImpl, sink: InlayHintsSink): Boolean {
+        var anyChanged = false
+        element.ktClassOrObjects().forEach {
+            anyChanged = collectInlayHintsForClass(it, editor, sink) || anyChanged
+        }
+
+        for (function in element.declarations.asSequence().filterIsInstance<KtFunction>()) {
+            if (function.containingClass() !== element) return false
+            anyChanged = collectInlayHintsForFunction(function, editor, sink) || anyChanged
         }
 
         return anyChanged
-    }.getOrElse { false }
+    }
+
+    private fun collectInlayHintsForFunction(
+        method: KtFunction,
+        editor: EditorImpl,
+        sink: InlayHintsSink,
+    ): Boolean {
+        if (method.canHaveBridgeFunctions().inlayHints) {
+            val factory = PresentationFactory(editor)
+            val presentation = createPresentation(factory, method, editor) ?: return false
+            sink.addBlockElement(
+                offset = method.identifyingElement?.startOffset ?: method.startOffset,
+                relatesToPrecedingText = false,
+                showAbove = true,
+                priority = BlockInlayPriority.ANNOTATIONS,
+                presentation = presentation,
+            )
+            return true
+        }
+        return false
+    }
 
 
     private fun createPresentation(
         factory: PresentationFactory,
-        method: PsiMethod,
+        method: KtFunction,
         editor: Editor,
     ): InlayPresentation? {
         var hint =
             factory.text("@${JvmBlockingBridge::class.simpleName}")
 
-        fun createNavigation(mouseEvent: MouseEvent, target: NavigatablePsiElement) {
-            PsiElementListNavigator.openTargets(
-                mouseEvent, arrayOf(target),
-                "Navigate To Annotation Source",
-                "Find Navigation Target",
-                DefaultPsiElementCellRenderer()
+        if (method.isJvmStatic() && method.containingClassOrObject !is KtObjectDeclaration) return null
+
+        method.containingClassOrObject?.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)?.let { annotation ->
+            val containingClass = method.containingClassOrObject
+            hint = factory.withTooltip(
+                "From ${annotation.text} on class ${containingClass?.name}",
+                hint
             )
+            hint = factory.withNavigation(hint, annotation)
+        } ?: method.containingKtFile.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)?.let { annotation ->
+            val containingKtFile = method.containingKtFile
+            hint = factory.withTooltip(
+                "From ${annotation.text} on file ${containingKtFile.name}",
+                hint
+            )
+            hint = factory.withNavigation(hint, annotation)
+        } ?: kotlin.run {
+            hint = factory.withTooltip("From enableForModule", hint)
         }
 
-        var annotation: KtAnnotationEntry?
-        if (method !is KtLightMethod) return null
-        if (method.lightMemberOrigin?.originKind != JvmDeclarationOriginKind.OTHER) return null
-        if (method.isJvmStatic() && method.containingKtClass !is KtObjectDeclaration) return null
-
-        when {
-            method.containingKtClass?.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
-                .also { annotation = it } != null -> {
-
-                val containingClass = method.containingClass
-                hint = factory.withTooltip(
-                    "From ${annotation!!.text} on class ${containingClass.name}",
-                    hint
-                )
-                hint = factory.onClick(hint, MouseButton.Middle) { mouseEvent, _ ->
-                    createNavigation(
-                        mouseEvent,
-                        annotation!!
-                    )
-                }
-            }
-
-            method.containingKtFile?.findAnnotation(RuntimeIntrinsics.JvmBlockingBridgeFqName)
-                .also { annotation = it } != null -> {
-
-                val containingKtFile = method.containingKtFile!!
-                hint = factory.withTooltip(
-                    "From ${annotation!!.text} on file ${containingKtFile.name}",
-                    hint
-                )
-                hint = factory.onClick(hint, MouseButton.Middle) { mouseEvent, _ ->
-                    createNavigation(
-                        mouseEvent,
-                        annotation!!
-                    )
-                }
-            }
-
-            else -> {
-                hint = factory.withTooltip(
-                    "From enableForModule",
-                    hint
-                )
-            }
-        }
-
-        val alignmentElement = method.modifierList
+        val alignmentElement = method.modifierList ?: return null
         val lineStart =
-            method.document?.getLineStartOffset((alignmentElement).getLineNumber()) ?: return null
+            method.document?.getLineStartOffset(alignmentElement.getLineNumber()) ?: return null
 
         hint = factory.inset(
             hint,
@@ -175,6 +127,31 @@ class BridgeInlayHintsCollector :
 //                0), true)
 //        )
 
+        return hint
+    }
+
+    private fun PresentationFactory.withNavigation(
+        base: InlayPresentation,
+        target: NavigatablePsiElement,
+    ): InlayPresentation {
+        fun createNavigation(mouseEvent: MouseEvent) {
+            PsiElementListNavigator.openTargets(
+                mouseEvent, arrayOf(target),
+                "Navigate To Annotation Source",
+                "Find Navigation Target",
+                DefaultPsiElementCellRenderer()
+            )
+        }
+
+        var hint = base
+
+        hint = onClick(hint, MouseButton.Middle) { mouseEvent, _ ->
+            createNavigation(mouseEvent)
+        }
+        hint = onClick(hint, MouseButton.Left) { mouseEvent, _ ->
+            if (!mouseEvent.isControlDown) return@onClick
+            createNavigation(mouseEvent)
+        }
         return hint
     }
 
@@ -203,3 +180,6 @@ class BridgeInlayHintsCollector :
 
     override val key: SettingsKey<NoSettings> get() = SettingsKey("blocking.bridge.hints")
 }
+
+private fun KtDeclarationContainer.ktClassOrObjects() =
+    declarations.asSequence().filterIsInstance<KtClassOrObject>()
