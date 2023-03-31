@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
-    id("org.jetbrains.intellij") version "1.12.0"
+    id("org.jetbrains.intellij") version "1.13.3"
     kotlin("jvm")
     kotlin("plugin.serialization")
 
@@ -65,7 +65,7 @@ tasks.getByName("publishPlugin", org.jetbrains.intellij.tasks.PublishPluginTask:
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
     sinceBuild.set("223.0")
-    untilBuild.set("223.*")
+    untilBuild.set("231.*")
     changeNotes.set(
         """
         See <a href="https://github.com/Him188/kotlin-jvm-blocking-bridge">Release notes</a>
