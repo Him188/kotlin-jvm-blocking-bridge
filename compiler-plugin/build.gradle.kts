@@ -48,7 +48,7 @@ dependencies tests@{
     testImplementation("com.github.tschuchortdev:kotlin-compile-testing:1.5.0") {
         exclude("org.jetbrains.kotlin", "kotlin-annotation-processing-embeddable")
     }
-    testRuntimeOnly("org.jetbrains.kotlin:kotlin-annotation-processing-embeddable:1.8.0")
+    testRuntimeOnly("org.jetbrains.kotlin:kotlin-annotation-processing-embeddable:${Versions.kotlin}")
 
 
     testImplementation("org.assertj:assertj-core:3.22.0")
@@ -61,11 +61,14 @@ embeddableCompiler()
 
 val test by tasks.getting(Test::class) {
     dependsOn(tasks.getByName("embeddable"))
-    this.classpath += tasks.getByName("embeddable").outputs.files
-    this.classpath =
-        files(*this.classpath.filterNot {
-            it.absolutePath.replace("\\", "/").removeSuffix("/").endsWith(("build/classes/kotlin/main"))
-        }.toTypedArray())
+    afterEvaluate {
+        classpath = tasks.getByName("embeddable").outputs.files + classpath
+        classpath =
+            files(*classpath.filterNot {
+                it.absolutePath.replace("\\", "/").removeSuffix("/").endsWith("build/classes/kotlin/main")
+                        || it.absolutePath.replace("\\", "/").removeSuffix("/").endsWith("build/classes/java/main")
+            }.toTypedArray())
+    }
 }
 
 mavenCentralPublish {

@@ -73,18 +73,21 @@ internal inline fun ShadowJar.configureEmbeddableCompilerRelocation(withJavaxInj
 @PublishedApi
 internal inline fun Project.compilerShadowJar(
     taskName: String,
-    crossinline body: ShadowJar.() -> Unit
+    crossinline body: ShadowJar.() -> Unit,
 ): TaskProvider<out ShadowJar> {
 
     // val compilerJar = configurations.getOrCreate("compilerJar")
     //dependencies.add(compilerJar.name, dependencies.project(":kotlin-compiler", configuration = "runtimeJar"))
 
     return tasks.register<ShadowJar>(taskName) {
-        @Suppress("DEPRECATION")
-        destinationDir = File(buildDir, "libs")
+        dependsOn("jar")
+        destinationDirectory.set(File(buildDir, "libs"))
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from((tasks.getByName("shadowJar") as ShadowJar).configurations)
         from((tasks.getByName("shadowJar") as ShadowJar).source)
+
+//        from(project.tasks.getByName("compileKotlin").outputs)
+//        from(project.tasks.getByName("compileJava").outputs)
         body()
     }
 }
@@ -93,7 +96,7 @@ fun ConfigurationContainer.getOrCreate(name: String): Configuration = findByName
 
 inline fun Project.embeddableCompiler(
     taskName: String = "embeddable",
-    crossinline body: ShadowJar.() -> Unit = {}
+    crossinline body: ShadowJar.() -> Unit = {},
 ): TaskProvider<out ShadowJar> {
     return compilerShadowJar(taskName) {
         group = "shadow"
