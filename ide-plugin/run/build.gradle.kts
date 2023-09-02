@@ -1,15 +1,12 @@
-import me.him188.kotlin.jvm.blocking.bridge.compiler.UnitCoercion.COMPATIBILITY
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.4.21"
-    id("me.him188.kotlin-jvm-blocking-bridge") version "2.0.0-160.3"
+    kotlin("jvm") version "1.8.20"
+    id("me.him188.kotlin-jvm-blocking-bridge") version "3.0.0-180.1"
 }
 
 blockingBridge {
 //    enableForModule = true
-
-    unitCoercion = COMPATIBILITY
 }
 
 group = "me.him188"
@@ -20,6 +17,10 @@ allprojects {
         mavenCentral()
     }
 
+}
+
+dependencies {
+    api("me.him188:kotlin-jvm-blocking-bridge-runtime:3.0.0-180.1")
 }
 
 tasks.withType<KotlinCompile>() {

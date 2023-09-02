@@ -6,7 +6,7 @@ suspend fun test() {
 
 }
 
-@JvmBlockingBridge // should error
+@JvmBlockingBridge
 suspend fun test2() {
 
 }

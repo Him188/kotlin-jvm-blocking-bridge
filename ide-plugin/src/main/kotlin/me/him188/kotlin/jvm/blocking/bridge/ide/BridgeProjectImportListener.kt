@@ -6,8 +6,8 @@ import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskNotifica
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskType
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.modules
 import com.intellij.openapi.util.Computable
-import org.jetbrains.kotlin.idea.util.projectStructure.allModules
 
 class BridgeProjectImportListener : Disposable, ExternalSystemTaskNotificationListenerAdapter() {
     override fun dispose() {
@@ -19,7 +19,7 @@ class BridgeProjectImportListener : Disposable, ExternalSystemTaskNotificationLi
             // At this point changes might be still not applied to project structure yet.
             val project = id.findResolvedProject() ?: return
             BackgroundTaskUtil.runUnderDisposeAwareIndicator(this, Computable {
-                for (module in project.allModules()) {
+                for (module in project.modules.asList()) {
                     module.getServiceIfCreated(BridgeModuleCacheService::class.java)?.initialized = false
                 }
             })
